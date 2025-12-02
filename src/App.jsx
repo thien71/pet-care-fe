@@ -1,7 +1,13 @@
-import "./App.css";
+import { RouterProvider } from "react-router-dom";
+import router from "./routes/index";
+import { AuthProvider } from "./contexts/AuthContext"; // Context cho auth
 
 function App() {
-  return <div className="bg-amber-700">Hello g</div>;
+  return (
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
+  );
 }
 
 export default App;
