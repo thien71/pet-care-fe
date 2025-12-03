@@ -72,7 +72,7 @@ const Register = () => {
   // Success modal
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-teal-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-green-50 to-teal-50 px-4">
         <div className="card w-96 bg-base-100 shadow-2xl">
           <div className="card-body items-center text-center">
             <div className="text-6xl mb-4">✅</div>
@@ -90,7 +90,7 @@ const Register = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-teal-50 to-blue-50 px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-green-50 via-teal-50 to-blue-50 px-4 py-8">
       <div className="max-w-2xl w-full">
         <div className="card bg-base-100 shadow-2xl">
           <div className="card-body">

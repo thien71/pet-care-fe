@@ -143,7 +143,7 @@ const Header = () => {
           </label>
           <ul
             tabIndex={0}
-            className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
+            className="menu menu-sm dropdown-content mt-3 z-1 p-2 shadow bg-base-100 rounded-box w-52"
           >
             {getNavLinks()}
           </ul>
@@ -188,7 +188,7 @@ const Header = () => {
               </label>
               <div
                 tabIndex={0}
-                className="mt-3 z-[1] card card-compact dropdown-content w-52 bg-base-100 shadow"
+                className="mt-3 z-1 card card-compact dropdown-content w-52 bg-base-100 shadow"
               >
                 <div className="card-body">
                   <span className="font-bold text-lg">Thông báo</span>
@@ -213,7 +213,7 @@ const Header = () => {
               </label>
               <ul
                 tabIndex={0}
-                className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-64"
+                className="menu menu-sm dropdown-content mt-3 z-1 p-2 shadow bg-base-100 rounded-box w-64"
               >
                 <li className="menu-title">
                   <div className="flex flex-col items-start gap-1">

@@ -204,7 +204,7 @@ const HomePage = () => {
       {/* CTA for Shop Owners */}
       <div className="py-20">
         <div className="container mx-auto px-4">
-          <div className="card bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white shadow-2xl">
+          <div className="card bg-linear-to-r from-pink-500 via-purple-500 to-indigo-500 text-white shadow-2xl">
             <div className="card-body items-center text-center p-12">
               <div className="text-6xl mb-6">🏪</div>
               <h2 className="card-title text-4xl mb-4">
