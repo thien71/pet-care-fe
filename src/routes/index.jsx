@@ -17,6 +17,8 @@ import AdminDashboard from "../pages/admin/AdminDashboard";
 import UserManagement from "../pages/admin/UserManagement";
 import PetTypeManagement from "../pages/admin/PetTypeManagement";
 import ServiceManagement from "../pages/admin/ServiceManagement";
+import ShopApproval from "../pages/admin/ShopApproval";
+
 // import RoleManagement from "../pages/admin/RoleManagement";
 // import ShopManagement from "../pages/admin/ShopManagement";
 // import ServiceProposals from "../pages/admin/ServiceProposals";
@@ -26,12 +28,12 @@ import ServiceManagement from "../pages/admin/ServiceManagement";
 // Owner Pages
 import OwnerDashboard from "../pages/owner/OwnerDashboard";
 // import OwnerBookings from "../pages/owner/Bookings";
-// import Employees from "../pages/owner/Employees";
-// import OwnerServices from "../pages/owner/Services";
+import EmployeeManagement from "../pages/owner/EmployeeManagement";
+import OwnerServiceManagement from "../pages/owner/OwnerServiceManagement";
 // import Schedule from "../pages/owner/Schedule";
 // import Statistics from "../pages/owner/Statistics";
 // import OwnerPayments from "../pages/owner/Payments";
-// import OwnerSettings from "../pages/owner/Settings";
+import ShopSettings from "../pages/owner/ShopSettings";
 
 // Staff Pages
 // import StaffSchedule from "../pages/staff/Schedule";
@@ -42,7 +44,7 @@ import OwnerDashboard from "../pages/owner/OwnerDashboard";
 // import BookingPage from "../pages/customer/Booking";
 // import HistoryPage from "../pages/customer/History";
 // import PetsPage from "../pages/customer/Pets";
-// import RegisterShopPage from "../pages/customer/RegisterShop";
+import RegisterShop from "../pages/customer/RegisterShop";
 
 // Public Pages
 // import ShopsPage from "../pages/public/Shops";
@@ -113,7 +115,7 @@ const router = createBrowserRouter([
             path: "customer/register-shop",
             element: (
               <ProtectedRoute allowedRoles={["KHACH_HANG"]}>
-                {/* <RegisterShopPage /> */}
+                <RegisterShop />
               </ProtectedRoute>
             ),
           },
@@ -131,6 +133,8 @@ const router = createBrowserRouter([
         children: [
           { path: "dashboard", element: <AdminDashboard /> },
           { path: "users", element: <UserManagement /> },
+          { path: "shops-approval", element: <ShopApproval /> },
+
           // { path: "roles", element: <RoleManagement /> },
           { path: "pet-types", element: <PetTypeManagement /> },
           { path: "services", element: <ServiceManagement /> },
@@ -152,12 +156,12 @@ const router = createBrowserRouter([
         children: [
           { path: "dashboard", element: <OwnerDashboard /> },
           // { path: "bookings", element: <OwnerBookings /> },
-          // { path: "employees", element: <Employees /> },
-          // { path: "services", element: <OwnerServices /> },
+          { path: "employees", element: <EmployeeManagement /> },
+          { path: "services", element: <OwnerServiceManagement /> },
           // { path: "schedule", element: <Schedule /> },
           // { path: "statistics", element: <Statistics /> },
           // { path: "payments", element: <OwnerPayments /> },
-          // { path: "settings", element: <OwnerSettings /> },
+          { path: "settings", element: <ShopSettings /> },
         ],
       },
 
