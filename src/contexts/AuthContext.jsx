@@ -1,18 +1,27 @@
 import { createContext, useState, useEffect } from "react";
+import jwtDecode from "jwt-decode";
 
-export const AuthContext = createContext();
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Load user from localStorage or API
+    const token = localStorage.getItem("token");
+    if (token) {
+      const decoded = jwtDecode(token);
+      setUser(decoded);
+    }
   }, []);
 
-  const login = (data) => {
-    setUser(data); /* Lưu token */
+  const login = async (data) => {
+    const res = await login(data); // Từ authApi
+    localStorage.setItem("token", res.data.token);
+    setUser(jwtDecode(res.data.token));
   };
+
   const logout = () => {
+    localStorage.removeItem("token");
     setUser(null);
   };
 
