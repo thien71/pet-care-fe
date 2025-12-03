@@ -6,10 +6,14 @@ const AdminLayout = () => {
   const menuItems = [
     { path: "/admin/dashboard", label: "Dashboard", icon: "📊" },
     { path: "/admin/users", label: "Quản lý người dùng", icon: "👥" },
-    { path: "/admin/roles", label: "Quản lý vai trò", icon: "🎭" },
     { path: "/admin/pet-types", label: "Quản lý loại thú cưng", icon: "🐾" },
     { path: "/admin/services", label: "Quản lý dịch vụ", icon: "✨" },
     { path: "/admin/shops", label: "Quản lý cửa hàng", icon: "🏪" },
+    {
+      path: "/admin/shop-approvals",
+      label: "Duyệt yêu cầu mở cửa hàng",
+      icon: "📋",
+    },
     {
       path: "/admin/service-proposals",
       label: "Duyệt đề xuất dịch vụ",

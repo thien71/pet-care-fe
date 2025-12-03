@@ -133,7 +133,7 @@ const router = createBrowserRouter([
         children: [
           { path: "dashboard", element: <AdminDashboard /> },
           { path: "users", element: <UserManagement /> },
-          { path: "shops-approval", element: <ShopApproval /> },
+          { path: "shop-approvals", element: <ShopApproval /> },
 
           // { path: "roles", element: <RoleManagement /> },
           { path: "pet-types", element: <PetTypeManagement /> },
