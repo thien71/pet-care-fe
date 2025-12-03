@@ -1,5 +1,11 @@
 // src/contexts/AuthContext.jsx
-import { createContext, useState, useEffect, useContext } from "react";
+import {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  useCallback,
+} from "react";
 import authApi from "../api/authApi";
 import { useNavigate } from "react-router-dom";
 
@@ -30,69 +36,80 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Đăng nhập
-  const login = async (email, matKhau) => {
-    try {
-      const response = await authApi.login(email, matKhau);
-      setUser(response.user);
+  const login = useCallback(
+    async (email, matKhau) => {
+      try {
+        const response = await authApi.login(email, matKhau);
+        setUser(response.user);
 
-      // Điều hướng dựa trên role
-      const role = response.user.VaiTro?.tenVaiTro;
+        // Điều hướng dựa trên role
+        const role = response.user.VaiTro?.tenVaiTro;
 
-      switch (role) {
-        case "QUAN_TRI_VIEN":
-          navigate("/admin/dashboard");
-          break;
-        case "CHU_CUA_HANG":
-          navigate("/owner/dashboard");
-          break;
-        case "LE_TAN":
-        case "KY_THUAT_VIEN":
-          navigate("/staff/schedule");
-          break;
-        default: // KHACH_HANG
-          navigate("/");
+        switch (role) {
+          case "QUAN_TRI_VIEN":
+            navigate("/admin/dashboard");
+            break;
+          case "CHU_CUA_HANG":
+            navigate("/owner/dashboard");
+            break;
+          case "LE_TAN":
+          case "KY_THUAT_VIEN":
+            navigate("/staff/schedule");
+            break;
+          default: // KHACH_HANG
+            navigate("/");
+        }
+
+        return response;
+      } catch (error) {
+        throw error;
       }
-
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  };
+    },
+    [navigate]
+  );
 
   // Đăng ký
-  const register = async (userData) => {
+  const register = useCallback(async (userData) => {
     try {
       const response = await authApi.register(userData);
       return response;
     } catch (error) {
       throw error;
     }
-  };
+  }, []);
 
   // Đăng xuất
-  const logout = () => {
+  const logout = useCallback(() => {
     authApi.logout();
     setUser(null);
     navigate("/login");
-  };
+  }, [navigate]);
 
   // Kiểm tra role
-  const hasRole = (roles) => {
-    if (!user?.VaiTro?.tenVaiTro) return false;
-    const userRole = user.VaiTro.tenVaiTro;
-    return Array.isArray(roles) ? roles.includes(userRole) : roles === userRole;
-  };
+  const hasRole = useCallback(
+    (roles) => {
+      if (!user?.VaiTro?.tenVaiTro) return false;
+      const userRole = user.VaiTro.tenVaiTro;
+      return Array.isArray(roles)
+        ? roles.includes(userRole)
+        : roles === userRole;
+    },
+    [user]
+  );
 
   // Lấy thông tin role
-  const getRole = () => {
+  const getRole = useCallback(() => {
     return user?.VaiTro?.tenVaiTro || null;
-  };
+  }, [user]);
 
   // Kiểm tra quyền truy cập
-  const canAccess = (requiredRoles) => {
-    if (!requiredRoles || requiredRoles.length === 0) return true;
-    return hasRole(requiredRoles);
-  };
+  const canAccess = useCallback(
+    (requiredRoles) => {
+      if (!requiredRoles || requiredRoles.length === 0) return true;
+      return hasRole(requiredRoles);
+    },
+    [hasRole]
+  );
 
   const value = {
     user,

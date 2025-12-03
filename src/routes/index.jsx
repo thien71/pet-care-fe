@@ -1,5 +1,6 @@
 // src/routes/index.jsx
 import { createBrowserRouter } from "react-router-dom";
+import RootLayout from "../layouts/RootLayout";
 import MainLayout from "../layouts/MainLayout";
 import ProtectedRoute from "../components/common/ProtectedRoute";
 
@@ -17,7 +18,7 @@ const ROLES = {
   KY_THUAT_VIEN: "KY_THUAT_VIEN",
 };
 
-// Placeholder components (sẽ tạo sau)
+// Placeholder components
 const PlaceholderPage = ({ title, icon = "🚧" }) => (
   <div className="min-h-[60vh] flex items-center justify-center">
     <div className="card w-96 bg-base-100 shadow-xl">
@@ -42,7 +43,6 @@ const RegisterShopPage = () => (
   <PlaceholderPage title="Đăng ký cửa hàng" icon="🏪" />
 );
 
-// Shop List
 const ShopsPage = () => (
   <PlaceholderPage title="Danh sách cửa hàng" icon="🏪" />
 );
@@ -50,7 +50,6 @@ const ServicesPage = () => (
   <PlaceholderPage title="Danh sách dịch vụ" icon="✨" />
 );
 
-// Staff Pages
 const SchedulePage = () => <PlaceholderPage title="Lịch làm việc" icon="📅" />;
 const StaffBookingsPage = () => (
   <PlaceholderPage title="Quản lý đặt hẹn" icon="📋" />
@@ -59,7 +58,6 @@ const CustomersPage = () => (
   <PlaceholderPage title="Quản lý khách hàng" icon="👥" />
 );
 
-// Owner Pages
 const OwnerDashboard = () => (
   <PlaceholderPage title="Dashboard Chủ Shop" icon="📊" />
 );
@@ -76,7 +74,6 @@ const OwnerSettingsPage = () => (
   <PlaceholderPage title="Cài đặt cửa hàng" icon="⚙️" />
 );
 
-// Admin Pages
 const AdminDashboard = () => (
   <PlaceholderPage title="Admin Dashboard" icon="📊" />
 );
@@ -90,13 +87,11 @@ const ServiceManagement = () => (
   <PlaceholderPage title="Quản lý dịch vụ" icon="✨" />
 );
 
-// Profile & Settings
 const ProfilePage = () => (
   <PlaceholderPage title="Thông tin cá nhân" icon="👤" />
 );
 const SettingsPage = () => <PlaceholderPage title="Cài đặt" icon="⚙️" />;
 
-// 404 Page
 const NotFoundPage = () => (
   <div className="min-h-screen flex items-center justify-center bg-base-200">
     <div className="card w-96 bg-base-100 shadow-2xl">
@@ -130,194 +125,183 @@ const NotFoundPage = () => (
 
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: <MainLayout />,
+    element: <RootLayout />,
     children: [
       {
-        index: true,
-        element: <HomePage />,
+        path: "/",
+        element: <MainLayout />,
+        children: [
+          {
+            index: true,
+            element: <HomePage />,
+          },
+          {
+            path: "shops",
+            element: <ShopsPage />,
+          },
+          {
+            path: "services",
+            element: <ServicesPage />,
+          },
+          {
+            path: "profile",
+            element: (
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "settings",
+            element: (
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "customer/booking",
+            element: (
+              <ProtectedRoute allowedRoles={["KHACH_HANG"]}>
+                <BookingPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "customer/history",
+            element: (
+              <ProtectedRoute allowedRoles={["KHACH_HANG"]}>
+                <HistoryPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "customer/pets",
+            element: (
+              <ProtectedRoute allowedRoles={["KHACH_HANG"]}>
+                <PetsPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "customer/register-shop",
+            element: (
+              <ProtectedRoute allowedRoles={["KHACH_HANG"]}>
+                <RegisterShopPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "staff/schedule",
+            element: (
+              <ProtectedRoute allowedRoles={["LE_TAN", "KY_THUAT_VIEN"]}>
+                <SchedulePage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "staff/bookings",
+            element: (
+              <ProtectedRoute allowedRoles={["LE_TAN", "KY_THUAT_VIEN"]}>
+                <StaffBookingsPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "staff/customers",
+            element: (
+              <ProtectedRoute allowedRoles={["LE_TAN", "KY_THUAT_VIEN"]}>
+                <CustomersPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "owner/dashboard",
+            element: (
+              <ProtectedRoute allowedRoles={["CHU_CUA_HANG"]}>
+                <OwnerDashboard />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "owner/bookings",
+            element: (
+              <ProtectedRoute allowedRoles={["CHU_CUA_HANG"]}>
+                <OwnerBookingsPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "owner/employees",
+            element: (
+              <ProtectedRoute allowedRoles={["CHU_CUA_HANG"]}>
+                <EmployeesPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "owner/services",
+            element: (
+              <ProtectedRoute allowedRoles={["CHU_CUA_HANG"]}>
+                <OwnerServicesPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "owner/settings",
+            element: (
+              <ProtectedRoute allowedRoles={["CHU_CUA_HANG"]}>
+                <OwnerSettingsPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "admin/dashboard",
+            element: (
+              <ProtectedRoute allowedRoles={["QUAN_TRI_VIEN"]}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "admin/users",
+            element: (
+              <ProtectedRoute allowedRoles={["QUAN_TRI_VIEN"]}>
+                <UserManagement />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "admin/shops",
+            element: (
+              <ProtectedRoute allowedRoles={["QUAN_TRI_VIEN"]}>
+                <ShopManagement />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "admin/services",
+            element: (
+              <ProtectedRoute allowedRoles={["QUAN_TRI_VIEN"]}>
+                <ServiceManagement />
+              </ProtectedRoute>
+            ),
+          },
+        ],
       },
-
-      // Public pages
       {
-        path: "shops",
-        element: <ShopsPage />,
+        path: "/login",
+        element: <Login />,
       },
       {
-        path: "services",
-        element: <ServicesPage />,
-      },
-
-      // Profile & Settings (all authenticated users)
-      {
-        path: "profile",
-        element: (
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        ),
+        path: "/register",
+        element: <Register />,
       },
       {
-        path: "settings",
-        element: (
-          <ProtectedRoute>
-            <SettingsPage />
-          </ProtectedRoute>
-        ),
-      },
-
-      // Customer routes
-      {
-        path: "customer/booking",
-        element: (
-          <ProtectedRoute allowedRoles={[ROLES.KHACH_HANG]}>
-            <BookingPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "customer/history",
-        element: (
-          <ProtectedRoute allowedRoles={[ROLES.KHACH_HANG]}>
-            <HistoryPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "customer/pets",
-        element: (
-          <ProtectedRoute allowedRoles={[ROLES.KHACH_HANG]}>
-            <PetsPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "customer/register-shop",
-        element: (
-          <ProtectedRoute allowedRoles={[ROLES.KHACH_HANG]}>
-            <RegisterShopPage />
-          </ProtectedRoute>
-        ),
-      },
-
-      // Staff routes
-      {
-        path: "staff/schedule",
-        element: (
-          <ProtectedRoute allowedRoles={[ROLES.LE_TAN, ROLES.KY_THUAT_VIEN]}>
-            <SchedulePage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "staff/bookings",
-        element: (
-          <ProtectedRoute allowedRoles={[ROLES.LE_TAN, ROLES.KY_THUAT_VIEN]}>
-            <StaffBookingsPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "staff/customers",
-        element: (
-          <ProtectedRoute allowedRoles={[ROLES.LE_TAN, ROLES.KY_THUAT_VIEN]}>
-            <CustomersPage />
-          </ProtectedRoute>
-        ),
-      },
-
-      // Owner routes
-      {
-        path: "owner/dashboard",
-        element: (
-          <ProtectedRoute allowedRoles={[ROLES.CHU_CUA_HANG]}>
-            <OwnerDashboard />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "owner/bookings",
-        element: (
-          <ProtectedRoute allowedRoles={[ROLES.CHU_CUA_HANG]}>
-            <OwnerBookingsPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "owner/employees",
-        element: (
-          <ProtectedRoute allowedRoles={[ROLES.CHU_CUA_HANG]}>
-            <EmployeesPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "owner/services",
-        element: (
-          <ProtectedRoute allowedRoles={[ROLES.CHU_CUA_HANG]}>
-            <OwnerServicesPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "owner/settings",
-        element: (
-          <ProtectedRoute allowedRoles={[ROLES.CHU_CUA_HANG]}>
-            <OwnerSettingsPage />
-          </ProtectedRoute>
-        ),
-      },
-
-      // Admin routes
-      {
-        path: "admin/dashboard",
-        element: (
-          <ProtectedRoute allowedRoles={[ROLES.QUAN_TRI_VIEN]}>
-            <AdminDashboard />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "admin/users",
-        element: (
-          <ProtectedRoute allowedRoles={[ROLES.QUAN_TRI_VIEN]}>
-            <UserManagement />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "admin/shops",
-        element: (
-          <ProtectedRoute allowedRoles={[ROLES.QUAN_TRI_VIEN]}>
-            <ShopManagement />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "admin/services",
-        element: (
-          <ProtectedRoute allowedRoles={[ROLES.QUAN_TRI_VIEN]}>
-            <ServiceManagement />
-          </ProtectedRoute>
-        ),
+        path: "*",
+        element: <NotFoundPage />,
       },
     ],
-  },
-
-  // Auth routes (no layout)
-  {
-    path: "/login",
-    element: <Login />,
-  },
-  {
-    path: "/register",
-    element: <Register />,
-  },
-
-  // 404
-  {
-    path: "*",
-    element: <NotFoundPage />,
   },
 ]);
 
