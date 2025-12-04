@@ -2,6 +2,23 @@
 import { useState, useEffect } from "react";
 import apiClient from "../../api/apiClient";
 
+// Ở đầu component, TRƯỚC useState
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL?.replace("/api", "") ||
+  "http://localhost:5000";
+
+const getImageUrl = (path) => {
+  if (!path) return "https://placehold.co/400x300?text=No+Image";
+
+  // Nếu đã là URL đầy đủ
+  if (path.startsWith("http")) return path;
+
+  // Nếu là đường dẫn tương đối
+  const fullUrl = `${API_BASE}${path}`;
+  console.log("🖼️ Image URL:", fullUrl); // Debug
+  return fullUrl;
+};
+
 const ShopApproval = () => {
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,9 +56,7 @@ const ShopApproval = () => {
   const handleApprove = async () => {
     try {
       setActionLoading(true);
-      await apiClient.put(
-        `/admin/shop-approvals/${selectedShop.maCuaHang}/approve`
-      );
+      await apiClient.put(`/admin/shops/${selectedShop.maCuaHang}/approve`);
       setShowDetailModal(false);
       await loadShops();
     } catch (err) {
@@ -59,10 +74,9 @@ const ShopApproval = () => {
 
     try {
       setActionLoading(true);
-      await apiClient.put(
-        `/admin/shop-approvals/${selectedShop.maCuaHang}/reject`,
-        { lyDo: rejectReason }
-      );
+      await apiClient.put(`/admin/shops/${selectedShop.maCuaHang}/reject`, {
+        lyDo: rejectReason,
+      });
       setShowDetailModal(false);
       setRejectReason("");
       await loadShops();
@@ -147,17 +161,24 @@ const ShopApproval = () => {
         {shops.length > 0 ? (
           shops.map((shop) => (
             <div key={shop.maCuaHang} className="card bg-base-100 shadow-xl">
-              {/* Image */}
-              {shop.anhCuaHang && (
+              {shop.anhCuaHang ? (
                 <figure className="h-48 bg-base-200 overflow-hidden">
                   <img
-                    src={shop.anhCuaHang}
+                    src={getImageUrl(shop.anhCuaHang)}
                     alt={shop.tenCuaHang}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.error("Failed to load image:", e.target.src);
+                      e.target.src =
+                        "https://placehold.co/400x300?text=Image+Load+Failed";
+                    }}
                   />
                 </figure>
+              ) : (
+                <figure className="h-48 bg-base-200 overflow-hidden flex items-center justify-center">
+                  <span className="text-gray-400">Không có ảnh</span>
+                </figure>
               )}
-
               <div className="card-body">
                 <div className="flex justify-between items-start">
                   <h2 className="card-title text-lg">{shop.tenCuaHang}</h2>
@@ -242,40 +263,56 @@ const ShopApproval = () => {
               <div className="space-y-2">
                 {selectedShop.giayPhepKD && (
                   <a
-                    href={selectedShop.giayPhepKD}
+                    href={getImageUrl(selectedShop.giayPhepKD)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-sm btn-outline w-full justify-start gap-2"
+                    onClick={(e) => {
+                      const url = getImageUrl(selectedShop.giayPhepKD);
+                      console.log("Opening:", url);
+                    }}
                   >
                     📄 Giấy Phép Kinh Doanh
                   </a>
                 )}
                 {selectedShop.anhCuaHang && (
                   <a
-                    href={selectedShop.anhCuaHang}
+                    href={getImageUrl(selectedShop.anhCuaHang)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-sm btn-outline w-full justify-start gap-2"
+                    onClick={(e) => {
+                      const url = getImageUrl(selectedShop.anhCuaHang);
+                      console.log("Opening:", url);
+                    }}
                   >
                     🖼️ Ảnh Cửa Hàng
                   </a>
                 )}
                 {selectedShop.cccdMatTruoc && (
                   <a
-                    href={selectedShop.cccdMatTruoc}
+                    href={getImageUrl(selectedShop.cccdMatTruoc)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-sm btn-outline w-full justify-start gap-2"
+                    onClick={(e) => {
+                      const url = getImageUrl(selectedShop.cccdMatTruoc);
+                      console.log("Opening:", url);
+                    }}
                   >
                     🆔 CCCD Mặt Trước
                   </a>
                 )}
                 {selectedShop.cccdMatSau && (
                   <a
-                    href={selectedShop.cccdMatSau}
+                    href={getImageUrl(selectedShop.cccdMatSau)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-sm btn-outline w-full justify-start gap-2"
+                    onClick={(e) => {
+                      const url = getImageUrl(selectedShop.cccdMatSau);
+                      console.log("Opening:", url);
+                    }}
                   >
                     🆔 CCCD Mặt Sau
                   </a>
