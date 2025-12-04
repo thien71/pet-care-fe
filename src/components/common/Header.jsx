@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
 const Header = () => {
-  const { user, logout, isAuthenticated, getRole } = useAuth();
+  const { user, logout, isAuthenticated, getRole, hasShop } = useAuth();
   const role = getRole();
+  const userHasShop = hasShop();
 
   const getNavLinks = () => {
     if (!isAuthenticated) {
@@ -111,7 +112,10 @@ const Header = () => {
       CHU_CUA_HANG: { text: "Chủ shop", class: "badge-warning" },
       LE_TAN: { text: "Lễ tân", class: "badge-info" },
       KY_THUAT_VIEN: { text: "Kỹ thuật viên", class: "badge-info" },
-      KHACH_HANG: { text: "Khách hàng", class: "badge-success" },
+      KHACH_HANG: {
+        text: userHasShop ? "Khách hàng & Chủ shop" : "Khách hàng",
+        class: "badge-success",
+      },
     };
 
     const config = roleConfig[role] || roleConfig.KHACH_HANG;
@@ -165,7 +169,7 @@ const Header = () => {
       <div className="navbar-end gap-2">
         {isAuthenticated ? (
           <>
-            {/* Notifications (placeholder) */}
+            {/* Notifications */}
             <div className="dropdown dropdown-end">
               <label tabIndex={0} className="btn btn-ghost btn-circle">
                 <div className="indicator">
@@ -235,14 +239,28 @@ const Header = () => {
                     Cài đặt
                   </Link>
                 </li>
+
+                {/* ⭐ QUAN TRỌNG: Hiển thị option phù hợp */}
                 {role === "KHACH_HANG" && (
-                  <li>
-                    <Link to="/customer/register-shop" className="gap-2">
-                      <span>🏪</span>
-                      Đăng ký cửa hàng
-                    </Link>
-                  </li>
+                  <>
+                    {userHasShop ? (
+                      <li>
+                        <Link to="/owner/dashboard" className="gap-2">
+                          <span>🏪</span>
+                          Quản lý cửa hàng
+                        </Link>
+                      </li>
+                    ) : (
+                      <li>
+                        <Link to="/customer/register-shop" className="gap-2">
+                          <span>🏪</span>
+                          Đăng ký cửa hàng
+                        </Link>
+                      </li>
+                    )}
+                  </>
                 )}
+
                 <div className="divider my-1"></div>
                 <li>
                   <button onClick={logout} className="text-error gap-2">

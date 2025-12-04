@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
-  const { user, isAuthenticated, loading, canAccess } = useAuth();
+  const { user, isAuthenticated, loading, canAccess, hasShop } = useAuth();
 
   // Đang load user từ localStorage
   if (loading) {
@@ -22,9 +22,13 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Kiểm tra role nếu có yêu cầu
+  // ⭐ Kiểm tra role với logic mới (support shop owner)
   if (allowedRoles.length > 0 && !canAccess(allowedRoles)) {
     const userRole = user?.VaiTro?.tenVaiTro;
+    const userHasShop = hasShop();
+
+    // ⭐ CASE ĐẶC BIỆT: KHACH_HANG có shop cố truy cập owner routes
+    // -> Đã được xử lý trong canAccess(), nếu đến đây là thực sự không có quyền
 
     return (
       <div className="min-h-screen flex items-center justify-center bg-base-200">
@@ -39,7 +43,11 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
               cập trang này.
             </p>
             <p className="text-sm text-gray-500">
-              Quyền hiện tại: <span className="badge badge-sm">{userRole}</span>
+              Quyền hiện tại:{" "}
+              <span className="badge badge-sm">
+                {userRole}
+                {userHasShop && " (Có cửa hàng)"}
+              </span>
             </p>
             <div className="card-actions mt-6">
               <button
