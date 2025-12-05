@@ -1,9 +1,9 @@
-// src/components/common/ProtectedRoute.jsx
+// src/components/common/ProtectedRoute.jsx (UPDATED)
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
-  const { user, isAuthenticated, loading, canAccess, hasShop } = useAuth();
+  const { user, isAuthenticated, loading, canAccess, getRoles } = useAuth();
 
   // Đang load user từ localStorage
   if (loading) {
@@ -22,13 +22,9 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // ⭐ Kiểm tra role với logic mới (support shop owner)
+  // ⭐ Kiểm tra quyền truy cập
   if (allowedRoles.length > 0 && !canAccess(allowedRoles)) {
-    const userRole = user?.VaiTro?.tenVaiTro;
-    const userHasShop = hasShop();
-
-    // ⭐ CASE ĐẶC BIỆT: KHACH_HANG có shop cố truy cập owner routes
-    // -> Đã được xử lý trong canAccess(), nếu đến đây là thực sự không có quyền
+    const userRoles = getRoles();
 
     return (
       <div className="min-h-screen flex items-center justify-center bg-base-200">
@@ -39,15 +35,16 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
               Không có quyền truy cập
             </h2>
             <p className="text-gray-600">
-              Bạn cần quyền <strong>{allowedRoles.join(", ")}</strong> để truy
-              cập trang này.
+              Bạn cần một trong các quyền:{" "}
+              <strong>{allowedRoles.join(", ")}</strong>
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 mt-2">
               Quyền hiện tại:{" "}
-              <span className="badge badge-sm">
-                {userRole}
-                {userHasShop && " (Có cửa hàng)"}
-              </span>
+              {userRoles.map((role, idx) => (
+                <span key={idx} className="badge badge-sm mr-1">
+                  {role}
+                </span>
+              ))}
             </p>
             <div className="card-actions mt-6">
               <button

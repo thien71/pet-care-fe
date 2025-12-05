@@ -1,4 +1,4 @@
-// src/contexts/AuthContext.jsx
+// src/contexts/AuthContext.jsx (FRONTEND - UPDATED)
 import {
   createContext,
   useState,
@@ -42,31 +42,24 @@ export const AuthProvider = ({ children }) => {
         const response = await authApi.login(email, matKhau);
         setUser(response.user);
 
-        const role = response.user.VaiTro?.tenVaiTro;
-        const hasShop = response.user.maCuaHang !== null;
+        // ⭐ Lấy danh sách vai trò từ user
+        const roles = response.user.VaiTros?.map((vt) => vt.tenVaiTro) || [];
+        console.log("🔐 User roles after login:", roles);
 
-        // Điều hướng dựa trên role và shop ownership
-        switch (role) {
-          case "QUAN_TRI_VIEN":
-            navigate("/admin/dashboard");
-            break;
-          case "CHU_CUA_HANG":
-            navigate("/owner/dashboard");
-            break;
-          case "LE_TAN":
-          case "KY_THUAT_VIEN":
-            navigate("/staff/schedule");
-            break;
-          case "KHACH_HANG":
-            // ⭐ Nếu khách hàng có shop -> vào owner dashboard
-            if (hasShop) {
-              navigate("/owner/dashboard");
-            } else {
-              navigate("/");
-            }
-            break;
-          default:
-            navigate("/");
+        // ⭐ Điều hướng dựa trên vai trò ƯU TIÊN
+        if (roles.includes("QUAN_TRI_VIEN")) {
+          navigate("/admin/dashboard");
+        } else if (roles.includes("CHU_CUA_HANG")) {
+          navigate("/owner/dashboard");
+        } else if (
+          roles.includes("LE_TAN") ||
+          roles.includes("KY_THUAT_VIEN")
+        ) {
+          navigate("/staff/schedule");
+        } else if (roles.includes("KHACH_HANG")) {
+          navigate("/");
+        } else {
+          navigate("/");
         }
 
         return response;
@@ -109,43 +102,47 @@ export const AuthProvider = ({ children }) => {
     return user?.maCuaHang !== null && user?.maCuaHang !== undefined;
   }, [user]);
 
-  // Kiểm tra role
+  // ⭐ Kiểm tra user có vai trò cụ thể
   const hasRole = useCallback(
-    (roles) => {
-      if (!user?.VaiTro?.tenVaiTro) return false;
-      const userRole = user.VaiTro.tenVaiTro;
-      return Array.isArray(roles)
-        ? roles.includes(userRole)
-        : roles === userRole;
+    (roleName) => {
+      if (!user?.VaiTros) return false;
+      return user.VaiTros.some((vt) => vt.tenVaiTro === roleName);
     },
     [user]
   );
 
-  // Lấy thông tin role
-  const getRole = useCallback(() => {
-    return user?.VaiTro?.tenVaiTro || null;
+  // ⭐ Kiểm tra user có ít nhất 1 trong các vai trò
+  const hasAnyRole = useCallback(
+    (roleNames) => {
+      if (!user?.VaiTros) return false;
+      return user.VaiTros.some((vt) => roleNames.includes(vt.tenVaiTro));
+    },
+    [user]
+  );
+
+  // ⭐ Lấy tất cả vai trò của user
+  const getRoles = useCallback(() => {
+    return user?.VaiTros?.map((vt) => vt.tenVaiTro) || [];
   }, [user]);
 
-  // ⭐ Kiểm tra quyền truy cập (cập nhật để support shop owner)
+  // ⭐ Lấy vai trò chính (ưu tiên: Admin > Owner > Staff > Customer)
+  const getPrimaryRole = useCallback(() => {
+    const roles = getRoles();
+    if (roles.includes("QUAN_TRI_VIEN")) return "QUAN_TRI_VIEN";
+    if (roles.includes("CHU_CUA_HANG")) return "CHU_CUA_HANG";
+    if (roles.includes("LE_TAN")) return "LE_TAN";
+    if (roles.includes("KY_THUAT_VIEN")) return "KY_THUAT_VIEN";
+    if (roles.includes("KHACH_HANG")) return "KHACH_HANG";
+    return null;
+  }, [getRoles]);
+
+  // ⭐ Kiểm tra quyền truy cập (cho ProtectedRoute)
   const canAccess = useCallback(
     (requiredRoles) => {
       if (!requiredRoles || requiredRoles.length === 0) return true;
-
-      const userRole = user?.VaiTro?.tenVaiTro;
-      const userHasShop = hasShop();
-
-      // Nếu yêu cầu CHU_CUA_HANG và user là KHACH_HANG có shop -> cho phép
-      if (
-        requiredRoles.includes("CHU_CUA_HANG") &&
-        userRole === "KHACH_HANG" &&
-        userHasShop
-      ) {
-        return true;
-      }
-
-      return hasRole(requiredRoles);
+      return hasAnyRole(requiredRoles);
     },
-    [hasRole, hasShop, user]
+    [hasAnyRole]
   );
 
   const value = {
@@ -155,7 +152,9 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     hasRole,
-    getRole,
+    hasAnyRole,
+    getRoles,
+    getPrimaryRole,
     canAccess,
     hasShop,
     switchToCustomerView,
@@ -166,7 +165,7 @@ export const AuthProvider = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Custom hook để sử dụng AuthContext
+// Custom hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

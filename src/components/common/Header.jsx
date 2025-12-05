@@ -1,10 +1,20 @@
-// src/components/common/Header.jsx
+// src/components/common/Header.jsx (UPDATED - Hiển thị nhiều vai trò)
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
 const Header = () => {
-  const { user, logout, isAuthenticated, getRole, hasShop } = useAuth();
-  const role = getRole();
+  const {
+    user,
+    logout,
+    isAuthenticated,
+    getRoles,
+    getPrimaryRole,
+    hasRole,
+    hasShop,
+  } = useAuth();
+
+  const primaryRole = getPrimaryRole();
+  const roles = getRoles();
   const userHasShop = hasShop();
 
   const getNavLinks = () => {
@@ -27,7 +37,8 @@ const Header = () => {
       );
     }
 
-    switch (role) {
+    // ⭐ Hiển thị nav dựa trên PRIMARY ROLE
+    switch (primaryRole) {
       case "QUAN_TRI_VIEN":
         return (
           <>
@@ -106,22 +117,29 @@ const Header = () => {
     }
   };
 
-  const getRoleBadge = () => {
-    const roleConfig = {
-      QUAN_TRI_VIEN: { text: "Admin", class: "badge-error" },
-      CHU_CUA_HANG: { text: "Chủ shop", class: "badge-warning" },
-      LE_TAN: { text: "Lễ tân", class: "badge-info" },
-      KY_THUAT_VIEN: { text: "Kỹ thuật viên", class: "badge-info" },
-      KHACH_HANG: {
-        text: userHasShop ? "Khách hàng & Chủ shop" : "Khách hàng",
-        class: "badge-success",
-      },
+  // ⭐ Hiển thị TẤT CẢ các vai trò
+  const getRoleBadges = () => {
+    const roleColors = {
+      QUAN_TRI_VIEN: "badge-error",
+      CHU_CUA_HANG: "badge-warning",
+      LE_TAN: "badge-info",
+      KY_THUAT_VIEN: "badge-info",
+      KHACH_HANG: "badge-success",
     };
 
-    const config = roleConfig[role] || roleConfig.KHACH_HANG;
-    return (
-      <span className={`badge ${config.class} badge-sm`}>{config.text}</span>
-    );
+    const roleLabels = {
+      QUAN_TRI_VIEN: "Admin",
+      CHU_CUA_HANG: "Chủ shop",
+      LE_TAN: "Lễ tân",
+      KY_THUAT_VIEN: "Kỹ thuật viên",
+      KHACH_HANG: "Khách hàng",
+    };
+
+    return roles.map((role, idx) => (
+      <span key={idx} className={`badge ${roleColors[role]} badge-sm mr-1`}>
+        {roleLabels[role]}
+      </span>
+    ));
   };
 
   return (
@@ -223,7 +241,10 @@ const Header = () => {
                   <div className="flex flex-col items-start gap-1">
                     <span className="font-bold text-base">{user?.hoTen}</span>
                     <span className="text-xs text-gray-500">{user?.email}</span>
-                    {getRoleBadge()}
+                    {/* ⭐ Hiển thị TẤT CẢ vai trò */}
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {getRoleBadges()}
+                    </div>
                   </div>
                 </li>
                 <div className="divider my-1"></div>
@@ -240,26 +261,42 @@ const Header = () => {
                   </Link>
                 </li>
 
-                {/* ⭐ QUAN TRỌNG: Hiển thị option phù hợp */}
-                {role === "KHACH_HANG" && (
+                {/* ⭐ Hiển thị option chuyển view nếu có nhiều vai trò */}
+                {hasRole("KHACH_HANG") && hasRole("CHU_CUA_HANG") && (
                   <>
-                    {userHasShop ? (
+                    <div className="divider my-1">Chuyển giao diện</div>
+                    {primaryRole === "CHU_CUA_HANG" ? (
+                      <li>
+                        <Link to="/" className="gap-2">
+                          <span>🛒</span>
+                          Giao diện Khách hàng
+                        </Link>
+                      </li>
+                    ) : (
                       <li>
                         <Link to="/owner/dashboard" className="gap-2">
                           <span>🏪</span>
                           Quản lý cửa hàng
                         </Link>
                       </li>
-                    ) : (
+                    )}
+                  </>
+                )}
+
+                {/* Nếu chỉ là KHACH_HANG nhưng chưa có shop */}
+                {hasRole("KHACH_HANG") &&
+                  !hasRole("CHU_CUA_HANG") &&
+                  !userHasShop && (
+                    <>
+                      <div className="divider my-1"></div>
                       <li>
                         <Link to="/customer/register-shop" className="gap-2">
                           <span>🏪</span>
                           Đăng ký cửa hàng
                         </Link>
                       </li>
-                    )}
-                  </>
-                )}
+                    </>
+                  )}
 
                 <div className="divider my-1"></div>
                 <li>

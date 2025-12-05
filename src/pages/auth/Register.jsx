@@ -11,8 +11,8 @@ const Register = () => {
     email: "",
     matKhau: "",
     confirmPassword: "",
-    soDienThoai: "",
-    diaChi: "",
+    // soDienThoai: "",
+    // diaChi: "",
     maVaiTro: 1, // Mặc định là KHACH_HANG
   });
   const [error, setError] = useState("");
@@ -164,7 +164,7 @@ const Register = () => {
                 </div>
 
                 {/* Số điện thoại */}
-                <div className="form-control">
+                {/* <div className="form-control">
                   <label className="label">
                     <span className="label-text font-medium">
                       Số điện thoại
@@ -180,10 +180,10 @@ const Register = () => {
                     pattern="[0-9]{10}"
                     disabled={loading}
                   />
-                </div>
+                </div> */}
 
                 {/* Địa chỉ */}
-                <div className="form-control">
+                {/* <div className="form-control">
                   <label className="label">
                     <span className="label-text font-medium">Địa chỉ</span>
                   </label>
@@ -196,7 +196,7 @@ const Register = () => {
                     onChange={handleChange}
                     disabled={loading}
                   />
-                </div>
+                </div> */}
 
                 {/* Password */}
                 <div className="form-control">
