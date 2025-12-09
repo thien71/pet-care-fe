@@ -16,7 +16,7 @@ const EmployeeManagement = () => {
     email: "",
     hoTen: "",
     soDienThoai: "",
-    maVaiTro: 2, // LE_TAN by default
+    maVaiTro: 4, // LE_TAN by default
     kinhNghiem: "",
     chungChi: "",
   });
@@ -62,7 +62,7 @@ const EmployeeManagement = () => {
         email: "",
         hoTen: "",
         soDienThoai: "",
-        maVaiTro: 2,
+        maVaiTro: 4,
         kinhNghiem: "",
         chungChi: "",
       });
@@ -200,7 +200,7 @@ const EmployeeManagement = () => {
                     email: "",
                     hoTen: "",
                     soDienThoai: "",
-                    maVaiTro: 2,
+                    maVaiTro: 4,
                     kinhNghiem: "",
                     chungChi: "",
                   });
@@ -233,6 +233,7 @@ const EmployeeManagement = () => {
                           <td>
                             <span className="badge badge-primary">
                               {emp.VaiTro?.tenVaiTro || "N/A"}
+                              {console.log("Vai trò", emp.VaiTro)}
                             </span>
                           </td>
                           <td>{emp.HoSoNhanVien?.kinhNghiem || "N/A"} năm</td>
@@ -381,8 +382,8 @@ const EmployeeManagement = () => {
                     })
                   }
                 >
-                  <option value="2">Lễ Tân</option>
-                  <option value="3">Kỹ Thuật Viên</option>
+                  <option value="4">Lễ Tân</option>
+                  <option value="5">Kỹ Thuật Viên</option>
                 </select>
               </div>
 

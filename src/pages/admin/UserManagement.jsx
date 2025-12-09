@@ -160,7 +160,7 @@ const UserManagement = () => {
                     <td>{user.email}</td>
                     <td>
                       <span className="badge badge-primary">
-                        {getRoleName(user.maVaiTro)}
+                        {user.VaiTro?.tenVaiTro || "N/A"}
                       </span>
                     </td>
                     <td>{user.soDienThoai || "N/A"}</td>

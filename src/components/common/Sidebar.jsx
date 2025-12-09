@@ -13,8 +13,8 @@ const Sidebar = ({ items = [] }) => {
     return location.pathname === path || location.pathname.startsWith(path);
   };
 
-  // ✅ Lấy đúng tên vai trò từ object lồng nhau
-  const tenVaiTro = user?.VaiTro?.tenVaiTro; // đúng cấu trúc backend của bạn
+  // ✅ Lấy đúng tên vai trò từ mảng VaiTros (lấy vai trò đầu tiên nếu có nhiều)
+  const tenVaiTro = user?.VaiTros?.[0]?.tenVaiTro; // Sửa ở đây để phù hợp với dữ liệu thực tế (mảng VaiTros)
   const maCuaHang = user?.maCuaHang;
 
   // ✅ Điều kiện hiển thị nút "Về trang chủ"
@@ -24,6 +24,18 @@ const Sidebar = ({ items = [] }) => {
 
   // ✅ Chỉ chủ cửa hàng mới thấy "Cài đặt cửa hàng"
   const isChuCuaHang = tenVaiTro === "CHU_CUA_HANG";
+
+  // ✅ Tính toán path động cho Logo dựa trên role
+  let homePath = "/"; // Default: Trang chủ khách hàng
+  if (tenVaiTro === "QUAN_TRI_VIEN") {
+    homePath = "/admin/dashboard";
+  } else if (tenVaiTro === "CHU_CUA_HANG") {
+    homePath = "/owner/dashboard";
+  } else if (tenVaiTro === "LE_TAN") {
+    homePath = "/staff/reception-dashboard"; // Thay bằng route thực tế của bạn
+  } else if (tenVaiTro === "KY_THUAT_VIEN") {
+    homePath = "/staff/technician-dashboard"; // Thay bằng route thực tế của bạn
+  }
 
   // Đóng dropdown khi click ngoài
   useEffect(() => {
@@ -43,7 +55,10 @@ const Sidebar = ({ items = [] }) => {
     <aside className="w-64 bg-base-100 shadow-lg h-screen fixed left-0 top-0 overflow-y-auto flex flex-col">
       {/* Logo */}
       <div className="p-6 border-b border-base-300">
-        <Link to="/" className="flex items-center gap-3 text-xl font-bold">
+        <Link
+          to={homePath}
+          className="flex items-center gap-3 text-xl font-bold"
+        >
           <span className="text-3xl">🐾</span>
           <span className="text-primary">Pet Care</span>
         </Link>
