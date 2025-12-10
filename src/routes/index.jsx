@@ -29,6 +29,7 @@ import EmployeeManagement from "../pages/owner/EmployeeManagement";
 import OwnerServiceManagement from "../pages/owner/OwnerServiceManagement";
 import ShopSettings from "../pages/owner/ShopSettings";
 import OwnerPayments from "../pages/owner/OwnerPayments"; // ⭐ NEW
+import OwnerSchedule from "../pages/owner/OwnerSchedule";
 
 // Customer Pages
 import RegisterShop from "../pages/customer/RegisterShop";
@@ -122,6 +123,7 @@ const router = createBrowserRouter([
         children: [
           { path: "dashboard", element: <OwnerDashboard /> },
           { path: "employees", element: <EmployeeManagement /> },
+          { path: "schedule", element: <OwnerSchedule /> },
           { path: "services", element: <OwnerServiceManagement /> },
           { path: "settings", element: <ShopSettings /> },
           { path: "payments", element: <OwnerPayments /> }, // ⭐ NEW

@@ -35,7 +35,7 @@ const EmployeeManagement = () => {
       setLoading(true);
       const [empRes, shiftRes] = await Promise.all([
         apiClient.get("/owner/employees"),
-        // apiClient.get("/owner/shifts"),
+        apiClient.get("/owner/shifts"),
       ]);
       setEmployees(empRes.data || []);
       setShifts(shiftRes.data || []);
