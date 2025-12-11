@@ -1,11 +1,11 @@
-// src/layouts/StaffLayout.jsx
+// src/layouts/TechnicianLayout.jsx
 import { Outlet } from "react-router-dom";
 import Sidebar from "../components/common/Sidebar";
 
 const TechnicianLayout = () => {
   const menuItems = [
-    { path: "/tech/dashboard", label: "???", icon: "" },
-    { path: "/tech/schedule", label: "Lịch làm việc", icon: "📅" },
+    { path: "/tech/dashboard", label: "Công Việc Của Tôi", icon: "🔧" },
+    { path: "/tech/schedule", label: "Lịch Làm Việc", icon: "📅" },
   ];
 
   return (

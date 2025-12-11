@@ -44,8 +44,9 @@ const BookingPage = () => {
     try {
       setLoading(true);
       const [shopsRes, petTypesRes] = await Promise.all([
-        apiClient.get("/admin/shops", { params: { trangThai: "HOAT_DONG" } }),
-        apiClient.get("/admin/pet-types"),
+        // ✅ ĐÃ SỬA: Dùng public endpoints thay vì admin endpoints
+        apiClient.get("/booking/public/shops"),
+        apiClient.get("/booking/public/pet-types"),
       ]);
       setShops(shopsRes.data || []);
       setPetTypes(petTypesRes.data || []);

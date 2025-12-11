@@ -1,12 +1,11 @@
-// src/layouts/StaffLayout.jsx
+// src/layouts/StaffLayout.jsx - UPDATED cho Lễ Tân
 import { Outlet } from "react-router-dom";
 import Sidebar from "../components/common/Sidebar";
 
 const StaffLayout = () => {
   const menuItems = [
-    { path: "/staff/schedule", label: "Lịch làm việc", icon: "📅" },
-    { path: "/staff/bookings", label: "Đặt hẹn", icon: "📋" },
-    { path: "/staff/customers", label: "Khách hàng", icon: "👥" },
+    { path: "/staff/dashboard", label: "Quản Lý Đơn Đặt", icon: "📋" },
+    { path: "/staff/schedule", label: "Lịch Làm Việc", icon: "📅" },
   ];
 
   return (

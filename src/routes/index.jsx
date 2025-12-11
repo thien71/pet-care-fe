@@ -141,7 +141,7 @@ const router = createBrowserRouter([
         ],
       },
 
-      // Staff layout routes
+      // ⭐ STAFF ROUTES - Riêng biệt
       {
         path: "/staff",
         element: (
@@ -150,12 +150,12 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         children: [
-          { path: "dashboard", element: <StaffDashboard /> }, // ⭐ Dùng chung cho cả LE_TAN và KY_THUAT_VIEN
-          { path: "bookings", element: <OwnerBookingManagement /> }, // ⭐ Lễ tân cũng xử lý đơn
+          { path: "dashboard", element: <StaffDashboard /> },
+          { path: "schedule", element: <OwnerSchedule /> }, // Xem lịch làm việc
         ],
       },
 
-      // Staff layout routes
+      // ⭐ TECHNICIAN ROUTES - Riêng biệt
       {
         path: "/tech",
         element: (
@@ -164,7 +164,8 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         children: [
-          { path: "dashboard", element: <TechnicianDashboard /> }, // ⭐ Dùng chung cho cả LE_TAN và KY_THUAT_VIEN
+          { path: "dashboard", element: <TechnicianDashboard /> },
+          { path: "schedule", element: <OwnerSchedule /> }, // Xem lịch làm việc
         ],
       },
 
