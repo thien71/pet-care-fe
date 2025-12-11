@@ -5,6 +5,7 @@ import MainLayout from "../layouts/MainLayout";
 import AdminLayout from "../layouts/AdminLayout";
 import OwnerLayout from "../layouts/OwnerLayout";
 import StaffLayout from "../layouts/StaffLayout";
+import TechnicianLayout from "../layouts/TechnicianLayout";
 import ProtectedRoute from "../components/common/ProtectedRoute";
 
 // Auth Pages
@@ -30,9 +31,18 @@ import OwnerServiceManagement from "../pages/owner/OwnerServiceManagement";
 import ShopSettings from "../pages/owner/ShopSettings";
 import OwnerPayments from "../pages/owner/OwnerPayments"; // ⭐ NEW
 import OwnerSchedule from "../pages/owner/OwnerSchedule";
+import OwnerBookingManagement from "../pages/owner/OwnerBookingManagement"; // ⭐ NEW
 
 // Customer Pages
 import RegisterShop from "../pages/customer/RegisterShop";
+import BookingPage from "../pages/customer/BookingPage"; // ⭐ NEW
+import BookingHistory from "../pages/customer/BookingHistory"; // ⭐ NEW (sẽ tạo sau)
+
+// Tech Pages
+import TechnicianDashboard from "../pages/technician/TechnicianDashboard"; // ⭐ NEW
+
+// Staff Pages
+import StaffDashboard from "../pages/staff/StaffDashboard";
 
 // Public Pages
 import NotFoundPage from "../pages/public/NotFound";
@@ -60,7 +70,7 @@ const router = createBrowserRouter([
             path: "customer/booking",
             element: (
               <ProtectedRoute allowedRoles={["KHACH_HANG"]}>
-                {/* <BookingPage /> */}
+                <BookingPage />
               </ProtectedRoute>
             ),
           },
@@ -68,7 +78,7 @@ const router = createBrowserRouter([
             path: "customer/history",
             element: (
               <ProtectedRoute allowedRoles={["KHACH_HANG"]}>
-                {/* <HistoryPage /> */}
+                <BookingHistory />
               </ProtectedRoute>
             ),
           },
@@ -127,6 +137,7 @@ const router = createBrowserRouter([
           { path: "services", element: <OwnerServiceManagement /> },
           { path: "settings", element: <ShopSettings /> },
           { path: "payments", element: <OwnerPayments /> }, // ⭐ NEW
+          { path: "bookings", element: <OwnerBookingManagement /> }, // ⭐ NEW
         ],
       },
 
@@ -134,12 +145,26 @@ const router = createBrowserRouter([
       {
         path: "/staff",
         element: (
-          <ProtectedRoute allowedRoles={["LE_TAN", "KY_THUAT_VIEN"]}>
+          <ProtectedRoute allowedRoles={["LE_TAN"]}>
             <StaffLayout />
           </ProtectedRoute>
         ),
         children: [
-          // { path: "schedule", element: <StaffSchedule /> },
+          { path: "dashboard", element: <StaffDashboard /> }, // ⭐ Dùng chung cho cả LE_TAN và KY_THUAT_VIEN
+          { path: "bookings", element: <OwnerBookingManagement /> }, // ⭐ Lễ tân cũng xử lý đơn
+        ],
+      },
+
+      // Staff layout routes
+      {
+        path: "/tech",
+        element: (
+          <ProtectedRoute allowedRoles={["KY_THUAT_VIEN"]}>
+            <TechnicianLayout />
+          </ProtectedRoute>
+        ),
+        children: [
+          { path: "dashboard", element: <TechnicianDashboard /> }, // ⭐ Dùng chung cho cả LE_TAN và KY_THUAT_VIEN
         ],
       },
 

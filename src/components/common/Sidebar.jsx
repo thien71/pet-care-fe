@@ -32,9 +32,9 @@ const Sidebar = ({ items = [] }) => {
   } else if (tenVaiTro === "CHU_CUA_HANG") {
     homePath = "/owner/dashboard";
   } else if (tenVaiTro === "LE_TAN") {
-    homePath = "/staff/reception-dashboard"; // Thay bằng route thực tế của bạn
+    homePath = "/staff/dashboard"; // Thay bằng route thực tế của bạn
   } else if (tenVaiTro === "KY_THUAT_VIEN") {
-    homePath = "/staff/technician-dashboard"; // Thay bằng route thực tế của bạn
+    homePath = "/technician/dashboard"; // Thay bằng route thực tế của bạn
   }
 
   // Đóng dropdown khi click ngoài

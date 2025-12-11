@@ -51,11 +51,10 @@ export const AuthProvider = ({ children }) => {
           navigate("/admin/dashboard");
         } else if (roles.includes("CHU_CUA_HANG")) {
           navigate("/owner/dashboard");
-        } else if (
-          roles.includes("LE_TAN") ||
-          roles.includes("KY_THUAT_VIEN")
-        ) {
-          navigate("/staff/schedule");
+        } else if (roles.includes("LE_TAN")) {
+          navigate("/staff/dashboard");
+        } else if (roles.includes("KY_THUAT_VIEN")) {
+          navigate("/tech/dashboard");
         } else if (roles.includes("KHACH_HANG")) {
           navigate("/");
         } else {
