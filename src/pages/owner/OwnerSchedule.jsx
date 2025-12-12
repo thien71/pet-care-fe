@@ -1,6 +1,7 @@
 // src/pages/owner/OwnerSchedule.jsx
 import { useState, useEffect } from "react";
 import apiClient from "../../api/apiClient";
+import BulkScheduleModal from "../../components/owner/BulkScheduleModal"; // ⭐ THÊM IMPORT
 
 const OwnerSchedule = () => {
   const [shifts, setShifts] = useState([]);
@@ -19,6 +20,7 @@ const OwnerSchedule = () => {
     maCa: "",
     ngayLam: "",
   });
+  const [showBulkModal, setShowBulkModal] = useState(false); // ⭐ THÊM STATE
 
   // Get week dates
   function getWeekDates(date) {
@@ -148,20 +150,30 @@ const OwnerSchedule = () => {
             Quản lý lịch làm việc của nhân viên
           </p>
         </div>
-        <button
-          onClick={() => {
-            setShowAssignModal(true);
-            setAssignForm({
-              maNhanVien: "",
-              maCa: "",
-              ngayLam: selectedDate,
-            });
-          }}
-          className="btn btn-primary gap-2"
-        >
-          <span>➕</span>
-          Phân Công Ca
-        </button>
+        <div className="flex gap-2">
+          {/* ⭐ THÊM NÚT NÀY */}
+          <button
+            onClick={() => setShowBulkModal(true)}
+            className="btn btn-secondary gap-2"
+          >
+            <span>📅</span>
+            Phân Công Hàng Tuần
+          </button>
+          <button
+            onClick={() => {
+              setShowAssignModal(true);
+              setAssignForm({
+                maNhanVien: "",
+                maCa: "",
+                ngayLam: selectedDate,
+              });
+            }}
+            className="btn btn-primary gap-2"
+          >
+            <span>➕</span>
+            Phân Công Ca
+          </button>
+        </div>
       </div>
 
       {/* Success Alert */}
@@ -458,6 +470,12 @@ const OwnerSchedule = () => {
         </div>
       </div>
 
+      {/* ⭐ THÊM MODAL MỚI */}
+      <BulkScheduleModal
+        isOpen={showBulkModal}
+        onClose={() => setShowBulkModal(false)}
+        onSuccess={loadData}
+      />
       {/* Assign Shift Modal */}
       {showAssignModal && (
         <div className="modal modal-open">

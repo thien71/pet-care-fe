@@ -7,6 +7,7 @@ const BookingPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Data states
   const [shops, setShops] = useState([]);
@@ -93,6 +94,18 @@ const BookingPage = () => {
       dichVuIds: [],
     });
     setServices([]);
+  };
+
+  // ⭐ THÊM HÀM MỚI
+  const loadServicesForEdit = async (petTypeId) => {
+    try {
+      const res = await apiClient.get(
+        `/booking/shop/${formData.maCuaHang}/services/pet-type/${petTypeId}`
+      );
+      setServices(res.data || []);
+    } catch (err) {
+      console.log("Lỗi tải dịch vụ:", err.message);
+    }
   };
 
   const handleRemovePet = (index) => {
@@ -269,7 +282,6 @@ const BookingPage = () => {
                   <h2 className="card-title">
                     🐾 Thông Tin Thú Cưng & Dịch Vụ
                   </h2>
-
                   {/* Pet Form */}
                   <div className="card bg-base-200">
                     <div className="card-body">
@@ -422,7 +434,6 @@ const BookingPage = () => {
                       </button>
                     </div>
                   </div>
-
                   {/* Added Pets List */}
                   {formData.pets.length > 0 && (
                     <div>
@@ -435,7 +446,7 @@ const BookingPage = () => {
                             key={idx}
                             className="flex items-center justify-between bg-base-200 p-3 rounded"
                           >
-                            <div>
+                            <div className="flex-1">
                               <span className="font-semibold">{pet.ten}</span>
                               <span className="text-sm ml-2">
                                 (
@@ -446,22 +457,220 @@ const BookingPage = () => {
                                 }
                                 )
                               </span>
-                              <p className="text-xs">
-                                {pet.dichVuIds.length} dịch vụ
+                              <p className="text-xs text-gray-600 mt-1">
+                                📋 {pet.dichVuIds.length} dịch vụ
                               </p>
                             </div>
-                            <button
-                              onClick={() => handleRemovePet(idx)}
-                              className="btn btn-sm btn-error"
-                            >
-                              🗑️
-                            </button>
+
+                            {/* ⭐ THÊM NÚT SỬA */}
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  // Mở modal sửa
+                                  setCurrentPet({
+                                    ...pet,
+                                    petIndex: idx, // Lưu index để biết sửa pet nào
+                                  });
+                                  loadServicesForEdit(pet.maLoai);
+                                  setShowEditModal(true);
+                                }}
+                                className="btn btn-sm btn-warning"
+                                title="Sửa thú cưng này"
+                              >
+                                ✏️ Sửa
+                              </button>
+                              <button
+                                onClick={() => handleRemovePet(idx)}
+                                className="btn btn-sm btn-error"
+                                title="Xóa thú cưng này"
+                              >
+                                🗑️ Xóa
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
+                  // ⭐ THÊM MODAL CHỈNH SỬA (sau modal Thêm Thú Cưng)
+                  {showEditModal && currentPet?.petIndex !== undefined && (
+                    <div className="modal modal-open">
+                      <div className="modal-box w-11/12 max-w-md">
+                        <h3 className="font-bold text-lg mb-4">
+                          ✏️ Sửa Thú Cưng
+                        </h3>
 
+                        <div className="space-y-4">
+                          <div className="form-control">
+                            <label className="label">
+                              <span className="label-text">Tên *</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Milu, Kitty..."
+                              className="input input-bordered"
+                              value={currentPet.ten}
+                              onChange={(e) =>
+                                setCurrentPet({
+                                  ...currentPet,
+                                  ten: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+
+                          <div className="form-control">
+                            <label className="label">
+                              <span className="label-text">Loài *</span>
+                            </label>
+                            <select
+                              className="select select-bordered"
+                              value={currentPet.maLoai}
+                              disabled // Không cho sửa loài vì sẽ ảnh hưởng đến dịch vụ
+                            >
+                              <option>
+                                {
+                                  petTypes.find(
+                                    (p) =>
+                                      p.maLoai === parseInt(currentPet.maLoai)
+                                  )?.tenLoai
+                                }
+                              </option>
+                            </select>
+                            <label className="label">
+                              <span className="label-text-alt text-xs">
+                                (Không thể thay đổi loài - nếu cần đổi, vui lòng
+                                xóa và thêm mới)
+                              </span>
+                            </label>
+                          </div>
+
+                          <div className="form-control">
+                            <label className="label">
+                              <span className="label-text">Tuổi</span>
+                            </label>
+                            <input
+                              type="number"
+                              placeholder="VD: 2"
+                              className="input input-bordered"
+                              value={currentPet.tuoi}
+                              onChange={(e) =>
+                                setCurrentPet({
+                                  ...currentPet,
+                                  tuoi: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+
+                          <div className="form-control">
+                            <label className="label">
+                              <span className="label-text">Đặc Điểm</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Hiền lành, sợ nước..."
+                              className="input input-bordered"
+                              value={currentPet.dacDiem}
+                              onChange={(e) =>
+                                setCurrentPet({
+                                  ...currentPet,
+                                  dacDiem: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+
+                          {/* Chọn dịch vụ */}
+                          {currentPet.maLoai && services.length > 0 && (
+                            <div className="mt-6">
+                              <h4 className="font-semibold mb-3">
+                                Chọn Dịch Vụ *
+                              </h4>
+                              <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
+                                {services.map((service) => (
+                                  <label
+                                    key={service.maDichVuShop}
+                                    className={`card cursor-pointer transition-all ${
+                                      currentPet.dichVuIds.includes(
+                                        service.maDichVuShop
+                                      )
+                                        ? "bg-primary text-primary-content"
+                                        : "bg-base-100"
+                                    }`}
+                                  >
+                                    <div className="card-body p-4">
+                                      <div className="flex items-start gap-3">
+                                        <input
+                                          type="checkbox"
+                                          className="checkbox checkbox-primary"
+                                          checked={currentPet.dichVuIds.includes(
+                                            service.maDichVuShop
+                                          )}
+                                          onChange={() =>
+                                            handleServiceToggle(
+                                              service.maDichVuShop
+                                            )
+                                          }
+                                        />
+                                        <div className="flex-1">
+                                          <h5 className="font-bold text-sm">
+                                            {service.tenDichVu}
+                                          </h5>
+                                          <p className="text-xs opacity-80">
+                                            💰{" "}
+                                            {parseInt(
+                                              service.gia
+                                            ).toLocaleString("vi-VN")}
+                                            đ
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="modal-action mt-6">
+                          <button
+                            onClick={() => setShowEditModal(false)}
+                            className="btn btn-ghost"
+                          >
+                            Hủy
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Cập nhật thú cưng
+                              const updatedPets = [...formData.pets];
+                              updatedPets[currentPet.petIndex] = {
+                                ten: currentPet.ten,
+                                maLoai: currentPet.maLoai,
+                                tuoi: currentPet.tuoi,
+                                dacDiem: currentPet.dacDiem,
+                                dichVuIds: currentPet.dichVuIds,
+                              };
+                              setFormData({ ...formData, pets: updatedPets });
+                              setShowEditModal(false);
+                            }}
+                            className="btn btn-primary"
+                            disabled={
+                              !currentPet.ten ||
+                              currentPet.dichVuIds.length === 0
+                            }
+                          >
+                            💾 Lưu Thay Đổi
+                          </button>
+                        </div>
+                      </div>
+                      <div
+                        className="modal-backdrop"
+                        onClick={() => setShowEditModal(false)}
+                      ></div>
+                    </div>
+                  )}
                   <div className="flex gap-2">
                     <button
                       onClick={() => setStep(1)}

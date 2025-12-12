@@ -42,7 +42,7 @@ const Header = () => {
       case "QUAN_TRI_VIEN":
         return (
           <>
-            <li>
+            {/* <li>
               <Link to="/admin/dashboard">📊 Dashboard</Link>
             </li>
             <li>
@@ -53,7 +53,7 @@ const Header = () => {
             </li>
             <li>
               <Link to="/admin/services">✨ Dịch vụ</Link>
-            </li>
+            </li> */}
           </>
         );
 
@@ -61,6 +61,18 @@ const Header = () => {
         return (
           <>
             <li>
+              <Link to="/">🏠 Trang chủ</Link>
+            </li>
+            <li>
+              <Link to="/shops">🏪 Cửa hàng</Link>
+            </li>
+            <li>
+              <Link to="/customer/booking">📅 Đặt lịch</Link>
+            </li>
+            <li>
+              <Link to="/customer/history">📜 Lịch sử</Link>
+            </li>
+            {/* <li>
               <Link to="/owner/dashboard">📊 Dashboard</Link>
             </li>
             <li>
@@ -74,7 +86,7 @@ const Header = () => {
             </li>
             <li>
               <Link to="/owner/settings">⚙️ Cài đặt</Link>
-            </li>
+            </li> */}
           </>
         );
 
@@ -82,7 +94,7 @@ const Header = () => {
       case "KY_THUAT_VIEN":
         return (
           <>
-            <li>
+            {/* <li>
               <Link to="/staff/schedule">📅 Lịch làm việc</Link>
             </li>
             <li>
@@ -90,7 +102,7 @@ const Header = () => {
             </li>
             <li>
               <Link to="/staff/customers">👥 Khách hàng</Link>
-            </li>
+            </li> */}
           </>
         );
 
@@ -109,9 +121,9 @@ const Header = () => {
             <li>
               <Link to="/customer/history">📜 Lịch sử</Link>
             </li>
-            <li>
+            {/* <li>
               <Link to="/customer/pets">🐾 Thú cưng</Link>
-            </li>
+            </li> */}
           </>
         );
     }
@@ -267,16 +279,16 @@ const Header = () => {
                     <div className="divider my-1">Chuyển giao diện</div>
                     {primaryRole === "CHU_CUA_HANG" ? (
                       <li>
-                        <Link to="/" className="gap-2">
+                        <Link to="/owner/dashboard" className="gap-2">
                           <span>🛒</span>
-                          Giao diện Khách hàng
+                          Quản lý cửa hàng
                         </Link>
                       </li>
                     ) : (
                       <li>
-                        <Link to="/owner/dashboard" className="gap-2">
+                        <Link to="/" className="gap-2">
                           <span>🏪</span>
-                          Quản lý cửa hàng
+                          Giao diện khách hàng
                         </Link>
                       </li>
                     )}
