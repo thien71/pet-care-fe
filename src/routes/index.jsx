@@ -46,6 +46,7 @@ import StaffDashboard from "../pages/staff/StaffDashboard";
 
 // Public Pages
 import NotFoundPage from "../pages/public/NotFound";
+import StaffBookingManagement from "../pages/staff/StaffBookingManagement";
 
 const router = createBrowserRouter([
   {
@@ -150,8 +151,8 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         children: [
-          { path: "dashboard", element: <StaffDashboard /> },
-          { path: "schedule", element: <OwnerSchedule /> }, // Xem lịch làm việc
+          { path: "dashboard", element: <StaffBookingManagement /> },
+          // { path: "schedule", element:  }, // Xem lịch làm việc
         ],
       },
 
@@ -165,7 +166,7 @@ const router = createBrowserRouter([
         ),
         children: [
           { path: "dashboard", element: <TechnicianDashboard /> },
-          { path: "schedule", element: <OwnerSchedule /> }, // Xem lịch làm việc
+          // { path: "schedule", element:  }, // Xem lịch làm việc
         ],
       },
 
