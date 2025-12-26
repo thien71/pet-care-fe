@@ -1,36 +1,37 @@
-// src/pages/home/HomePage.jsx
+// src/pages/home/HomePage.jsx - UPDATED với dynamic services
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import apiClient from "../../api/apiClient";
 
 const HomePage = () => {
   const { user, isAuthenticated } = useAuth();
+  const [services, setServices] = useState([]);
+  const [topShops, setTopShops] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const services = [
-    {
-      icon: "🛁",
-      title: "Tắm & Vệ sinh",
-      desc: "Dịch vụ tắm, cắt tỉa lông chuyên nghiệp cho thú cưng",
-      price: "Từ 150.000đ",
-    },
-    {
-      icon: "💉",
-      title: "Khám & Chữa bệnh",
-      desc: "Khám sức khỏe định kỳ, điều trị bệnh",
-      price: "Từ 200.000đ",
-    },
-    {
-      icon: "🏠",
-      title: "Khách sạn thú cưng",
-      desc: "Dịch vụ lưu trú an toàn, thoải mái",
-      price: "Từ 100.000đ/ngày",
-    },
-    {
-      icon: "🎨",
-      title: "Spa & Làm đẹp",
-      desc: "Chăm sóc da lông, nhuộm móng chuyên nghiệp",
-      price: "Từ 180.000đ",
-    },
-  ];
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [servicesRes, shopsRes] = await Promise.all([
+        apiClient.get("/booking/public/services"),
+        apiClient.get("/booking/public/top-shops?limit=6"),
+      ]);
+      console.log("ServiceRes", servicesRes);
+      console.log("ShopRes", shopsRes);
+
+      setServices(servicesRes.data || []);
+      setTopShops(shopsRes.data || []);
+    } catch (err) {
+      console.error("Error loading data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const features = [
     {
@@ -110,7 +111,7 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Services Section */}
+      {/* Services Section - DYNAMIC */}
       <div className="bg-base-200 py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
@@ -122,42 +123,133 @@ const HomePage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {services.map((service, index) => (
-              <div
-                key={index}
-                className="card bg-base-100 shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-300"
-              >
-                <div className="card-body items-center text-center">
-                  <div className="text-6xl mb-4">{service.icon}</div>
-                  <h3 className="card-title text-2xl">{service.title}</h3>
-                  <p className="text-gray-600">{service.desc}</p>
-                  <div className="badge badge-primary badge-lg mt-4">
-                    {service.price}
-                  </div>
-                </div>
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <span className="loading loading-spinner loading-lg text-primary"></span>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {services.slice(0, 4).map((service) => (
+                  <Link
+                    key={service.maDichVu}
+                    to={`/services/${service.maDichVu}`}
+                    className="card bg-base-100 shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-300"
+                  >
+                    <div className="card-body items-center text-center">
+                      <div className="text-6xl mb-4">
+                        {service.tenDichVu.includes("Tắm")
+                          ? "🛁"
+                          : service.tenDichVu.includes("Khám")
+                          ? "💉"
+                          : service.tenDichVu.includes("Trông")
+                          ? "🏠"
+                          : service.tenDichVu.includes("Cắt")
+                          ? "✂️"
+                          : "✨"}
+                      </div>
+                      <h3 className="card-title text-2xl">
+                        {service.tenDichVu}
+                      </h3>
+                      <p className="text-gray-600 line-clamp-2">
+                        {service.moTa}
+                      </p>
+                      <div className="badge badge-primary badge-lg mt-4">
+                        Từ{" "}
+                        {parseInt(service.giaThapNhat || 0).toLocaleString(
+                          "vi-VN"
+                        )}
+                        đ
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        {service.soLuongShop} cửa hàng cung cấp
+                      </p>
+                    </div>
+                  </Link>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <div className="text-center mt-12">
-            <Link to="/services" className="btn btn-primary btn-lg gap-2">
-              <span>🔍</span>
-              Xem tất cả dịch vụ
-            </Link>
-          </div>
+              <div className="text-center mt-12">
+                <Link to="/services" className="btn btn-primary btn-lg gap-2">
+                  <span>🔍</span>
+                  Xem tất cả {services.length} dịch vụ
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
+      {/* Top Shops Section - NEW */}
+      {topShops.length > 0 && (
+        <div className="py-20">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold mb-4">
+                Cửa Hàng Nổi Bật
+              </h2>
+              <p className="text-xl text-gray-600">
+                Được khách hàng tin tưởng và đánh giá cao
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {topShops.map((shop) => (
+                <Link
+                  key={shop.maCuaHang}
+                  to={`/shops/${shop.maCuaHang}`}
+                  className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all"
+                >
+                  <figure className="h-48 bg-linear-to-br from-blue-400 to-purple-500">
+                    {shop.anhCuaHang ? (
+                      <img
+                        src={`http://localhost:5000${shop.anhCuaHang}`}
+                        alt={shop.tenCuaHang}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center w-full h-full text-white text-6xl">
+                        🏪
+                      </div>
+                    )}
+                  </figure>
+                  <div className="card-body">
+                    <h3 className="card-title">{shop.tenCuaHang}</h3>
+                    <p className="text-sm text-gray-600 line-clamp-2">
+                      📍 {shop.diaChi}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      📞 {shop.soDienThoai}
+                    </p>
+                    <div className="card-actions justify-end mt-4">
+                      <button className="btn btn-primary btn-sm">
+                        Xem chi tiết →
+                      </button>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            <div className="text-center mt-12">
+              <Link to="/shops" className="btn btn-outline btn-lg gap-2">
+                <span>🏪</span>
+                Xem tất cả cửa hàng
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Features Section */}
-      <div className="py-20">
+      <div className="bg-base-200 py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4">
               Tại Sao Chọn Chúng Tôi?
             </h2>
             <p className="text-xl text-gray-600">
-              Những lý do bạn nên tin tùng
+              Những lý do bạn nên tin tưởng
             </p>
           </div>
 
@@ -179,9 +271,16 @@ const HomePage = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div className="stat bg-transparent">
               <div className="stat-figure text-4xl">🏪</div>
-              <div className="stat-value">50+</div>
+              <div className="stat-value">{topShops.length || 50}+</div>
               <div className="stat-title text-white/80">Cửa hàng</div>
               <div className="stat-desc text-white/60">Trên toàn Đà Nẵng</div>
+            </div>
+
+            <div className="stat bg-transparent">
+              <div className="stat-figure text-4xl">✨</div>
+              <div className="stat-value">{services.length || 10}+</div>
+              <div className="stat-title text-white/80">Dịch vụ</div>
+              <div className="stat-desc text-white/60">Đa dạng lựa chọn</div>
             </div>
 
             <div className="stat bg-transparent">
@@ -189,13 +288,6 @@ const HomePage = () => {
               <div className="stat-value">10K+</div>
               <div className="stat-title text-white/80">Khách hàng</div>
               <div className="stat-desc text-white/60">Tin tưởng sử dụng</div>
-            </div>
-
-            <div className="stat bg-transparent">
-              <div className="stat-figure text-4xl">✨</div>
-              <div className="stat-value">5K+</div>
-              <div className="stat-title text-white/80">Dịch vụ/tháng</div>
-              <div className="stat-desc text-white/60">Hoàn thành xuất sắc</div>
             </div>
           </div>
         </div>
@@ -269,13 +361,6 @@ const HomePage = () => {
             <Link to="/privacy" className="link link-hover">
               Chính sách
             </Link>
-          </div>
-        </div>
-        <div>
-          <div className="grid grid-flow-col gap-4">
-            <a className="link link-hover">📱 Facebook</a>
-            <a className="link link-hover">📷 Instagram</a>
-            <a className="link link-hover">📧 Email</a>
           </div>
         </div>
       </footer>
