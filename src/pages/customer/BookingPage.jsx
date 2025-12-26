@@ -492,7 +492,7 @@ const BookingPage = () => {
                       </div>
                     </div>
                   )}
-                  // ⭐ THÊM MODAL CHỈNH SỬA (sau modal Thêm Thú Cưng)
+
                   {showEditModal && currentPet?.petIndex !== undefined && (
                     <div className="modal modal-open">
                       <div className="modal-box w-11/12 max-w-md">
