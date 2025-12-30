@@ -13,6 +13,10 @@ import HomePage from "../pages/home/HomePage";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 
+// ⭐ Service Pages - NEW
+import ShopServiceDetail from "../pages/services/ShopServiceDetail";
+import ServiceDetail from "../pages/services/ServiceDetail";
+
 // Admin Pages
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import UserManagement from "../pages/admin/UserManagement";
@@ -60,6 +64,16 @@ const router = createBrowserRouter([
         element: <MainLayout />,
         children: [
           { index: true, element: <HomePage /> },
+
+          // ⭐ PUBLIC SERVICE ROUTES - Không cần đăng nhập
+          {
+            path: "service/:serviceId",
+            element: <ShopServiceDetail />,
+          },
+          {
+            path: "services/:serviceId",
+            element: <ServiceDetail />, // Trang chi tiết dịch vụ hệ thống (có thể giữ lại)
+          },
           {
             path: "profile",
             element: <ProtectedRoute>{/* <ProfilePage /> */}</ProtectedRoute>,
