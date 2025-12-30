@@ -78,14 +78,31 @@ const BookingPage = () => {
       const res = await apiClient.get(
         `/booking/shop/${formData.maCuaHang}/services/pet-type/${currentPet.maLoai}`
       );
-      setServicesByPetType(res.data?.data || []);
+      setServicesByPetType(res.data || []);
     } catch (err) {
       console.error("Error loading services:", err);
       setServicesByPetType([]);
     }
   };
 
-  const loadAvailableTimeSlots = async () => {};
+  const loadAvailableTimeSlots = async () => {
+    try {
+      setLoading(true);
+      const res = await apiClient.get(
+        `/booking/shop/${formData.maCuaHang}/available-slots`,
+        {
+          params: { date: formData.ngayHen },
+        }
+      );
+      setAvailableTimeSlots(res.slots || []);
+    } catch (err) {
+      console.error("Error loading time slots:", err);
+      setAvailableTimeSlots([]);
+      setError("Không thể tải khung giờ. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ==================== VALIDATION ====================
 

@@ -61,7 +61,7 @@ const HomePage = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <div className="hero min-h-[500px] bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500">
+      <div className="hero min-h-[500px] bg-linear-to-br from-blue-600 via-purple-600 to-pink-500">
         <div className="hero-overlay bg-opacity-30"></div>
         <div className="hero-content text-center text-white">
           <div className="max-w-3xl">
@@ -149,7 +149,7 @@ const HomePage = () => {
                   onClick={() => navigate(`/service/${service.maDichVuShop}`)}
                 >
                   {/* Image */}
-                  <figure className="h-48 bg-gradient-to-br from-blue-400 to-purple-500">
+                  <figure className="h-48 bg-linear-to-br from-blue-400 to-purple-500">
                     {service.anhCuaHang ? (
                       <img
                         src={`http://localhost:5000${service.anhCuaHang}`}
@@ -252,7 +252,7 @@ const HomePage = () => {
                   to={`/shop/${shop.maCuaHang}`}
                   className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all"
                 >
-                  <figure className="h-48 bg-gradient-to-br from-blue-400 to-purple-500">
+                  <figure className="h-48 bg-linear-to-br from-blue-400 to-purple-500">
                     {shop.anhCuaHang ? (
                       <img
                         src={`http://localhost:5000${shop.anhCuaHang}`}
@@ -303,7 +303,7 @@ const HomePage = () => {
       {/* CTA for Shop Owners */}
       <div className="py-20">
         <div className="container mx-auto px-4">
-          <div className="card bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white shadow-2xl">
+          <div className="card bg-linear-to-r from-pink-500 via-purple-500 to-indigo-500 text-white shadow-2xl">
             <div className="card-body items-center text-center p-12">
               <div className="text-6xl mb-6">🏪</div>
               <h2 className="text-4xl font-bold mb-4">Bạn là chủ cửa hàng?</h2>
