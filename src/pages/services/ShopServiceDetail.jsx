@@ -1,3 +1,5 @@
+"use client";
+
 // src/pages/services/ShopServiceDetail.jsx - TRANG MỚI
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
@@ -40,7 +42,6 @@ const ShopServiceDetail = () => {
       return;
     }
 
-    // Chuyển sang trang đặt lịch với thông tin đã chọn
     navigate("/customer/booking", {
       state: {
         preselectedShop: service.shop.maCuaHang,
@@ -51,23 +52,27 @@ const ShopServiceDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base-200">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <span
+          className="loading loading-spinner loading-lg"
+          style={{ color: "#8e2800" }}
+        ></span>
       </div>
     );
   }
 
   if (error || !service) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base-200">
-        <div className="card w-96 bg-base-100 shadow-xl">
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="card w-96 bg-white shadow-xl">
           <div className="card-body items-center text-center">
             <div className="text-6xl mb-4">❌</div>
-            <h2 className="card-title text-error">Không tìm thấy dịch vụ</h2>
+            <h2 className="card-title text-red-600">Không tìm thấy dịch vụ</h2>
             <p className="text-gray-600">{error}</p>
             <button
               onClick={() => navigate("/")}
-              className="btn btn-primary mt-4"
+              className="btn mt-4 text-white"
+              style={{ backgroundColor: "#8e2800" }}
             >
               Về trang chủ
             </button>
@@ -78,320 +83,331 @@ const ShopServiceDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-200">
-      {/* Header */}
-      <div className="bg-linear-to-r from-blue-600 to-purple-600 text-white py-12">
-        <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-white">
+      {/* Top Navigation */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 py-3">
           <button
             onClick={() => navigate(-1)}
-            className="btn btn-ghost text-white mb-4"
+            className="flex items-center gap-2 text-gray-700 hover:text-gray-900 font-semibold transition-colors duration-200"
           >
             ← Quay lại
           </button>
-          <div className="flex flex-col md:flex-row gap-6 items-start">
-            {/* Service Icon */}
-            <div className="text-7xl">
-              {service.tenDichVu?.includes("Tắm")
-                ? "🛁"
-                : service.tenDichVu?.includes("Khám")
-                ? "💉"
-                : service.tenDichVu?.includes("Cắt")
-                ? "✂️"
-                : service.tenDichVu?.includes("Trông")
-                ? "🏠"
-                : "✨"}
-            </div>
+        </div>
+      </div>
 
-            <div className="flex-1">
-              <h1 className="text-4xl md:text-5xl font-bold mb-3">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        {/* Service Detail Section - Image Left, Content Right */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-16">
+          {/* Left: Service Image */}
+          <div className="lg:col-span-2">
+            <div className="bg-gray-200 rounded-2xl overflow-hidden shadow-lg h-96 flex items-center justify-center sticky top-20">
+              {service.anhCuaHang ? (
+                <img
+                  src={`http://localhost:5000${service.anhCuaHang}`}
+                  alt={service.tenDichVu}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.src = `/placeholder.svg?height=400&width=400&query=${service.tenDichVu}`;
+                  }}
+                />
+              ) : (
+                <div className="text-center">
+                  <div className="text-8xl mb-4">
+                    {service.tenDichVu?.includes("Tắm")
+                      ? "🛁"
+                      : service.tenDichVu?.includes("Khám")
+                      ? "💉"
+                      : service.tenDichVu?.includes("Cắt")
+                      ? "✂️"
+                      : service.tenDichVu?.includes("Trông")
+                      ? "🏠"
+                      : "✨"}
+                  </div>
+                  <p className="text-gray-500 font-semibold">
+                    {service.tenDichVu}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Service Details & Booking */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* Service Name & Rating */}
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-3">
                 {service.tenDichVu}
               </h1>
-              <div className="flex flex-wrap gap-4 text-lg">
-                <div className="flex items-center gap-2">
-                  <span className="text-yellow-300">⭐</span>
-                  <span>{service.rating}</span>
-                  <span className="opacity-80">
-                    ({service.reviewCount} đánh giá)
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1">
+                  <span className="text-yellow-500 text-lg">⭐</span>
+                  <span className="text-2xl font-bold text-gray-900">
+                    {service.rating || "N/A"}
+                  </span>
+                  <span className="text-gray-600 text-sm">
+                    ({service.reviewCount || 0} đánh giá)
                   </span>
                 </div>
-                {service.thoiLuong && (
-                  <div className="opacity-90">⏱️ {service.thoiLuong} phút</div>
-                )}
               </div>
-              <div className="mt-4">
-                <div className="text-3xl font-bold text-yellow-300">
-                  {parseInt(service.gia).toLocaleString("vi-VN")}đ
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+              {/* Price */}
+              <div className="bg-linear-to-br from-gray-50 to-gray-100 rounded-xl p-5 shadow-sm">
+                <p className="text-gray-600 text-xs uppercase tracking-wide mb-1">
+                  Giá dịch vụ
+                </p>
+                <p className="text-3xl font-bold" style={{ color: "#8e2800" }}>
+                  {Number.parseInt(service.gia).toLocaleString("vi-VN")}đ
+                </p>
+              </div>
+
+              {/* Duration */}
+              {service.thoiLuong && (
+                <div className="bg-linear-to-br from-gray-50 to-gray-100 rounded-xl p-5 shadow-sm">
+                  <p className="text-gray-600 text-xs uppercase tracking-wide mb-1">
+                    Thời lượng
+                  </p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold text-gray-900">
+                      {service.thoiLuong}
+                    </span>
+                    <span className="text-gray-600 font-semibold">phút</span>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              <button
+                onClick={handleBookNow}
+                className="w-full text-white py-5 rounded-xl font-bold text-base transition hover:opacity-90 shadow-lg h-full"
+                style={{ backgroundColor: "#8e2800" }}
+              >
+                📅 {isAuthenticated ? "Đặt Lịch" : "Đăng nhập"}
+              </button>
+            </div>
+
+            <div>
+              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {service.moTa || "Chưa có mô tả chi tiết"}
+              </p>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Mô tả dịch vụ */}
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <h2 className="card-title text-2xl">📋 Mô Tả Dịch Vụ</h2>
-                <p className="text-gray-600 whitespace-pre-line">
-                  {service.moTa || "Chưa có mô tả chi tiết"}
+        {/* Shop Info Section - Horizontal Row */}
+        <div className="mb-16">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            🏪 Thông Tin Cửa Hàng
+          </h2>
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-md">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Shop Name */}
+              <div>
+                <p className="text-gray-600 text-sm mb-1">Tên cửa hàng</p>
+                <p className="text-lg font-bold text-gray-900 line-clamp-2">
+                  {service.shop.tenCuaHang}
                 </p>
+              </div>
 
-                {service.thoiLuong && (
-                  <div className="mt-4">
-                    <h3 className="font-semibold mb-2">
-                      ⏱️ Thời lượng dự kiến:
-                    </h3>
-                    <p className="text-gray-600">
-                      Khoảng {service.thoiLuong} phút
-                    </p>
-                  </div>
-                )}
+              {/* Address */}
+              <div>
+                <p className="text-gray-600 text-sm mb-1">📍 Địa chỉ</p>
+                <p className="text-sm text-gray-700 line-clamp-2">
+                  {service.shop.diaChi}
+                </p>
+              </div>
+
+              {/* View Shop */}
+              <div className="flex items-end">
+                <Link
+                  to={`/shop/${service.shop.maCuaHang}`}
+                  className="w-full text-center py-2 rounded-lg font-semibold text-white transition hover:opacity-90"
+                  style={{ backgroundColor: "#8e2800" }}
+                >
+                  Xem trang cửa hàng →
+                </Link>
               </div>
             </div>
 
-            {/* Thông tin cửa hàng */}
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <h2 className="card-title text-2xl">🏪 Thông Tin Cửa Hàng</h2>
-
-                <div className="space-y-3">
-                  <div>
-                    <h3 className="font-bold text-lg">
-                      {service.shop.tenCuaHang}
-                    </h3>
-                  </div>
-
-                  <div className="flex items-start gap-2">
-                    <span className="text-xl">📍</span>
-                    <div>
-                      <p className="font-semibold">Địa chỉ:</p>
-                      <p className="text-gray-600">{service.shop.diaChi}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2">
-                    <span className="text-xl">📞</span>
-                    <div>
-                      <p className="font-semibold">Số điện thoại:</p>
-                      <p className="text-gray-600">
-                        {service.shop.soDienThoai}
-                      </p>
-                    </div>
-                  </div>
-
-                  {service.shop.moTa && (
-                    <div className="flex items-start gap-2">
-                      <span className="text-xl">📝</span>
-                      <div>
-                        <p className="font-semibold">Giới thiệu:</p>
-                        <p className="text-gray-600">{service.shop.moTa}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  <Link
-                    to={`/shop/${service.shop.maCuaHang}`}
-                    className="btn btn-outline btn-sm w-full mt-4"
-                  >
-                    Xem trang cửa hàng →
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Các dịch vụ khác của shop */}
-            {service.otherServices && service.otherServices.length > 0 && (
-              <div className="card bg-base-100 shadow-xl">
-                <div className="card-body">
-                  <h2 className="card-title text-2xl">
-                    ✨ Dịch Vụ Khác Của Cửa Hàng
-                  </h2>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    {service.otherServices.map((s) => (
-                      <Link
-                        key={s.maDichVuShop}
-                        to={`/service/${s.maDichVuShop}`}
-                        className="card bg-base-200 hover:shadow-lg transition-all"
-                      >
-                        <div className="card-body p-4">
-                          <h3 className="font-bold">{s.tenDichVu}</h3>
-                          <div className="flex justify-between items-center mt-2">
-                            <span className="text-primary font-bold">
-                              {parseInt(s.gia).toLocaleString("vi-VN")}đ
-                            </span>
-                            {s.thoiLuong && (
-                              <span className="text-xs text-gray-500">
-                                ⏱️ {s.thoiLuong}p
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
+            {/* Shop Description */}
+            {service.shop.moTa && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <p className="text-gray-700 text-sm">
+                  <span className="font-semibold">Giới thiệu:</span>{" "}
+                  {service.shop.moTa}
+                </p>
               </div>
             )}
-
-            {/* Đánh giá */}
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <h2 className="card-title text-2xl">⭐ Đánh Giá & Nhận Xét</h2>
-
-                {/* Tổng quan đánh giá */}
-                <div className="flex items-center gap-6 mb-6 p-4 bg-base-200 rounded-lg">
-                  <div className="text-center">
-                    <div className="text-5xl font-bold text-primary">
-                      {service.rating}
-                    </div>
-                    <div className="text-yellow-500 text-2xl">⭐⭐⭐⭐⭐</div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      {service.reviewCount} đánh giá
-                    </div>
-                  </div>
-
-                  <div className="flex-1">
-                    {[5, 4, 3, 2, 1].map((star) => (
-                      <div key={star} className="flex items-center gap-2 mb-1">
-                        <span className="text-xs w-8">{star} ⭐</span>
-                        <progress
-                          className="progress progress-warning w-full"
-                          value={star * 20}
-                          max="100"
-                        ></progress>
-                        <span className="text-xs text-gray-500 w-12">
-                          {Math.floor(Math.random() * 30)}%
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Danh sách reviews */}
-                <div className="space-y-4">
-                  {service.reviews &&
-                    service.reviews.map((review) => (
-                      <div key={review.id} className="border-b pb-4">
-                        <div className="flex items-start gap-3">
-                          <div className="avatar placeholder">
-                            <div className="bg-primary text-white rounded-full w-12">
-                              <span>{review.userName.charAt(0)}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex-1">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <p className="font-bold">{review.userName}</p>
-                                <div className="flex gap-1 text-yellow-500">
-                                  {"⭐".repeat(review.rating)}
-                                </div>
-                              </div>
-                              <span className="text-xs text-gray-500">
-                                {new Date(review.date).toLocaleDateString(
-                                  "vi-VN"
-                                )}
-                              </span>
-                            </div>
-                            <p className="text-gray-600 mt-2">
-                              {review.comment}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-
-                <button className="btn btn-outline btn-sm w-full mt-4">
-                  Xem thêm đánh giá
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar - Booking Card */}
-          <div className="lg:col-span-1">
-            <div className="card bg-base-100 shadow-xl sticky top-4">
-              <div className="card-body">
-                <h3 className="card-title text-2xl">📅 Đặt Lịch Ngay</h3>
-
-                <div className="space-y-4">
-                  {/* Price */}
-                  <div className="flex justify-between items-center p-4 bg-base-200 rounded-lg">
-                    <span className="text-gray-600">Giá dịch vụ:</span>
-                    <span className="text-2xl font-bold text-primary">
-                      {parseInt(service.gia).toLocaleString("vi-VN")}đ
-                    </span>
-                  </div>
-
-                  {/* Duration */}
-                  {service.thoiLuong && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Thời lượng:</span>
-                      <span className="font-semibold">
-                        ⏱️ {service.thoiLuong} phút
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="divider"></div>
-
-                  {/* Booking Button */}
-                  <button
-                    onClick={handleBookNow}
-                    className="btn btn-primary btn-lg w-full gap-2"
-                  >
-                    <span>📅</span>
-                    {isAuthenticated
-                      ? "Đặt Lịch Ngay"
-                      : "Đăng nhập để đặt lịch"}
-                  </button>
-
-                  {/* Contact Shop */}
-                  <a
-                    href={`tel:${service.shop.soDienThoai}`}
-                    className="btn btn-outline w-full gap-2"
-                  >
-                    <span>📞</span>
-                    Gọi ngay: {service.shop.soDienThoai}
-                  </a>
-                </div>
-
-                <div className="divider"></div>
-
-                {/* Benefits */}
-                <div>
-                  <h4 className="font-bold mb-3">✅ Lợi ích khi đặt lịch:</h4>
-                  <ul className="space-y-2 text-sm">
-                    <li>✓ Đặt lịch online tiện lợi</li>
-                    <li>✓ Xác nhận nhanh chóng</li>
-                    <li>✓ Theo dõi trạng thái đơn hàng</li>
-                    <li>✓ Tích điểm và ưu đãi</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            {/* Help Card */}
-            <div className="card bg-base-100 shadow-xl mt-6">
-              <div className="card-body">
-                <h4 className="font-bold">💡 Cần Hỗ Trợ?</h4>
-                <p className="text-sm text-gray-600">
-                  Liên hệ với chúng tôi nếu bạn cần tư vấn
-                </p>
-                <button className="btn btn-sm btn-outline">
-                  📧 Liên hệ hỗ trợ
-                </button>
-              </div>
-            </div>
           </div>
         </div>
+
+        {/* Reviews Section */}
+        <div className="mb-16">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            ⭐ Đánh Giá & Nhận Xét
+          </h2>
+
+          {/* Rating Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {/* Overall Rating */}
+            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200 text-center">
+              <p
+                className="text-5xl font-bold mb-2"
+                style={{ color: "#8e2800" }}
+              >
+                {service.rating || "N/A"}
+              </p>
+              <div className="text-2xl text-yellow-500 mb-2">
+                {Array(5)
+                  .fill(0)
+                  .map((_, i) => (
+                    <span key={i}>
+                      {i < Math.round(service.rating || 0) ? "⭐" : "☆"}
+                    </span>
+                  ))}
+              </div>
+              <p className="text-gray-600">
+                {service.reviewCount || 0} đánh giá
+              </p>
+            </div>
+
+            {/* Rating Distribution */}
+            <div className="md:col-span-2 bg-gray-50 rounded-2xl p-6 border border-gray-200">
+              <p className="font-bold text-gray-900 mb-4">Phân bố đánh giá</p>
+              {[5, 4, 3, 2, 1].map((star) => (
+                <div key={star} className="flex items-center gap-3 mb-2">
+                  <span className="w-12 text-sm font-semibold text-gray-600">
+                    {star} ⭐
+                  </span>
+                  <progress
+                    className="progress progress-warning flex-1"
+                    value={star * 20}
+                    max="100"
+                    style={{
+                      "--progress-color": "#8e2800",
+                    }}
+                  />
+                  <span className="text-xs text-gray-500 w-12 text-right">
+                    {Math.floor(Math.random() * 30)}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Reviews List */}
+          <div className="space-y-4">
+            {service.reviews && service.reviews.length > 0 ? (
+              service.reviews.map((review, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white rounded-xl border border-gray-200 p-6"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="avatar placeholder">
+                      <div
+                        className="rounded-full w-12 text-white"
+                        style={{ backgroundColor: "#8e2800" }}
+                      >
+                        <span className="text-lg">
+                          {review.userName?.charAt(0)?.toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-bold text-gray-900">
+                            {review.userName}
+                          </p>
+                          <div className="flex gap-1 text-yellow-500">
+                            {Array(5)
+                              .fill(0)
+                              .map((_, i) => (
+                                <span key={i}>
+                                  {i < review.rating ? "⭐" : "☆"}
+                                </span>
+                              ))}
+                          </div>
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          {new Date(review.date).toLocaleDateString("vi-VN")}
+                        </span>
+                      </div>
+                      <p className="text-gray-700">{review.comment}</p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-center text-gray-600 py-8">
+                Chưa có đánh giá nào
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Related Services Section */}
+        {service.otherServices && service.otherServices.length > 0 && (
+          <div className="mb-16">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              ✨ Các Dịch Vụ Khác Của Cửa Hàng
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {service.otherServices.map((s) => (
+                <Link
+                  key={s.maDichVuShop}
+                  to={`/service/${s.maDichVuShop}`}
+                  className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all cursor-pointer"
+                >
+                  {/* Service Image */}
+                  <div className="h-40 bg-gray-200 flex items-center justify-center overflow-hidden">
+                    {s.anhCuaHang ? (
+                      <img
+                        src={`http://localhost:5000${s.anhCuaHang}`}
+                        alt={s.tenDichVu}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform"
+                        onError={(e) => {
+                          e.target.src = `/placeholder.svg?height=160&width=300&query=${s.tenDichVu}`;
+                        }}
+                      />
+                    ) : (
+                      <span className="text-4xl">✨</span>
+                    )}
+                  </div>
+
+                  <div className="p-4">
+                    <h3 className="font-bold text-gray-900 line-clamp-2 mb-2">
+                      {s.tenDichVu}
+                    </h3>
+
+                    <div className="flex justify-between items-center">
+                      <span
+                        className="font-bold text-lg"
+                        style={{ color: "#8e2800" }}
+                      >
+                        {Number.parseInt(s.gia).toLocaleString("vi-VN")}đ
+                      </span>
+                      {s.thoiLuong && (
+                        <span className="text-xs text-gray-500">
+                          ⏱️ {s.thoiLuong}p
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Footer Spacing */}
+      <div className="h-12" />
     </div>
   );
 };
