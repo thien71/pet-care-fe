@@ -80,7 +80,7 @@ const ShopServiceDetail = () => {
   return (
     <div className="min-h-screen bg-base-200">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-12">
+      <div className="bg-linear-to-r from-blue-600 to-purple-600 text-white py-12">
         <div className="container mx-auto px-4">
           <button
             onClick={() => navigate(-1)}

@@ -1,28 +1,33 @@
+// src/pages/customer/BookingPage.jsx - FULL IMPLEMENTATION
 import { useState, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import apiClient from "../../api/apiClient";
 
 const BookingPage = () => {
-  const [step, setStep] = useState(1);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const preselectedShopId = searchParams.get("shopId");
+  const preselectedServiceId = searchParams.get("serviceId");
+
+  // UI States
+  const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  // Data states
+  // Modal States
+  const [shopModalOpen, setShopModalOpen] = useState(false);
+  const [shopSearchTerm, setShopSearchTerm] = useState("");
+
+  // Data States
   const [shops, setShops] = useState([]);
   const [petTypes, setPetTypes] = useState([]);
-  const [selectedShop, setSelectedShop] = useState(null);
+  const [availableServices, setAvailableServices] = useState([]);
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
-  const [servicesByPetType, setServicesByPetType] = useState([]);
 
-  // Form states
-  const [formData, setFormData] = useState({
-    maCuaHang: "",
-    ngayHen: "",
-    gioBatDau: "",
-    ghiChu: "",
-    pets: [],
-  });
-
+  // Form States
+  const [selectedShop, setSelectedShop] = useState(null);
+  const [pets, setPets] = useState([]);
   const [currentPet, setCurrentPet] = useState({
     ten: "",
     maLoai: "",
@@ -30,44 +35,59 @@ const BookingPage = () => {
     dacDiem: "",
     dichVuIds: [],
   });
+  const [booking, setBooking] = useState({
+    ngayHen: "",
+    gioBatDau: "",
+    ghiChu: "",
+  });
 
   const [formErrors, setFormErrors] = useState({});
 
-  // Load initial data on mount
+  // ==================== LOAD INITIAL DATA ====================
   useEffect(() => {
     loadInitialData();
   }, []);
 
-  // Load services when shop or pet type changes
+  // ==================== PRELOAD FROM URL ====================
   useEffect(() => {
-    if (currentPet.maLoai && formData.maCuaHang) {
+    if (preselectedShopId && shops.length > 0) {
+      const shop = shops.find(
+        (s) => s.maCuaHang === parseInt(preselectedShopId)
+      );
+      if (shop) {
+        setSelectedShop(shop);
+      }
+    }
+  }, [preselectedShopId, shops]);
+
+  // ==================== LOAD SERVICES WHEN PET TYPE CHANGES ====================
+  useEffect(() => {
+    if (currentPet.maLoai && selectedShop) {
       loadServicesByPetType();
     }
-  }, [currentPet.maLoai, formData.maCuaHang]);
+  }, [currentPet.maLoai, selectedShop]);
 
-  // Load available time slots when date is selected
+  // ==================== LOAD TIME SLOTS WHEN DATE SELECTED ====================
   useEffect(() => {
-    if (formData.ngayHen && formData.maCuaHang) {
+    if (booking.ngayHen && selectedShop) {
       loadAvailableTimeSlots();
     }
-  }, [formData.ngayHen, formData.maCuaHang]);
+  }, [booking.ngayHen, selectedShop]);
 
   // ==================== API CALLS ====================
 
   const loadInitialData = async () => {
     try {
       setLoading(true);
-
       const [shopsRes, petTypesRes] = await Promise.all([
         apiClient.get("/booking/public/shops"),
         apiClient.get("/booking/public/pet-types"),
       ]);
-
       setShops(shopsRes.data || []);
       setPetTypes(petTypesRes.data || []);
     } catch (err) {
-      setError("Lỗi tải dữ liệu cửa hàng. Vui lòng thử lại.");
-      console.error("Error loading initial data:", err);
+      setError("Không thể tải dữ liệu. Vui lòng thử lại.");
+      console.error("Load initial data error:", err);
     } finally {
       setLoading(false);
     }
@@ -76,126 +96,85 @@ const BookingPage = () => {
   const loadServicesByPetType = async () => {
     try {
       const res = await apiClient.get(
-        `/booking/shop/${formData.maCuaHang}/services/pet-type/${currentPet.maLoai}`
+        `/booking/shop/${selectedShop.maCuaHang}/services/pet-type/${currentPet.maLoai}`
       );
-      setServicesByPetType(res.data || []);
+      setAvailableServices(res.data || []);
+
+      // Auto-select preselected service if exists
+      if (preselectedServiceId) {
+        const service = res.data.find(
+          (s) => s.maDichVuShop === parseInt(preselectedServiceId)
+        );
+        if (service) {
+          setCurrentPet((prev) => ({
+            ...prev,
+            dichVuIds: [service.maDichVuShop],
+          }));
+        }
+      }
     } catch (err) {
-      console.error("Error loading services:", err);
-      setServicesByPetType([]);
+      console.error("Load services error:", err);
+      setAvailableServices([]);
     }
   };
 
   const loadAvailableTimeSlots = async () => {
     try {
-      setLoading(true);
       const res = await apiClient.get(
-        `/booking/shop/${formData.maCuaHang}/available-slots`,
-        {
-          params: { date: formData.ngayHen },
-        }
+        `/booking/shop/${selectedShop.maCuaHang}/available-slots`,
+        { params: { date: booking.ngayHen } }
       );
       setAvailableTimeSlots(res.slots || []);
     } catch (err) {
-      console.error("Error loading time slots:", err);
+      console.error("Load time slots error:", err);
       setAvailableTimeSlots([]);
-      setError("Không thể tải khung giờ. Vui lòng thử lại.");
-    } finally {
-      setLoading(false);
     }
   };
 
-  // ==================== VALIDATION ====================
+  // ==================== HANDLERS ====================
 
-  const validateField = (name, value) => {
-    const newErrors = { ...formErrors };
-
-    switch (name) {
-      case "maCuaHang":
-        if (!value) {
-          newErrors.maCuaHang = "Vui lòng chọn cửa hàng";
-        } else {
-          delete newErrors.maCuaHang;
-        }
-        break;
-
-      case "ngayHen":
-        if (!value) {
-          newErrors.ngayHen = "Vui lòng chọn ngày";
-        } else {
-          const selectedDate = new Date(value);
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          if (selectedDate < today) {
-            newErrors.ngayHen = "Không thể chọn ngày trong quá khứ";
-          } else {
-            delete newErrors.ngayHen;
-          }
-        }
-        break;
-
-      case "gioBatDau":
-        if (!value) {
-          newErrors.gioBatDau = "Vui lòng chọn giờ";
-        } else {
-          delete newErrors.gioBatDau;
-        }
-        break;
-
-      case "ten":
-        if (!value.trim()) {
-          newErrors.ten = "Tên thú cưng không được để trống";
-        } else {
-          delete newErrors.ten;
-        }
-        break;
-
-      case "maLoai":
-        if (!value) {
-          newErrors.maLoai = "Vui lòng chọn loài thú cưng";
-        } else {
-          delete newErrors.maLoai;
-        }
-        break;
-
-      default:
-        break;
-    }
-
-    setFormErrors(newErrors);
-  };
-
-  const handleShopChange = (shopId) => {
-    setFormData({
-      ...formData,
-      maCuaHang: shopId,
+  const handleShopSelect = (shop) => {
+    setSelectedShop(shop);
+    setShopModalOpen(false);
+    // Reset dependent data
+    setPets([]);
+    setCurrentPet({
+      ten: "",
+      maLoai: "",
+      tuoi: "",
+      dacDiem: "",
+      dichVuIds: [],
+    });
+    setBooking({
       ngayHen: "",
       gioBatDau: "",
+      ghiChu: "",
     });
-    const shop = shops.find((s) => s.maCuaHang === parseInt(shopId));
-    setSelectedShop(shop);
-    setAvailableTimeSlots([]);
-    validateField("maCuaHang", shopId);
+    setFormErrors({});
+  };
+
+  const handleServiceToggle = (serviceId) => {
+    setCurrentPet((prev) => ({
+      ...prev,
+      dichVuIds: prev.dichVuIds.includes(serviceId)
+        ? prev.dichVuIds.filter((id) => id !== serviceId)
+        : [...prev.dichVuIds, serviceId],
+    }));
   };
 
   const handleAddPet = () => {
-    const petErrors = {};
+    const errors = {};
+    if (!currentPet.ten.trim()) errors.ten = "Vui lòng nhập tên";
+    if (!currentPet.maLoai) errors.maLoai = "Vui lòng chọn loài";
+    if (currentPet.dichVuIds.length === 0)
+      errors.services = "Vui lòng chọn ít nhất 1 dịch vụ";
 
-    if (!currentPet.ten.trim()) petErrors.ten = "Tên không được để trống";
-    if (!currentPet.maLoai) petErrors.maLoai = "Vui lòng chọn loài";
-    if (currentPet.dichVuIds.length === 0) {
-      petErrors.service = "Vui lòng chọn ít nhất 1 dịch vụ";
-    }
-
-    if (Object.keys(petErrors).length > 0) {
-      setFormErrors(petErrors);
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       return;
     }
 
-    setFormData({
-      ...formData,
-      pets: [...formData.pets, { ...currentPet }],
-    });
-
+    setPets((prev) => [...prev, { ...currentPet, id: Date.now() }]);
     setCurrentPet({
       ten: "",
       maLoai: "",
@@ -206,155 +185,163 @@ const BookingPage = () => {
     setFormErrors({});
   };
 
-  const handleRemovePet = (index) => {
-    const newPets = formData.pets.filter((_, i) => i !== index);
-    setFormData({ ...formData, pets: newPets });
-  };
-
-  const handleServiceToggle = (serviceId) => {
-    const newIds = currentPet.dichVuIds.includes(serviceId)
-      ? currentPet.dichVuIds.filter((id) => id !== serviceId)
-      : [...currentPet.dichVuIds, serviceId];
-
-    setCurrentPet({ ...currentPet, dichVuIds: newIds });
-  };
-
-  const calculateTotalPrice = () => {
-    let total = 0;
-    formData.pets.forEach((pet) => {
-      pet.dichVuIds.forEach((serviceId) => {
-        const service = servicesByPetType.find(
-          (s) => s.maDichVuShop === serviceId
-        );
-        if (service) total += parseFloat(service.gia);
-      });
-    });
-    return total;
+  const handleRemovePet = (petId) => {
+    setPets((prev) => prev.filter((p) => p.id !== petId));
   };
 
   const handleSubmit = async () => {
-    const errors = {};
-
-    if (!formData.maCuaHang) errors.maCuaHang = "Chọn cửa hàng";
-    if (!formData.ngayHen) errors.ngayHen = "Chọn ngày";
-    if (!formData.gioBatDau) errors.gioBatDau = "Chọn giờ";
-    if (formData.pets.length === 0) errors.pets = "Thêm ít nhất 1 thú cưng";
-
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      return;
-    }
-
     try {
       setLoading(true);
-
       const payload = {
-        ...formData,
-        ngayHen: new Date(formData.ngayHen).toISOString(),
+        maCuaHang: selectedShop.maCuaHang,
+        ngayHen: `${booking.ngayHen}T${booking.gioBatDau}:00`,
+        ghiChu: booking.ghiChu || null,
+        pets: pets.map((pet) => ({
+          ten: pet.ten,
+          maLoai: parseInt(pet.maLoai),
+          tuoi: pet.tuoi ? parseInt(pet.tuoi) : null,
+          dacDiem: pet.dacDiem || null,
+          dichVuIds: pet.dichVuIds,
+        })),
       };
 
       await apiClient.post("/booking/create", payload);
-
       setSuccess(true);
-      setTimeout(() => {
-        window.location.href = "/customer/history";
-      }, 2000);
+      setTimeout(() => navigate("/customer/history"), 2000);
     } catch (err) {
       setError(
         err.response?.data?.message || "Đặt lịch thất bại. Vui lòng thử lại."
       );
-      console.error("Error submitting booking:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading && shops.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100">
-        <div className="text-center">
-          <div className="animate-spin w-12 h-12 border-4 border-slate-300 border-t-slate-900 rounded-full mx-auto mb-4"></div>
-          <p className="text-slate-600 font-medium">Đang tải dữ liệu...</p>
-        </div>
-      </div>
-    );
-  }
+  const calculateTotal = () => {
+    return pets.reduce((total, pet) => {
+      return (
+        total +
+        pet.dichVuIds.reduce((petTotal, serviceId) => {
+          const service = availableServices.find(
+            (s) => s.maDichVuShop === serviceId
+          );
+          return petTotal + (service ? parseFloat(service.gia) : 0);
+        }, 0)
+      );
+    }, 0);
+  };
 
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-            <div className="text-6xl mb-6">✓</div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">
-              Đặt lịch thành công
-            </h2>
-            <p className="text-slate-600 mb-6">
-              Cửa hàng sẽ xác nhận đơn của bạn trong ít phút
-            </p>
-            <div className="text-sm text-slate-500">Đang chuyển hướng...</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const selectedShopData = shops.find(
-    (s) => s.maCuaHang === parseInt(formData.maCuaHang)
+  const filteredShops = shops.filter(
+    (shop) =>
+      shop.tenCuaHang.toLowerCase().includes(shopSearchTerm.toLowerCase()) ||
+      shop.diaChi.toLowerCase().includes(shopSearchTerm.toLowerCase())
   );
 
+  const steps = [
+    { num: 1, label: "Thông Tin Thú" },
+    { num: 2, label: "Ngày & Giờ" },
+    { num: 3, label: "Xác Nhận" },
+  ];
+
+  // ==================== SUCCESS SCREEN ====================
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center bg-white rounded-2xl shadow-xl p-12 max-w-md">
+          <div className="text-6xl mb-6">✅</div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Đặt lịch thành công!
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Cửa hàng sẽ xác nhận đơn của bạn trong ít phút
+          </p>
+          <div className="animate-pulse text-gray-500">
+            Đang chuyển hướng...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==================== LOADING SCREEN ====================
+  if (loading && shops.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-gray-300 border-t-gray-900 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==================== MAIN UI ====================
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 py-12 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-12">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center">
-              <span className="text-white text-xl font-bold">PC</span>
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-20">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="text-2xl hover:bg-gray-100 w-10 h-10 rounded-full flex items-center justify-center"
+            >
+              ←
+            </button>
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">
+              <h1 className="text-xl font-bold text-gray-900">
                 Đặt Lịch Dịch Vụ
               </h1>
-              <p className="text-slate-600">
-                Chăm sóc thú cưng của bạn một cách chuyên nghiệp
-              </p>
+              <p className="text-sm text-gray-600">Hoàn thành trong 3 bước</p>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Progress Steps */}
-          <div className="flex items-center gap-8">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className="flex items-center gap-3">
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-colors ${
-                    step >= s
-                      ? "bg-slate-900 text-white"
-                      : "bg-slate-300 text-slate-600"
-                  }`}
-                >
-                  {s}
+      {/* Progress Steps */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex items-center justify-center gap-4">
+            {steps.map((step, idx) => (
+              <div key={step.num} className="flex items-center">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
+                      currentStep >= step.num
+                        ? "bg-gray-900 text-white"
+                        : "bg-gray-200 text-gray-500"
+                    }`}
+                  >
+                    {step.num}
+                  </div>
+                  <span
+                    className={`hidden sm:block font-medium ${
+                      currentStep >= step.num
+                        ? "text-gray-900"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    {step.label}
+                  </span>
                 </div>
-                <span
-                  className={`hidden sm:block text-sm font-medium ${
-                    step >= s ? "text-slate-900" : "text-slate-500"
-                  }`}
-                >
-                  {s === 1
-                    ? "Cửa Hàng & Giờ"
-                    : s === 2
-                    ? "Thú Cưng"
-                    : "Xác Nhận"}
-                </span>
+                {idx < steps.length - 1 && (
+                  <div
+                    className={`w-12 sm:w-16 h-0.5 mx-2 ${
+                      currentStep > step.num ? "bg-gray-900" : "bg-gray-200"
+                    }`}
+                  />
+                )}
               </div>
             ))}
           </div>
         </div>
+      </div>
 
-        {/* Error Alert */}
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-            <div className="text-red-600 font-bold text-lg">!</div>
+      {/* Error Alert */}
+      {error && (
+        <div className="max-w-7xl mx-auto px-4 pt-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+            <span className="text-red-600 font-bold text-lg">!</span>
             <div className="flex-1">
               <p className="text-red-800 font-medium">Có lỗi xảy ra</p>
               <p className="text-red-700 text-sm">{error}</p>
@@ -366,596 +353,647 @@ const BookingPage = () => {
               ×
             </button>
           </div>
-        )}
+        </div>
+      )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-md p-8">
-              {/* STEP 1: Shop Selection & Time */}
-              {step === 1 && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-900 mb-4">
-                      Chọn Cửa Hàng
-                    </h2>
-
-                    {shops.length === 0 ? (
-                      <p className="text-slate-600">Không có cửa hàng nào</p>
-                    ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {shops.map((shop) => (
-                          <button
-                            key={shop.maCuaHang}
-                            onClick={() => handleShopChange(shop.maCuaHang)}
-                            className={`text-left rounded-lg overflow-hidden transition-all border-2 ${
-                              formData.maCuaHang === shop.maCuaHang
-                                ? "border-slate-900 shadow-lg"
-                                : "border-slate-200 hover:border-slate-300"
-                            }`}
-                          >
-                            <div className="aspect-video bg-slate-200 overflow-hidden">
-                              {shop.anhCuaHang ? (
-                                <img
-                                  src={`http://localhost:5000${shop.anhCuaHang}`}
-                                  alt={shop.tenCuaHang}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-slate-200 to-slate-300">
-                                  <span className="text-3xl">🏪</span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="p-4">
-                              <h3 className="font-bold text-slate-900 mb-1">
-                                {shop.tenCuaHang}
-                              </h3>
-                              <p className="text-xs text-slate-600 mb-2">
-                                {shop.diaChi}
-                              </p>
-                              <p className="text-sm font-medium text-slate-900">
-                                {shop.soDienThoai}
-                              </p>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {formErrors.maCuaHang && (
-                      <p className="mt-2 text-sm text-red-600">
-                        {formErrors.maCuaHang}
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* LEFT COLUMN - Shop Info */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden sticky top-24">
+              {!selectedShop ? (
+                <div className="p-6">
+                  <h3 className="font-bold text-gray-900 mb-4">
+                    🏪 Chọn Cửa Hàng
+                  </h3>
+                  <button
+                    onClick={() => setShopModalOpen(true)}
+                    className="w-full py-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors"
+                  >
+                    + Chọn cửa hàng
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {selectedShop.anhCuaHang && (
+                    <div className="aspect-video w-full">
+                      <img
+                        src={`http://localhost:5000${selectedShop.anhCuaHang}`}
+                        alt={selectedShop.tenCuaHang}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <h3 className="font-bold text-gray-900 mb-3 flex items-center justify-between">
+                      {selectedShop.tenCuaHang}
+                      <button
+                        onClick={() => setShopModalOpen(true)}
+                        className="text-sm text-blue-600 hover:underline"
+                      >
+                        Đổi
+                      </button>
+                    </h3>
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <p className="flex items-start gap-2">
+                        <span className="shrink-0">📍</span>
+                        <span>{selectedShop.diaChi}</span>
                       </p>
-                    )}
+                      <p className="flex items-center gap-2">
+                        <span>📞</span>
+                        <span>{selectedShop.soDienThoai}</span>
+                      </p>
+                    </div>
                   </div>
+                </>
+              )}
+            </div>
+          </div>
 
-                  {/* Date & Time Selection */}
-                  {formData.maCuaHang && (
+          {/* MIDDLE COLUMN - Main Form */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              {/* STEP 1: Pet Info & Services */}
+              {currentStep === 1 && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Thông Tin Thú Cưng & Dịch Vụ
+                  </h2>
+
+                  {!selectedShop ? (
+                    <div className="text-center py-12 text-gray-500">
+                      Vui lòng chọn cửa hàng trước
+                    </div>
+                  ) : (
                     <>
-                      <div className="border-t border-slate-200 pt-6">
-                        <h2 className="text-xl font-bold text-slate-900 mb-4">
-                          Chọn Ngày & Giờ
-                        </h2>
-
-                        <div className="mb-6">
-                          <label className="block text-sm font-medium text-slate-900 mb-2">
-                            Ngày hẹn
-                          </label>
-                          <input
-                            type="date"
-                            value={formData.ngayHen}
-                            onChange={(e) => {
-                              setFormData({
-                                ...formData,
-                                ngayHen: e.target.value,
-                                gioBatDau: "",
-                              });
-                              validateField("ngayHen", e.target.value);
-                              setAvailableTimeSlots([]);
-                            }}
-                            min={new Date().toISOString().split("T")[0]}
-                            className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
-                          />
-                          {formErrors.ngayHen && (
-                            <p className="mt-2 text-sm text-red-600">
-                              {formErrors.ngayHen}
-                            </p>
-                          )}
+                      {/* Pet Form */}
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Tên thú cưng *
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="VD: Milu"
+                              value={currentPet.ten}
+                              onChange={(e) =>
+                                setCurrentPet({
+                                  ...currentPet,
+                                  ten: e.target.value,
+                                })
+                              }
+                              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-gray-900 ${
+                                formErrors.ten
+                                  ? "border-red-500"
+                                  : "border-gray-300"
+                              }`}
+                            />
+                            {formErrors.ten && (
+                              <p className="text-xs text-red-600 mt-1">
+                                {formErrors.ten}
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Loài *
+                            </label>
+                            <select
+                              value={currentPet.maLoai}
+                              onChange={(e) =>
+                                setCurrentPet({
+                                  ...currentPet,
+                                  maLoai: e.target.value,
+                                  dichVuIds: [],
+                                })
+                              }
+                              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-gray-900 ${
+                                formErrors.maLoai
+                                  ? "border-red-500"
+                                  : "border-gray-300"
+                              }`}
+                            >
+                              <option value="">-- Chọn --</option>
+                              {petTypes.map((type) => (
+                                <option key={type.maLoai} value={type.maLoai}>
+                                  {type.tenLoai}
+                                </option>
+                              ))}
+                            </select>
+                            {formErrors.maLoai && (
+                              <p className="text-xs text-red-600 mt-1">
+                                {formErrors.maLoai}
+                              </p>
+                            )}
+                          </div>
                         </div>
 
-                        {formData.ngayHen && (
+                        <div className="grid grid-cols-2 gap-4 mb-4">
                           <div>
-                            <label className="block text-sm font-medium text-slate-900 mb-3">
-                              Khung giờ
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Tuổi
                             </label>
-                            {availableTimeSlots.length === 0 ? (
-                              <p className="text-sm text-slate-600 bg-slate-50 p-4 rounded-lg">
-                                Đang tải khung giờ...
+                            <input
+                              type="number"
+                              placeholder="VD: 2"
+                              min="0"
+                              value={currentPet.tuoi}
+                              onChange={(e) =>
+                                setCurrentPet({
+                                  ...currentPet,
+                                  tuoi: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Đặc điểm
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="VD: Hiền lành"
+                              value={currentPet.dacDiem}
+                              onChange={(e) =>
+                                setCurrentPet({
+                                  ...currentPet,
+                                  dacDiem: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Services */}
+                        {currentPet.maLoai && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Chọn dịch vụ *
+                            </label>
+                            {availableServices.length === 0 ? (
+                              <p className="text-sm text-gray-500 text-center py-4">
+                                Đang tải dịch vụ...
                               </p>
                             ) : (
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                {availableTimeSlots.map((slot) => (
-                                  <button
-                                    key={slot.gioBatDau}
-                                    onClick={() => {
-                                      setFormData({
-                                        ...formData,
-                                        gioBatDau: slot.gioBatDau,
-                                      });
-                                      validateField(
-                                        "gioBatDau",
-                                        slot.gioBatDau
-                                      );
-                                    }}
-                                    disabled={!slot.available}
-                                    className={`py-3 px-3 rounded-lg font-medium text-sm transition-colors ${
-                                      formData.gioBatDau === slot.gioBatDau
-                                        ? "bg-slate-900 text-white"
-                                        : slot.available
-                                        ? "bg-slate-100 text-slate-900 hover:bg-slate-200"
-                                        : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                              <div className="space-y-2 max-h-64 overflow-y-auto">
+                                {availableServices.map((service) => (
+                                  <label
+                                    key={service.maDichVuShop}
+                                    className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 ${
+                                      currentPet.dichVuIds.includes(
+                                        service.maDichVuShop
+                                      )
+                                        ? "border-gray-900 bg-gray-50"
+                                        : "border-gray-200"
                                     }`}
                                   >
-                                    {slot.gioBatDau}
-                                    {!slot.available && (
-                                      <div className="text-xs">Hết</div>
-                                    )}
-                                  </button>
+                                    <input
+                                      type="checkbox"
+                                      checked={currentPet.dichVuIds.includes(
+                                        service.maDichVuShop
+                                      )}
+                                      onChange={() =>
+                                        handleServiceToggle(
+                                          service.maDichVuShop
+                                        )
+                                      }
+                                      className="w-5 h-5 accent-gray-900"
+                                    />
+                                    <div className="flex-1">
+                                      <p className="font-medium text-gray-900">
+                                        {service.tenDichVu}
+                                      </p>
+                                      <p className="text-sm text-gray-600">
+                                        {parseInt(service.gia).toLocaleString(
+                                          "vi-VN"
+                                        )}
+                                        đ
+                                        {service.thoiLuong &&
+                                          ` • ${service.thoiLuong}p`}
+                                      </p>
+                                    </div>
+                                  </label>
                                 ))}
                               </div>
                             )}
-                            {formErrors.gioBatDau && (
-                              <p className="mt-2 text-sm text-red-600">
-                                {formErrors.gioBatDau}
+                            {formErrors.services && (
+                              <p className="text-xs text-red-600 mt-2">
+                                {formErrors.services}
                               </p>
                             )}
                           </div>
                         )}
+
+                        <button
+                          onClick={handleAddPet}
+                          className="w-full mt-4 py-2 bg-gray-100 text-gray-900 rounded-lg font-medium hover:bg-gray-200"
+                        >
+                          + Thêm Thú Cưng
+                        </button>
                       </div>
 
-                      <div className="border-t border-slate-200 pt-6">
-                        <label className="block text-sm font-medium text-slate-900 mb-2">
-                          Ghi chú (tùy chọn)
-                        </label>
-                        <textarea
-                          value={formData.ghiChu}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              ghiChu: e.target.value,
-                            })
-                          }
-                          placeholder="Thêm yêu cầu đặc biệt (ví dụ: thú cưng sợ nước)..."
-                          className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
-                          rows="3"
-                        />
-                      </div>
+                      {/* Added Pets List */}
+                      {pets.length > 0 && (
+                        <div>
+                          <h3 className="font-bold text-gray-900 mb-3">
+                            Danh Sách Thú Cưng ({pets.length})
+                          </h3>
+                          <div className="space-y-2">
+                            {pets.map((pet) => {
+                              const petType = petTypes.find(
+                                (t) => t.maLoai === parseInt(pet.maLoai)
+                              );
+                              return (
+                                <div
+                                  key={pet.id}
+                                  className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+                                >
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div>
+                                      <p className="font-medium text-gray-900">
+                                        {pet.ten}
+                                      </p>
+                                      <p className="text-xs text-gray-600">
+                                        {petType?.tenLoai}
+                                        {pet.tuoi && ` • ${pet.tuoi} tuổi`}
+                                      </p>
+                                    </div>
+                                    <button
+                                      onClick={() => handleRemovePet(pet.id)}
+                                      className="text-red-600 text-sm font-medium hover:underline"
+                                    >
+                                      Xóa
+                                    </button>
+                                  </div>
+                                  <ul className="text-xs text-gray-700 space-y-1">
+                                    {pet.dichVuIds.map((serviceId) => {
+                                      const service = availableServices.find(
+                                        (s) => s.maDichVuShop === serviceId
+                                      );
+                                      return service ? (
+                                        <li key={serviceId}>
+                                          • {service.tenDichVu}
+                                        </li>
+                                      ) : null;
+                                    })}
+                                  </ul>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </>
                   )}
-
-                  {/* Action Button */}
-                  <div className="flex gap-3 pt-6 border-t border-slate-200">
-                    <button
-                      onClick={() => window.history.back()}
-                      className="flex-1 px-6 py-3 border border-slate-300 text-slate-900 rounded-lg font-medium hover:bg-slate-50 transition-colors"
-                    >
-                      Hủy
-                    </button>
-                    <button
-                      onClick={() => setStep(2)}
-                      disabled={
-                        !formData.maCuaHang ||
-                        !formData.ngayHen ||
-                        !formData.gioBatDau
-                      }
-                      className="flex-1 px-6 py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Tiếp Theo
-                    </button>
-                  </div>
                 </div>
               )}
 
-              {/* STEP 2: Pet Information */}
-              {step === 2 && (
+              {/* STEP 2: Date & Time */}
+              {currentStep === 2 && (
                 <div className="space-y-6">
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Chọn Ngày & Giờ
+                  </h2>
+
                   <div>
-                    <h2 className="text-xl font-bold text-slate-900 mb-4">
-                      Thông Tin Thú Cưng
-                    </h2>
-
-                    <div className="bg-slate-50 rounded-lg p-6 space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-slate-900 mb-2">
-                            Tên thú cưng *
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="VD: Milu, Kitty..."
-                            value={currentPet.ten}
-                            onChange={(e) => {
-                              setCurrentPet({
-                                ...currentPet,
-                                ten: e.target.value,
-                              });
-                              validateField("ten", e.target.value);
-                            }}
-                            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 ${
-                              formErrors.ten
-                                ? "border-red-500"
-                                : "border-slate-200"
-                            }`}
-                          />
-                          {formErrors.ten && (
-                            <p className="mt-1 text-xs text-red-600">
-                              {formErrors.ten}
-                            </p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-slate-900 mb-2">
-                            Loài *
-                          </label>
-                          <select
-                            value={currentPet.maLoai}
-                            onChange={(e) => {
-                              setCurrentPet({
-                                ...currentPet,
-                                maLoai: e.target.value,
-                                dichVuIds: [],
-                              });
-                              validateField("maLoai", e.target.value);
-                              setServicesByPetType([]);
-                            }}
-                            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 ${
-                              formErrors.maLoai
-                                ? "border-red-500"
-                                : "border-slate-200"
-                            }`}
-                          >
-                            <option value="">-- Chọn loài --</option>
-                            {petTypes.map((type) => (
-                              <option key={type.maLoai} value={type.maLoai}>
-                                {type.tenLoai}
-                              </option>
-                            ))}
-                          </select>
-                          {formErrors.maLoai && (
-                            <p className="mt-1 text-xs text-red-600">
-                              {formErrors.maLoai}
-                            </p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-slate-900 mb-2">
-                            Tuổi (năm)
-                          </label>
-                          <input
-                            type="number"
-                            placeholder="VD: 2"
-                            min="0"
-                            value={currentPet.tuoi}
-                            onChange={(e) =>
-                              setCurrentPet({
-                                ...currentPet,
-                                tuoi: e.target.value,
-                              })
-                            }
-                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-slate-900 mb-2">
-                            Đặc điểm
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="VD: Hiền lành, sợ nước..."
-                            value={currentPet.dacDiem}
-                            onChange={(e) =>
-                              setCurrentPet({
-                                ...currentPet,
-                                dacDiem: e.target.value,
-                              })
-                            }
-                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Ngày hẹn *
+                    </label>
+                    <input
+                      type="date"
+                      value={booking.ngayHen}
+                      onChange={(e) =>
+                        setBooking({
+                          ...booking,
+                          ngayHen: e.target.value,
+                          gioBatDau: "",
+                        })
+                      }
+                      min={new Date().toISOString().split("T")[0]}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-gray-900"
+                    />
                   </div>
 
-                  {/* Services Selection */}
-                  {currentPet.maLoai && servicesByPetType.length > 0 && (
-                    <div className="border-t border-slate-200 pt-6">
-                      <h2 className="text-xl font-bold text-slate-900 mb-4">
-                        Chọn Dịch Vụ
-                      </h2>
-
-                      <div className="space-y-3">
-                        {servicesByPetType.map((service) => (
-                          <label
-                            key={service.maDichVuShop}
-                            className={`block p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                              currentPet.dichVuIds.includes(
-                                service.maDichVuShop
-                              )
-                                ? "border-slate-900 bg-slate-50"
-                                : "border-slate-200 hover:border-slate-300"
-                            }`}
-                          >
-                            <div className="flex items-start gap-3">
-                              <input
-                                type="checkbox"
-                                checked={currentPet.dichVuIds.includes(
-                                  service.maDichVuShop
-                                )}
-                                onChange={() =>
-                                  handleServiceToggle(service.maDichVuShop)
-                                }
-                                className="mt-1 w-5 h-5 accent-slate-900"
-                              />
-                              <div className="flex-1">
-                                <h4 className="font-bold text-slate-900">
-                                  {service.tenDichVu}
-                                </h4>
-                                <div className="flex items-center gap-4 mt-2 text-sm text-slate-600">
-                                  <span>
-                                    {parseInt(service.gia).toLocaleString(
-                                      "vi-VN"
-                                    )}
-                                    đ
-                                  </span>
-                                  {service.thoiLuong && (
-                                    <span>{service.thoiLuong} phút</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </label>
-                        ))}
-                      </div>
-
-                      {formErrors.service && (
-                        <p className="mt-3 text-sm text-red-600">
-                          {formErrors.service}
+                  {booking.ngayHen && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Khung giờ *
+                      </label>
+                      {availableTimeSlots.length === 0 ? (
+                        <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">
+                          Đang tải khung giờ...
                         </p>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-2">
+                          {availableTimeSlots.map((slot) => (
+                            <button
+                              key={slot.gioBatDau}
+                              onClick={() =>
+                                setBooking({
+                                  ...booking,
+                                  gioBatDau: slot.gioBatDau,
+                                })
+                              }
+                              disabled={!slot.available}
+                              className={`py-3 rounded-lg font-medium text-sm transition-colors ${
+                                booking.gioBatDau === slot.gioBatDau
+                                  ? "bg-gray-900 text-white"
+                                  : slot.available
+                                  ? "bg-gray-100 text-gray-900 hover:bg-gray-200"
+                                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              }`}
+                            >
+                              {slot.gioBatDau}
+                              {!slot.available && (
+                                <div className="text-xs">Hết</div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
                       )}
                     </div>
                   )}
 
-                  <button
-                    onClick={handleAddPet}
-                    className="w-full py-3 px-4 bg-slate-100 text-slate-900 rounded-lg font-medium hover:bg-slate-200 transition-colors"
-                  >
-                    + Thêm Thú Cưng
-                  </button>
-
-                  {/* Added Pets List */}
-                  {formData.pets.length > 0 && (
-                    <div className="border-t border-slate-200 pt-6">
-                      <h3 className="font-bold text-slate-900 mb-4">
-                        Danh Sách Thú Cưng ({formData.pets.length})
-                      </h3>
-
-                      <div className="space-y-2">
-                        {formData.pets.map((pet, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center justify-between bg-slate-50 p-4 rounded-lg"
-                          >
-                            <div>
-                              <p className="font-medium text-slate-900">
-                                {pet.ten}
-                              </p>
-                              <p className="text-xs text-slate-600">
-                                {
-                                  petTypes.find(
-                                    (p) => p.maLoai === parseInt(pet.maLoai)
-                                  )?.tenLoai
-                                }
-                                {pet.tuoi && ` • ${pet.tuoi} tuổi`}
-                              </p>
-                            </div>
-                            <button
-                              onClick={() => handleRemovePet(idx)}
-                              className="text-red-600 hover:text-red-800 font-medium"
-                            >
-                              Xóa
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 pt-6 border-t border-slate-200">
-                    <button
-                      onClick={() => setStep(1)}
-                      className="flex-1 px-6 py-3 border border-slate-300 text-slate-900 rounded-lg font-medium hover:bg-slate-50 transition-colors"
-                    >
-                      Quay Lại
-                    </button>
-                    <button
-                      onClick={() => setStep(3)}
-                      disabled={formData.pets.length === 0}
-                      className="flex-1 px-6 py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Tiếp Theo
-                    </button>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Ghi chú (tùy chọn)
+                    </label>
+                    <textarea
+                      value={booking.ghiChu}
+                      onChange={(e) =>
+                        setBooking({ ...booking, ghiChu: e.target.value })
+                      }
+                      placeholder="Thêm yêu cầu đặc biệt..."
+                      rows="3"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-gray-900 resize-none"
+                    />
                   </div>
                 </div>
               )}
 
               {/* STEP 3: Confirmation */}
-              {step === 3 && (
+              {currentStep === 3 && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-bold text-slate-900">
+                  <h2 className="text-xl font-bold text-gray-900">
                     Xác Nhận Đặt Lịch
                   </h2>
 
-                  {/* Shop Info */}
-                  <div className="border border-slate-200 rounded-lg overflow-hidden">
-                    <div className="aspect-video bg-slate-200">
-                      {selectedShopData?.anhCuaHang ? (
-                        <img
-                          src={`http://localhost:5000${selectedShopData.anhCuaHang}`}
-                          alt={selectedShopData?.tenCuaHang}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-slate-200 to-slate-300">
-                          <span className="text-6xl">🏪</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-6">
-                      <h3 className="text-lg font-bold text-slate-900 mb-2">
-                        {selectedShopData?.tenCuaHang}
-                      </h3>
-                      <p className="text-slate-600 mb-4">
-                        {selectedShopData?.diaChi}
-                      </p>
-                      <p className="text-slate-900 font-medium">
-                        {selectedShopData?.soDienThoai}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Details */}
-                  <div className="bg-slate-50 rounded-lg p-6 space-y-4">
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Ngày hẹn</span>
-                      <span className="font-medium text-slate-900">
-                        {new Date(formData.ngayHen).toLocaleDateString("vi-VN")}
+                  <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Ngày hẹn:</span>
+                      <span className="font-medium text-gray-900">
+                        {new Date(booking.ngayHen).toLocaleDateString("vi-VN")}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Giờ hẹn</span>
-                      <span className="font-medium text-slate-900">
-                        {formData.gioBatDau}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Giờ hẹn:</span>
+                      <span className="font-medium text-gray-900">
+                        {booking.gioBatDau}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Số thú cưng</span>
-                      <span className="font-medium text-slate-900">
-                        {formData.pets.length}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Số thú cưng:</span>
+                      <span className="font-medium text-gray-900">
+                        {pets.length}
                       </span>
                     </div>
                   </div>
 
-                  {/* Pets Summary */}
                   <div>
-                    <h4 className="font-bold text-slate-900 mb-3">
-                      Thú Cưng & Dịch Vụ
-                    </h4>
+                    <h3 className="font-bold text-gray-900 mb-3">
+                      Chi tiết dịch vụ:
+                    </h3>
                     <div className="space-y-3">
-                      {formData.pets.map((pet, idx) => (
-                        <div key={idx} className="bg-slate-50 rounded-lg p-4">
-                          <p className="font-medium text-slate-900 mb-2">
-                            {pet.ten}
-                          </p>
-                          <ul className="text-sm text-slate-600 space-y-1">
-                            {pet.dichVuIds.map((serviceId) => {
-                              const service = servicesByPetType.find(
-                                (s) => s.maDichVuShop === serviceId
-                              );
-                              return (
-                                <li key={serviceId}>
-                                  • {service?.tenDichVu} (
-                                  {parseInt(service?.gia).toLocaleString(
-                                    "vi-VN"
-                                  )}
-                                  đ)
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </div>
-                      ))}
+                      {pets.map((pet) => {
+                        const petType = petTypes.find(
+                          (t) => t.maLoai === parseInt(pet.maLoai)
+                        );
+                        return (
+                          <div
+                            key={pet.id}
+                            className="bg-blue-50 rounded-lg p-4"
+                          >
+                            <p className="font-medium text-gray-900 mb-2">
+                              {pet.ten} ({petType?.tenLoai})
+                            </p>
+                            <ul className="text-sm text-gray-700 space-y-1">
+                              {pet.dichVuIds.map((serviceId) => {
+                                const service = availableServices.find(
+                                  (s) => s.maDichVuShop === serviceId
+                                );
+                                return service ? (
+                                  <li
+                                    key={serviceId}
+                                    className="flex justify-between"
+                                  >
+                                    <span>• {service.tenDichVu}</span>
+                                    <span className="font-medium">
+                                      {parseInt(service.gia).toLocaleString(
+                                        "vi-VN"
+                                      )}
+                                      đ
+                                    </span>
+                                  </li>
+                                ) : null;
+                              })}
+                            </ul>
+                          </div>
+                        );
+                      })}
                     </div>
-                  </div>
-
-                  <div className="flex gap-3 pt-6 border-t border-slate-200">
-                    <button
-                      onClick={() => setStep(2)}
-                      className="flex-1 px-6 py-3 border border-slate-300 text-slate-900 rounded-lg font-medium hover:bg-slate-50 transition-colors"
-                    >
-                      Quay Lại
-                    </button>
-                    <button
-                      onClick={handleSubmit}
-                      disabled={loading}
-                      className="flex-1 px-6 py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      {loading ? "Đang xử lý..." : "Xác Nhận Đặt Lịch"}
-                    </button>
                   </div>
                 </div>
               )}
+
+              {/* Navigation Buttons */}
+              <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
+                {currentStep > 1 && (
+                  <button
+                    onClick={() => setCurrentStep(currentStep - 1)}
+                    className="flex-1 py-3 border-2 border-gray-300 text-gray-900 rounded-lg font-medium hover:bg-gray-50"
+                  >
+                    ← Quay Lại
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    if (currentStep === 1 && pets.length === 0) {
+                      setError("Vui lòng thêm ít nhất 1 thú cưng");
+                      return;
+                    }
+                    if (
+                      currentStep === 2 &&
+                      (!booking.ngayHen || !booking.gioBatDau)
+                    ) {
+                      setError("Vui lòng chọn ngày và giờ");
+                      return;
+                    }
+                    if (currentStep < 3) {
+                      setCurrentStep(currentStep + 1);
+                    } else {
+                      handleSubmit();
+                    }
+                  }}
+                  disabled={loading || (currentStep === 1 && !selectedShop)}
+                  className="flex-1 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading
+                    ? "Đang xử lý..."
+                    : currentStep === 3
+                    ? "Xác Nhận Đặt Lịch"
+                    : "Tiếp Theo →"}
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Sidebar */}
+          {/* RIGHT COLUMN - Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-8">
-              <h3 className="text-lg font-bold text-slate-900 mb-6">Tóm Tắt</h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-24">
+              <h3 className="text-lg font-bold text-gray-900 mb-6">
+                📋 Tóm Tắt
+              </h3>
 
-              <div className="space-y-4 pb-6 border-b border-slate-200">
-                <div className="flex justify-between text-slate-600">
-                  <span>Cửa hàng</span>
-                  <span className="font-medium text-slate-900">
-                    {selectedShopData?.tenCuaHang || "---"}
+              <div className="space-y-4 pb-4 border-b border-gray-200">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Cửa hàng:</span>
+                  <span className="font-medium text-gray-900 text-right max-w-[60%]">
+                    {selectedShop?.tenCuaHang || "---"}
                   </span>
                 </div>
-
-                {formData.ngayHen && (
-                  <>
-                    <div className="flex justify-between text-slate-600">
-                      <span>Ngày hẹn</span>
-                      <span className="font-medium text-slate-900">
-                        {new Date(formData.ngayHen).toLocaleDateString("vi-VN")}
-                      </span>
-                    </div>
-
-                    {formData.gioBatDau && (
-                      <div className="flex justify-between text-slate-600">
-                        <span>Giờ hẹn</span>
-                        <span className="font-medium text-slate-900">
-                          {formData.gioBatDau}
-                        </span>
-                      </div>
-                    )}
-                  </>
+                {booking.ngayHen && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Ngày hẹn:</span>
+                    <span className="font-medium text-gray-900">
+                      {new Date(booking.ngayHen).toLocaleDateString("vi-VN")}
+                    </span>
+                  </div>
                 )}
-
-                <div className="flex justify-between text-slate-600">
-                  <span>Thú cưng</span>
-                  <span className="font-medium text-slate-900">
-                    {formData.pets.length} con
+                {booking.gioBatDau && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Giờ hẹn:</span>
+                    <span className="font-medium text-gray-900">
+                      {booking.gioBatDau}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Thú cưng:</span>
+                  <span className="font-medium text-gray-900">
+                    {pets.length} con
                   </span>
                 </div>
               </div>
 
-              <div className="pt-6">
+              <div className="pt-4">
                 <div className="flex justify-between items-baseline mb-2">
-                  <span className="text-slate-600">Tổng tiền</span>
-                  <span className="text-2xl font-bold text-slate-900">
-                    {calculateTotalPrice().toLocaleString("vi-VN")}đ
+                  <span className="text-gray-600">Tổng tiền:</span>
+                  <span className="text-2xl font-bold text-gray-900">
+                    {calculateTotal().toLocaleString("vi-VN")}đ
                   </span>
                 </div>
-                <p className="text-xs text-slate-500">Bao gồm tất cả dịch vụ</p>
+                <p className="text-xs text-gray-500">Bao gồm tất cả dịch vụ</p>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-bold text-gray-900 mb-2 text-sm">
+                    💡 Lưu ý
+                  </h4>
+                  <ul className="text-xs text-gray-700 space-y-1">
+                    <li>✓ Đến đúng giờ hẹn</li>
+                    <li>✓ Mang theo sổ tiêm chủng</li>
+                    <li>✓ Có thể hủy trước 24h</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Shop Selector Modal */}
+      {shopModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Chọn Cửa Hàng
+                </h2>
+                <button
+                  onClick={() => setShopModalOpen(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm cửa hàng, địa chỉ..."
+                  value={shopSearchTerm}
+                  onChange={(e) => setShopSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-gray-900"
+                />
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl">
+                  🔍
+                </span>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {filteredShops.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">🔍</div>
+                  <p className="text-gray-600">Không tìm thấy cửa hàng nào</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredShops.map((shop) => (
+                    <button
+                      key={shop.maCuaHang}
+                      onClick={() => handleShopSelect(shop)}
+                      className="bg-white border-2 border-gray-200 rounded-xl p-4 text-left hover:border-gray-900 hover:shadow-lg transition-all"
+                    >
+                      <div className="flex gap-4">
+                        <div className="w-24 h-24 shrink-0 bg-gray-100 rounded-lg overflow-hidden">
+                          {shop.anhCuaHang ? (
+                            <img
+                              src={`http://localhost:5000${shop.anhCuaHang}`}
+                              alt={shop.tenCuaHang}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-3xl">
+                              🏪
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-gray-900 mb-1 line-clamp-1">
+                            {shop.tenCuaHang}
+                          </h3>
+                          <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                            📍 {shop.diaChi}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            📞 {shop.soDienThoai}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
