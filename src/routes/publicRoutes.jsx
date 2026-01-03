@@ -1,15 +1,20 @@
 // src/routes/publicRoutes.jsx
-import ProtectedRoute from "../components/common/ProtectedRoute";
+import ProtectedRoute from "@/components/common/ProtectedRoute";
 
 // Public Pages
-import HomePage from "../pages/home/HomePage";
-import ShopServiceDetail from "../pages/services/ShopServiceDetail";
-import ServiceDetail from "../pages/services/ServiceDetail";
+import HomePage from "@/pages/home/HomePage";
+import ShopServiceDetail from "@/pages/services/ShopServiceDetail";
+import ServiceDetail from "@/pages/services/ServiceDetail";
+import SearchResults from "@/pages/search/SearchResults";
 
 export const publicRoutes = [
   {
     index: true,
     element: <HomePage />,
+  },
+  {
+    path: "search",
+    element: <SearchResults />,
   },
   {
     path: "service/:serviceId",
