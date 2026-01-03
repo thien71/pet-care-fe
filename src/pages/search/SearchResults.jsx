@@ -13,7 +13,6 @@ import {
   FaPaw,
   FaChevronLeft,
   FaChevronRight,
-  FaDollarSign,
 } from "react-icons/fa";
 
 const SearchResults = () => {
@@ -108,15 +107,24 @@ const SearchResults = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleApplyFilters = () => {
+  // ⭐ AUTO-APPLY: Khi thay đổi filter, tự động áp dụng
+  const handlePriceRangeChange = (min, max) => {
+    setPriceRange({ min, max });
     setCurrentPage(1);
     updateSearchParams({
-      minPrice: priceRange.min,
-      maxPrice: priceRange.max,
-      petType: selectedPetType,
+      minPrice: min,
+      maxPrice: max,
       page: 1,
     });
-    setShowFilters(false);
+  };
+
+  const handlePetTypeChange = (petType) => {
+    setSelectedPetType(petType);
+    setCurrentPage(1);
+    updateSearchParams({
+      petType,
+      page: 1,
+    });
   };
 
   const handleClearFilters = () => {
@@ -160,12 +168,12 @@ const SearchResults = () => {
             </button>
           </div>
 
-          {/* Filters & Sort Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Filters & Sort Bar - ⭐ MOVED TO LEFT */}
+          <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition lg:hidden ${
                   hasActiveFilters
                     ? "bg-[#8e2800] text-white"
                     : "bg-gray-100 hover:bg-gray-200 text-gray-700"
@@ -189,22 +197,24 @@ const SearchResults = () => {
                   Xóa bộ lọc
                 </button>
               )}
-            </div>
 
-            <div className="flex items-center gap-3">
-              <FaSortAmountDown className="text-gray-500" />
-              <select
-                value={sortBy}
-                onChange={(e) => handleSortChange(e.target.value)}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 focus:outline-none cursor-pointer"
-              >
-                <option value="newest">Mới nhất</option>
-                <option value="price_asc">Giá thấp → cao</option>
-                <option value="price_desc">Giá cao → thấp</option>
-                <option value="rating">Đánh giá cao</option>
-              </select>
+              {/* ⭐ SORT MOVED HERE */}
+              <div className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 rounded-lg px-4 py-2">
+                <FaSortAmountDown className="text-gray-500" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => handleSortChange(e.target.value)}
+                  className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none cursor-pointer"
+                >
+                  <option value="newest">Mới nhất</option>
+                  <option value="price_asc">Giá thấp → cao</option>
+                  <option value="price_desc">Giá cao → thấp</option>
+                  <option value="rating">Đánh giá cao</option>
+                </select>
+              </div>
 
-              <div className="text-sm text-gray-600">
+              {/* ⭐ RESULT COUNT MOVED HERE */}
+              <div className="text-sm text-gray-600 bg-gray-100 px-4 py-2 rounded-lg">
                 <span className="font-medium">{total}</span> kết quả
               </div>
             </div>
@@ -232,25 +242,17 @@ const SearchResults = () => {
 
               <FilterPanel
                 priceRange={priceRange}
-                setPriceRange={setPriceRange}
+                onPriceRangeChange={handlePriceRangeChange}
                 selectedPetType={selectedPetType}
-                setSelectedPetType={setSelectedPetType}
+                onPetTypeChange={handlePetTypeChange}
               />
 
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={handleClearFilters}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition"
-                >
-                  Xóa
-                </button>
-                <button
-                  onClick={handleApplyFilters}
-                  className="flex-1 px-4 py-3 bg-[#8e2800] hover:bg-[#6d1f00] text-white rounded-lg font-medium transition"
-                >
-                  Áp dụng
-                </button>
-              </div>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="w-full mt-6 px-4 py-3 bg-[#8e2800] hover:bg-[#6d1f00] text-white rounded-lg font-medium transition"
+              >
+                Xem kết quả
+              </button>
             </div>
           </div>
         </div>
@@ -261,34 +263,27 @@ const SearchResults = () => {
           {/* Desktop Filter Sidebar */}
           <aside className="hidden lg:block w-64 shrink-0">
             <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <FaFilter className="text-[#8e2800]" />
-                Bộ lọc
-              </h3>
-
-              <FilterPanel
-                priceRange={priceRange}
-                setPriceRange={setPriceRange}
-                selectedPetType={selectedPetType}
-                setSelectedPetType={setSelectedPetType}
-              />
-
-              <div className="flex flex-col gap-3 mt-6">
-                <button
-                  onClick={handleApplyFilters}
-                  className="w-full px-4 py-3 bg-[#8e2800] hover:bg-[#6d1f00] text-white rounded-lg font-medium transition"
-                >
-                  Áp dụng bộ lọc
-                </button>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <FaFilter className="text-[#8e2800]" />
+                  Bộ lọc
+                </h3>
                 {hasActiveFilters && (
                   <button
                     onClick={handleClearFilters}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition"
+                    className="text-xs text-[#8e2800] hover:underline font-medium"
                   >
-                    Xóa bộ lọc
+                    Xóa tất cả
                   </button>
                 )}
               </div>
+
+              <FilterPanel
+                priceRange={priceRange}
+                onPriceRangeChange={handlePriceRangeChange}
+                selectedPetType={selectedPetType}
+                onPetTypeChange={handlePetTypeChange}
+              />
             </div>
           </aside>
 
@@ -406,84 +401,33 @@ const SearchResults = () => {
   );
 };
 
-// Filter Panel Component
+// Filter Panel Component - ⭐ AUTO-APPLY khi tick
 const FilterPanel = ({
   priceRange,
-  setPriceRange,
+  onPriceRangeChange,
   selectedPetType,
-  setSelectedPetType,
+  onPetTypeChange,
 }) => {
   const petTypes = [
+    { value: "", label: "Tất cả" },
     { value: "cho", label: "Chó" },
     { value: "meo", label: "Mèo" },
     { value: "chim", label: "Chim" },
     { value: "hamster", label: "Hamster" },
     { value: "tho", label: "Thỏ" },
+    { value: "rua", label: "Rùa" },
   ];
 
   const priceRanges = [
-    { label: "Dưới 100k", min: 0, max: 100000 },
-    { label: "100k - 200k", min: 100000, max: 200000 },
-    { label: "200k - 500k", min: 200000, max: 500000 },
-    { label: "Trên 500k", min: 500000, max: 999999999 },
+    { label: "Tất cả", min: "", max: "" },
+    { label: "Dưới 100k", min: "0", max: "100000" },
+    { label: "100k - 200k", min: "100000", max: "200000" },
+    { label: "200k - 500k", min: "200000", max: "500000" },
+    { label: "Trên 500k", min: "500000", max: "999999999" },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Price Range */}
-      <div>
-        <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-          <FaDollarSign className="text-[#8e2800]" />
-          Khoảng giá
-        </h4>
-        <div className="space-y-2">
-          {priceRanges.map((range) => (
-            <label
-              key={range.label}
-              className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition"
-            >
-              <input
-                type="radio"
-                name="priceRange"
-                checked={
-                  priceRange.min == range.min && priceRange.max == range.max
-                }
-                onChange={() =>
-                  setPriceRange({ min: range.min, max: range.max })
-                }
-                className="w-4 h-4 text-[#8e2800] focus:ring-[#8e2800]"
-              />
-              <span className="text-sm text-gray-700">{range.label}</span>
-            </label>
-          ))}
-        </div>
-
-        <div className="mt-3 pt-3 border-t border-gray-200">
-          <p className="text-xs text-gray-600 mb-2">Hoặc nhập khoảng giá:</p>
-          <div className="flex gap-2">
-            <input
-              type="number"
-              placeholder="Từ"
-              value={priceRange.min}
-              onChange={(e) =>
-                setPriceRange({ ...priceRange, min: e.target.value })
-              }
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#8e2800]"
-            />
-            <span className="text-gray-400">-</span>
-            <input
-              type="number"
-              placeholder="Đến"
-              value={priceRange.max}
-              onChange={(e) =>
-                setPriceRange({ ...priceRange, max: e.target.value })
-              }
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#8e2800]"
-            />
-          </div>
-        </div>
-      </div>
-
       {/* Pet Type */}
       <div>
         <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
@@ -500,22 +444,12 @@ const FilterPanel = ({
                 type="radio"
                 name="petType"
                 checked={selectedPetType === type.value}
-                onChange={() => setSelectedPetType(type.value)}
+                onChange={() => onPetTypeChange(type.value)}
                 className="w-4 h-4 text-[#8e2800] focus:ring-[#8e2800]"
               />
               <span className="text-sm text-gray-700">{type.label}</span>
             </label>
           ))}
-          <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition">
-            <input
-              type="radio"
-              name="petType"
-              checked={selectedPetType === ""}
-              onChange={() => setSelectedPetType("")}
-              className="w-4 h-4 text-[#8e2800] focus:ring-[#8e2800]"
-            />
-            <span className="text-sm text-gray-700">Tất cả</span>
-          </label>
         </div>
       </div>
     </div>
