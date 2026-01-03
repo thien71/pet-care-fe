@@ -1,6 +1,4 @@
-"use client";
-
-// src/pages/services/ShopServiceDetail.jsx - TRANG MỚI
+// src/pages/services/ShopServiceDetail.jsx - UPDATED
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -42,10 +40,12 @@ const ShopServiceDetail = () => {
       return;
     }
 
+    // ⭐ Navigate với đầy đủ thông tin pre-fill
     navigate("/customer/booking", {
       state: {
         preselectedShop: service.shop.maCuaHang,
-        preselectedService: serviceId,
+        preselectedServiceId: parseInt(serviceId),
+        preselectedServiceName: service.tenDichVu, // Để detect pet type
       },
     });
   };
@@ -98,14 +98,14 @@ const ShopServiceDetail = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-12">
-        {/* Service Detail Section - Image Left, Content Right */}
+        {/* Service Detail Section */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-16">
           {/* Left: Service Image */}
           <div className="lg:col-span-2">
             <div className="bg-gray-200 rounded-2xl overflow-hidden shadow-lg h-96 flex items-center justify-center sticky top-20">
-              {service.anhCuaHang ? (
+              {service.shop.anhCuaHang ? (
                 <img
-                  src={`http://localhost:5000${service.anhCuaHang}`}
+                  src={`http://localhost:5000${service.shop.anhCuaHang}`}
                   alt={service.tenDichVu}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -184,7 +184,7 @@ const ShopServiceDetail = () => {
                 className="w-full text-white py-5 rounded-xl font-bold text-base transition hover:opacity-90 shadow-lg h-full"
                 style={{ backgroundColor: "#8e2800" }}
               >
-                📅 {isAuthenticated ? "Đặt Lịch" : "Đăng nhập"}
+                📅 {isAuthenticated ? "Đặt Lịch Ngay" : "Đăng nhập để đặt"}
               </button>
             </div>
 
@@ -196,30 +196,25 @@ const ShopServiceDetail = () => {
           </div>
         </div>
 
-        {/* Shop Info Section - Horizontal Row */}
+        {/* Shop Info Section */}
         <div className="mb-16">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
             🏪 Thông Tin Cửa Hàng
           </h2>
           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-md">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Shop Name */}
               <div>
                 <p className="text-gray-600 text-sm mb-1">Tên cửa hàng</p>
                 <p className="text-lg font-bold text-gray-900 line-clamp-2">
                   {service.shop.tenCuaHang}
                 </p>
               </div>
-
-              {/* Address */}
               <div>
                 <p className="text-gray-600 text-sm mb-1">📍 Địa chỉ</p>
                 <p className="text-sm text-gray-700 line-clamp-2">
                   {service.shop.diaChi}
                 </p>
               </div>
-
-              {/* View Shop */}
               <div className="flex items-end">
                 <Link
                   to={`/shop/${service.shop.maCuaHang}`}
@@ -230,8 +225,6 @@ const ShopServiceDetail = () => {
                 </Link>
               </div>
             </div>
-
-            {/* Shop Description */}
             {service.shop.moTa && (
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <p className="text-gray-700 text-sm">
@@ -248,10 +241,7 @@ const ShopServiceDetail = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
             ⭐ Đánh Giá & Nhận Xét
           </h2>
-
-          {/* Rating Overview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {/* Overall Rating */}
             <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200 text-center">
               <p
                 className="text-5xl font-bold mb-2"
@@ -272,8 +262,6 @@ const ShopServiceDetail = () => {
                 {service.reviewCount || 0} đánh giá
               </p>
             </div>
-
-            {/* Rating Distribution */}
             <div className="md:col-span-2 bg-gray-50 rounded-2xl p-6 border border-gray-200">
               <p className="font-bold text-gray-900 mb-4">Phân bố đánh giá</p>
               {[5, 4, 3, 2, 1].map((star) => (
@@ -285,9 +273,6 @@ const ShopServiceDetail = () => {
                     className="progress progress-warning flex-1"
                     value={star * 20}
                     max="100"
-                    style={{
-                      "--progress-color": "#8e2800",
-                    }}
                   />
                   <span className="text-xs text-gray-500 w-12 text-right">
                     {Math.floor(Math.random() * 30)}%
@@ -296,8 +281,6 @@ const ShopServiceDetail = () => {
               ))}
             </div>
           </div>
-
-          {/* Reviews List */}
           <div className="space-y-4">
             {service.reviews && service.reviews.length > 0 ? (
               service.reviews.map((review, idx) => (
@@ -316,7 +299,6 @@ const ShopServiceDetail = () => {
                         </span>
                       </div>
                     </div>
-
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-2">
                         <div>
@@ -350,13 +332,12 @@ const ShopServiceDetail = () => {
           </div>
         </div>
 
-        {/* Related Services Section */}
+        {/* Related Services */}
         {service.otherServices && service.otherServices.length > 0 && (
           <div className="mb-16">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
               ✨ Các Dịch Vụ Khác Của Cửa Hàng
             </h2>
-
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {service.otherServices.map((s) => (
                 <Link
@@ -364,27 +345,21 @@ const ShopServiceDetail = () => {
                   to={`/service/${s.maDichVuShop}`}
                   className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all cursor-pointer"
                 >
-                  {/* Service Image */}
                   <div className="h-40 bg-gray-200 flex items-center justify-center overflow-hidden">
                     {s.anhCuaHang ? (
                       <img
                         src={`http://localhost:5000${s.anhCuaHang}`}
                         alt={s.tenDichVu}
                         className="w-full h-full object-cover hover:scale-105 transition-transform"
-                        onError={(e) => {
-                          e.target.src = `/placeholder.svg?height=160&width=300&query=${s.tenDichVu}`;
-                        }}
                       />
                     ) : (
                       <span className="text-4xl">✨</span>
                     )}
                   </div>
-
                   <div className="p-4">
                     <h3 className="font-bold text-gray-900 line-clamp-2 mb-2">
                       {s.tenDichVu}
                     </h3>
-
                     <div className="flex justify-between items-center">
                       <span
                         className="font-bold text-lg"
@@ -406,7 +381,6 @@ const ShopServiceDetail = () => {
         )}
       </div>
 
-      {/* Footer Spacing */}
       <div className="h-12" />
     </div>
   );
