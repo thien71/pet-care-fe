@@ -1,6 +1,17 @@
-// src/pages/owner/OwnerBookingManagement.jsx - QUẢN LÝ ĐƠN HÀNG
 import { useState, useEffect } from "react";
 import apiClient from "../../api/apiClient";
+import {
+  FaCalendar,
+  FaUser,
+  FaPaw,
+  FaDollarSign,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaUserMd,
+  FaEye,
+  FaClock,
+  FaSpinner,
+} from "react-icons/fa";
 
 const OwnerBookingManagement = () => {
   const [bookings, setBookings] = useState([]);
@@ -61,9 +72,7 @@ const OwnerBookingManagement = () => {
       setLoading(true);
       await apiClient.put(
         `/booking/${selectedBooking.maLichHen}/assign-technician`,
-        {
-          maNhanVien: parseInt(assignTechId),
-        }
+        { maNhanVien: parseInt(assignTechId) }
       );
       setSuccess("Gán kỹ thuật viên thành công!");
       setShowAssignModal(false);
@@ -106,14 +115,35 @@ const OwnerBookingManagement = () => {
 
   const getStatusBadge = (status) => {
     const badges = {
-      CHO_XAC_NHAN: { class: "badge-warning", label: "Chờ xác nhận" },
-      DA_XAC_NHAN: { class: "badge-info", label: "Đã xác nhận" },
-      DANG_THUC_HIEN: { class: "badge-primary", label: "Đang thực hiện" },
-      HOAN_THANH: { class: "badge-success", label: "Hoàn thành" },
-      HUY: { class: "badge-error", label: "Đã hủy" },
+      CHO_XAC_NHAN: {
+        class: "bg-yellow-100 text-yellow-700 border-yellow-300",
+        label: "Chờ xác nhận",
+      },
+      DA_XAC_NHAN: {
+        class: "bg-blue-100 text-blue-700 border-blue-300",
+        label: "Đã xác nhận",
+      },
+      DANG_THUC_HIEN: {
+        class: "bg-purple-100 text-purple-700 border-purple-300",
+        label: "Đang thực hiện",
+      },
+      HOAN_THANH: {
+        class: "bg-green-100 text-green-700 border-green-300",
+        label: "Hoàn thành",
+      },
+      HUY: { class: "bg-red-100 text-red-700 border-red-300", label: "Đã hủy" },
     };
-    const badge = badges[status] || { class: "", label: status };
-    return <span className={`badge ${badge.class}`}>{badge.label}</span>;
+    const badge = badges[status] || {
+      class: "bg-gray-100 text-gray-700 border-gray-300",
+      label: status,
+    };
+    return (
+      <span
+        className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border ${badge.class}`}
+      >
+        {badge.label}
+      </span>
+    );
   };
 
   const getTechnicianEmployees = () => {
@@ -122,10 +152,18 @@ const OwnerBookingManagement = () => {
     );
   };
 
+  const filterButtons = [
+    { value: "CHO_XAC_NHAN", label: "Chờ xác nhận" },
+    { value: "DA_XAC_NHAN", label: "Đã xác nhận" },
+    { value: "DANG_THUC_HIEN", label: "Đang thực hiện" },
+    { value: "HOAN_THANH", label: "Hoàn thành" },
+    { value: "HUY", label: "Đã hủy" },
+  ];
+
   if (loading && bookings.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
+        <FaSpinner className="animate-spin text-4xl text-[#8e2800]" />
       </div>
     );
   }
@@ -133,166 +171,182 @@ const OwnerBookingManagement = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">📋 Quản Lý Đặt Hẹn</h1>
-        <p className="text-gray-600 mt-2">
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h1 className="text-2xl font-bold text-gray-800">Quản Lý Đặt Hẹn</h1>
+        <p className="text-gray-600 mt-1">
           Xử lý các đơn đặt lịch từ khách hàng
         </p>
       </div>
 
       {/* Success Alert */}
       {success && (
-        <div className="alert alert-success">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
+          <FaCheckCircle className="text-green-600 text-xl" />
+          <span className="text-green-800">{success}</span>
+          <button
+            onClick={() => setSuccess("")}
+            className="ml-auto text-green-600 hover:text-green-800"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>{success}</span>
+            <FaTimesCircle />
+          </button>
         </div>
       )}
 
       {/* Error Alert */}
       {error && (
-        <div className="alert alert-error">
-          <span>{error}</span>
-          <button onClick={() => setError("")} className="btn btn-sm btn-ghost">
-            ✕
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
+          <FaTimesCircle className="text-red-600 text-xl" />
+          <span className="text-red-800">{error}</span>
+          <button
+            onClick={() => setError("")}
+            className="ml-auto text-red-600 hover:text-red-800"
+          >
+            <FaTimesCircle />
           </button>
         </div>
       )}
 
       {/* Filter Tabs */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <div className="tabs tabs-boxed">
-            {[
-              { value: "CHO_XAC_NHAN", label: "Chờ Xác Nhận" },
-              { value: "DA_XAC_NHAN", label: "Đã Xác Nhận" },
-              { value: "DANG_THUC_HIEN", label: "Đang Thực Hiện" },
-              { value: "HOAN_THANH", label: "Hoàn Thành" },
-              { value: "HUY", label: "Đã Hủy" },
-            ].map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => setFilter(tab.value)}
-                className={`tab ${filter === tab.value ? "tab-active" : ""}`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="flex flex-wrap gap-2">
+          {filterButtons.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setFilter(tab.value)}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                filter === tab.value
+                  ? "bg-[#8e2800] text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="stat bg-base-100 shadow rounded-lg">
-          <div className="stat-title">Chờ xác nhận</div>
-          <div className="stat-value text-warning">
-            {bookings.filter((b) => b.trangThai === "CHO_XAC_NHAN").length}
+        {[
+          {
+            label: "Chờ xác nhận",
+            value: bookings.filter((b) => b.trangThai === "CHO_XAC_NHAN")
+              .length,
+            color: "yellow",
+          },
+          {
+            label: "Đang thực hiện",
+            value: bookings.filter((b) => b.trangThai === "DANG_THUC_HIEN")
+              .length,
+            color: "purple",
+          },
+          {
+            label: "Hoàn thành",
+            value: bookings.filter((b) => b.trangThai === "HOAN_THANH").length,
+            color: "green",
+          },
+          { label: "Tổng đơn", value: bookings.length, color: "gray" },
+        ].map((stat, idx) => (
+          <div
+            key={idx}
+            className="bg-white border border-gray-200 rounded-lg p-6"
+          >
+            <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
+            <p className={`text-3xl font-bold text-${stat.color}-600`}>
+              {stat.value}
+            </p>
           </div>
-        </div>
-        <div className="stat bg-base-100 shadow rounded-lg">
-          <div className="stat-title">Đang thực hiện</div>
-          <div className="stat-value text-primary">
-            {bookings.filter((b) => b.trangThai === "DANG_THUC_HIEN").length}
-          </div>
-        </div>
-        <div className="stat bg-base-100 shadow rounded-lg">
-          <div className="stat-title">Hoàn thành</div>
-          <div className="stat-value text-success">
-            {bookings.filter((b) => b.trangThai === "HOAN_THANH").length}
-          </div>
-        </div>
-        <div className="stat bg-base-100 shadow rounded-lg">
-          <div className="stat-title">Tổng đơn</div>
-          <div className="stat-value">{bookings.length}</div>
-        </div>
+        ))}
       </div>
 
       {/* Bookings List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {bookings.length > 0 ? (
-          bookings.map((booking) => (
-            <div key={booking.maLichHen} className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="card-title text-lg">#{booking.maLichHen}</h3>
+      {bookings.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {bookings.map((booking) => (
+            <div
+              key={booking.maLichHen}
+              className="bg-white border border-gray-200 rounded-lg hover:border-[#8e2800] transition-colors"
+            >
+              <div className="p-6 space-y-4">
+                {/* Header */}
+                <div className="flex justify-between items-start">
+                  <h3 className="text-lg font-bold text-gray-800">
+                    #{booking.maLichHen}
+                  </h3>
                   {getStatusBadge(booking.trangThai)}
                 </div>
 
+                {/* Customer Info */}
                 <div className="space-y-2 text-sm">
-                  <div className="flex items-start gap-2">
-                    <span>👤</span>
+                  <div className="flex items-start gap-3">
+                    <FaUser className="text-[#8e2800] mt-1 shrink-0" />
                     <div>
-                      <p className="font-semibold">
+                      <p className="font-semibold text-gray-800">
                         {booking.KhachHang?.hoTen}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-gray-600">
                         {booking.KhachHang?.soDienThoai}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span>📅</span>
-                    <span>
+                  <div className="flex items-center gap-3">
+                    <FaCalendar className="text-[#8e2800]" />
+                    <span className="text-gray-700">
                       {new Date(booking.ngayHen).toLocaleString("vi-VN")}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span>🐾</span>
-                    <span>{booking.LichHenThuCungs?.length || 0} thú cưng</span>
+                  <div className="flex items-center gap-3">
+                    <FaPaw className="text-[#8e2800]" />
+                    <span className="text-gray-700">
+                      {booking.LichHenThuCungs?.length || 0} thú cưng
+                    </span>
                   </div>
 
                   {booking.NhanVien && (
-                    <div className="flex items-center gap-2">
-                      <span>👨‍🔧</span>
-                      <span>{booking.NhanVien.hoTen}</span>
+                    <div className="flex items-center gap-3">
+                      <FaUserMd className="text-[#8e2800]" />
+                      <span className="text-gray-700">
+                        {booking.NhanVien.hoTen}
+                      </span>
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2">
-                    <span>💰</span>
-                    <span className="font-bold text-primary">
+                  <div className="flex items-center gap-3">
+                    <FaDollarSign className="text-[#8e2800]" />
+                    <span className="font-bold text-[#8e2800]">
                       {parseInt(booking.tongTien).toLocaleString("vi-VN")}đ
                     </span>
                   </div>
                 </div>
 
-                <div className="card-actions justify-end mt-4 gap-2">
+                {/* Actions */}
+                <div className="flex justify-center flex-wrap gap-2 pt-4 border-t border-gray-200">
                   <button
                     onClick={() => openDetailModal(booking)}
-                    className="btn btn-sm btn-ghost"
+                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
                   >
-                    👁️ Chi tiết
+                    <FaEye />
                   </button>
 
                   {booking.trangThai === "CHO_XAC_NHAN" && (
                     <>
                       <button
                         onClick={() => handleConfirm(booking.maLichHen)}
-                        className="btn btn-sm btn-success"
+                        className="flex items-center gap-2 px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium"
                       >
-                        ✅ Xác nhận
+                        <FaCheckCircle />
+                        Xác nhận
                       </button>
                       <button
                         onClick={() =>
                           handleUpdateStatus(booking.maLichHen, "HUY")
                         }
-                        className="btn btn-sm btn-error"
+                        className="flex items-center gap-2 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium"
                       >
-                        ❌ Hủy
+                        <FaTimesCircle />
+                        Hủy
                       </button>
                     </>
                   )}
@@ -301,78 +355,91 @@ const OwnerBookingManagement = () => {
                     booking.trangThai === "DANG_THUC_HIEN") && (
                     <button
                       onClick={() => openAssignModal(booking)}
-                      className="btn btn-sm btn-info"
+                      className="flex items-center gap-2 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
                     >
-                      👨‍🔧 Gán KTV
+                      <FaUserMd />
+                      Gán KTV
                     </button>
                   )}
                 </div>
               </div>
             </div>
-          ))
-        ) : (
-          <div className="col-span-3 text-center py-12">
-            <p className="text-gray-500 text-lg">Không có đơn hàng nào</p>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
+          <FaClock className="mx-auto text-6xl text-gray-300 mb-4" />
+          <p className="text-gray-500 text-lg">Không có đơn hàng nào</p>
+        </div>
+      )}
 
       {/* Detail Modal */}
       {showDetailModal && selectedBooking && (
-        <div className="modal modal-open">
-          <div className="modal-box w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="font-bold text-lg mb-4">
-              📋 Chi Tiết Đơn #{selectedBooking.maLichHen}
-            </h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-xl font-bold text-gray-800">
+                Chi Tiết Đơn #{selectedBooking.maLichHen}
+              </h3>
+            </div>
 
-            <div className="space-y-4">
-              {/* Customer Info */}
-              <div className="card bg-base-200">
-                <div className="card-body p-4">
-                  <h4 className="font-bold">👤 Khách Hàng</h4>
-                  <p>{selectedBooking.KhachHang?.hoTen}</p>
-                  <p className="text-sm">
-                    {selectedBooking.KhachHang?.soDienThoai}
-                  </p>
-                  <p className="text-sm">{selectedBooking.KhachHang?.email}</p>
-                </div>
+            <div className="p-6 space-y-4">
+              {/* Customer */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <FaUser className="text-[#8e2800]" />
+                  Khách Hàng
+                </h4>
+                <p className="text-gray-700">
+                  {selectedBooking.KhachHang?.hoTen}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {selectedBooking.KhachHang?.soDienThoai}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {selectedBooking.KhachHang?.email}
+                </p>
               </div>
 
               {/* Pets & Services */}
-              <div className="card bg-base-200">
-                <div className="card-body p-4">
-                  <h4 className="font-bold">🐾 Thú Cưng & Dịch Vụ</h4>
-                  {selectedBooking.LichHenThuCungs?.map((pet, idx) => (
-                    <div key={idx} className="mt-2 p-2 bg-base-100 rounded">
-                      <p className="font-semibold">
-                        {pet.ten} - {pet.LoaiThuCung?.tenLoai}
-                      </p>
-                      <div className="ml-4 mt-1 space-y-1">
-                        {pet.LichHenChiTiets?.map((detail, i) => (
-                          <div key={i} className="text-sm flex justify-between">
-                            <span>
-                              • {detail.DichVuCuaShop?.DichVuHeThong?.tenDichVu}
-                            </span>
-                            <span className="font-semibold">
-                              {parseInt(detail.gia).toLocaleString("vi-VN")}đ
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <FaPaw className="text-[#8e2800]" />
+                  Thú Cưng & Dịch Vụ
+                </h4>
+                {selectedBooking.LichHenThuCungs?.map((pet, idx) => (
+                  <div
+                    key={idx}
+                    className="mt-2 p-3 bg-white border border-gray-200 rounded-lg"
+                  >
+                    <p className="font-semibold text-gray-800">
+                      {pet.ten} - {pet.LoaiThuCung?.tenLoai}
+                    </p>
+                    <div className="ml-4 mt-2 space-y-1">
+                      {pet.LichHenChiTiets?.map((detail, i) => (
+                        <div key={i} className="text-sm flex justify-between">
+                          <span className="text-gray-700">
+                            • {detail.DichVuCuaShop?.DichVuHeThong?.tenDichVu}
+                          </span>
+                          <span className="font-semibold text-[#8e2800]">
+                            {parseInt(detail.gia).toLocaleString("vi-VN")}đ
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
 
-              {/* Additional Info */}
+              {/* Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Trạng Thái</p>
+                  <p className="text-sm text-gray-600 mb-1">Trạng Thái</p>
                   {getStatusBadge(selectedBooking.trangThai)}
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Tổng Tiền</p>
-                  <p className="font-bold text-primary text-lg">
+                  <p className="text-sm text-gray-600 mb-1">Tổng Tiền</p>
+                  <p className="font-bold text-[#8e2800] text-xl">
                     {parseInt(selectedBooking.tongTien).toLocaleString("vi-VN")}
                     đ
                   </p>
@@ -381,73 +448,75 @@ const OwnerBookingManagement = () => {
 
               {selectedBooking.ghiChu && (
                 <div>
-                  <p className="text-sm text-gray-600">Ghi Chú</p>
-                  <p>{selectedBooking.ghiChu}</p>
+                  <p className="text-sm text-gray-600 mb-1">Ghi Chú</p>
+                  <p className="text-gray-700">{selectedBooking.ghiChu}</p>
                 </div>
               )}
             </div>
 
-            <div className="modal-action">
-              <button onClick={() => setShowDetailModal(false)} className="btn">
+            <div className="p-6 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              >
                 Đóng
               </button>
             </div>
           </div>
-          <div
-            className="modal-backdrop"
-            onClick={() => setShowDetailModal(false)}
-          ></div>
         </div>
       )}
 
       {/* Assign Technician Modal */}
       {showAssignModal && selectedBooking && (
-        <div className="modal modal-open">
-          <div className="modal-box w-11/12 max-w-md">
-            <h3 className="font-bold text-lg mb-4">👨‍🔧 Gán Kỹ Thuật Viên</h3>
-
-            <p className="mb-4">Đơn hàng: #{selectedBooking.maLichHen}</p>
-
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-semibold">
-                  Chọn Kỹ Thuật Viên
-                </span>
-              </label>
-              <select
-                className="select select-bordered"
-                value={assignTechId}
-                onChange={(e) => setAssignTechId(e.target.value)}
-              >
-                <option value="">-- Chọn kỹ thuật viên --</option>
-                {getTechnicianEmployees().map((emp) => (
-                  <option key={emp.maNguoiDung} value={emp.maNguoiDung}>
-                    {emp.hoTen}
-                  </option>
-                ))}
-              </select>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-xl font-bold text-gray-800">
+                Gán Kỹ Thuật Viên
+              </h3>
             </div>
 
-            <div className="modal-action">
+            <div className="p-6 space-y-4">
+              <p className="text-gray-700">
+                Đơn hàng:{" "}
+                <span className="font-bold">#{selectedBooking.maLichHen}</span>
+              </p>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Chọn Kỹ Thuật Viên
+                </label>
+                <select
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent"
+                  value={assignTechId}
+                  onChange={(e) => setAssignTechId(e.target.value)}
+                >
+                  <option value="">-- Chọn kỹ thuật viên --</option>
+                  {getTechnicianEmployees().map((emp) => (
+                    <option key={emp.maNguoiDung} value={emp.maNguoiDung}>
+                      {emp.hoTen}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex gap-3 justify-end">
               <button
                 onClick={() => setShowAssignModal(false)}
-                className="btn btn-ghost"
+                className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
               >
                 Hủy
               </button>
               <button
                 onClick={handleAssignTechnician}
-                className="btn btn-primary"
                 disabled={loading}
+                className="px-6 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors font-medium disabled:opacity-50"
               >
                 {loading ? "Đang xử lý..." : "Gán"}
               </button>
             </div>
           </div>
-          <div
-            className="modal-backdrop"
-            onClick={() => setShowAssignModal(false)}
-          ></div>
         </div>
       )}
     </div>

@@ -1,7 +1,22 @@
-// src/pages/owner/ShopSettings.jsx
 import { useState, useEffect } from "react";
 import apiClient from "../../api/apiClient";
 import { useAuth } from "../../contexts/AuthContext";
+import {
+  FaEdit,
+  FaSave,
+  FaTimes,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaSpinner,
+  FaStore,
+  FaMapMarkerAlt,
+  FaPhone,
+  FaFileAlt,
+  FaImage,
+  FaCalendar,
+  FaUser,
+} from "react-icons/fa";
+import { getShopImageUrl } from "../../utils/constants";
 
 const ShopSettings = () => {
   const { user } = useAuth();
@@ -14,10 +29,10 @@ const ShopSettings = () => {
     diaChi: "",
     soDienThoai: "",
     moTa: "",
-    kinhDo: "",
-    viDo: "",
+    anhCuaHang: "",
   });
   const [editMode, setEditMode] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
     loadShopData();
@@ -27,7 +42,13 @@ const ShopSettings = () => {
     try {
       setLoading(true);
       const res = await apiClient.get("/owner/shop-info");
-      setShopData(res.data || {});
+      setShopData({
+        tenCuaHang: res.data.tenCuaHang || "",
+        diaChi: res.data.diaChi || "",
+        soDienThoai: res.data.soDienThoai || "",
+        moTa: res.data.moTa || "",
+        anhCuaHang: res.data.anhCuaHang || "",
+      });
       setError("");
     } catch (err) {
       setError(err.message || "Lỗi khi tải thông tin cửa hàng");
@@ -36,17 +57,48 @@ const ShopSettings = () => {
     }
   };
 
+  const validateForm = () => {
+    const errors = {};
+
+    if (!shopData.tenCuaHang.trim()) {
+      errors.tenCuaHang = "Tên cửa hàng không được để trống";
+    } else if (shopData.tenCuaHang.trim().length < 3) {
+      errors.tenCuaHang = "Tên cửa hàng phải có ít nhất 3 ký tự";
+    }
+
+    if (!shopData.diaChi.trim()) {
+      errors.diaChi = "Địa chỉ không được để trống";
+    }
+
+    if (shopData.soDienThoai && !/^[0-9]{10}$/.test(shopData.soDienThoai)) {
+      errors.soDienThoai = "Số điện thoại phải có 10 chữ số";
+    }
+
+    if (
+      shopData.anhCuaHang &&
+      shopData.anhCuaHang.trim() &&
+      !/^https?:\/\/.+/.test(shopData.anhCuaHang)
+    ) {
+      errors.anhCuaHang = "Link ảnh không hợp lệ";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setShopData({ ...shopData, [name]: value });
     setSuccess("");
+
+    // Clear error for this field
+    if (formErrors[name]) {
+      setFormErrors({ ...formErrors, [name]: "" });
+    }
   };
 
   const handleSave = async () => {
-    if (!shopData.tenCuaHang.trim()) {
-      setError("Vui lòng nhập tên cửa hàng");
-      return;
-    }
+    if (!validateForm()) return;
 
     try {
       setSaving(true);
@@ -54,6 +106,7 @@ const ShopSettings = () => {
       setSuccess("Cập nhật thông tin cửa hàng thành công!");
       setEditMode(false);
       setError("");
+      setFormErrors({});
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       setError(err.message || "Lỗi khi cập nhật thông tin");
@@ -62,10 +115,16 @@ const ShopSettings = () => {
     }
   };
 
+  const handleCancel = () => {
+    setEditMode(false);
+    setFormErrors({});
+    loadShopData();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
+        <FaSpinner className="animate-spin text-4xl text-[#8e2800]" />
       </div>
     );
   }
@@ -73,17 +132,19 @@ const ShopSettings = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="bg-white border border-gray-200 rounded-lg p-6 flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold">⚙️ Cài Đặt Cửa Hàng</h1>
-          <p className="text-gray-600 mt-2">Quản lý thông tin cửa hàng</p>
+          <h1 className="text-2xl font-bold text-gray-800">Cài Đặt Cửa Hàng</h1>
+          <p className="text-gray-600 mt-1">
+            Quản lý thông tin cửa hàng của bạn
+          </p>
         </div>
         {!editMode && (
           <button
             onClick={() => setEditMode(true)}
-            className="btn btn-primary gap-2"
+            className="flex items-center gap-2 px-4 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors font-medium"
           >
-            <span>✏️</span>
+            <FaEdit />
             Chỉnh Sửa
           </button>
         )}
@@ -91,218 +152,244 @@ const ShopSettings = () => {
 
       {/* Success Alert */}
       {success && (
-        <div className="alert alert-success">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
+          <FaCheckCircle className="text-green-600 text-xl" />
+          <span className="text-green-800">{success}</span>
+          <button
+            onClick={() => setSuccess("")}
+            className="ml-auto text-green-600 hover:text-green-800"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>{success}</span>
+            <FaTimesCircle />
+          </button>
         </div>
       )}
 
       {/* Error Alert */}
       {error && (
-        <div className="alert alert-error">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
+          <FaTimesCircle className="text-red-600 text-xl" />
+          <span className="text-red-800">{error}</span>
+          <button
+            onClick={() => setError("")}
+            className="ml-auto text-red-600 hover:text-red-800"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>{error}</span>
+            <FaTimesCircle />
+          </button>
         </div>
       )}
 
       {/* Shop Info Card */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title mb-6">🏪 Thông Tin Cửa Hàng</h2>
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+          <FaStore className="text-[#8e2800]" />
+          Thông Tin Cửa Hàng
+        </h2>
 
-          <div className="space-y-4">
-            {/* Tên Cửa Hàng */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-semibold">Tên Cửa Hàng</span>
+        <div className="space-y-6">
+          {/* Tên Cửa Hàng */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Tên Cửa Hàng <span className="text-red-600">*</span>
+            </label>
+            <input
+              type="text"
+              name="tenCuaHang"
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent ${
+                formErrors.tenCuaHang ? "border-red-500" : "border-gray-300"
+              } ${!editMode ? "bg-gray-50" : ""}`}
+              value={shopData.tenCuaHang}
+              onChange={handleChange}
+              disabled={!editMode}
+            />
+            {formErrors.tenCuaHang && (
+              <p className="text-red-600 text-sm mt-1">
+                {formErrors.tenCuaHang}
+              </p>
+            )}
+          </div>
+
+          {/* Grid 2 columns */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Địa Chỉ <span className="text-red-600">*</span>
               </label>
               <input
                 type="text"
-                name="tenCuaHang"
-                className="input input-bordered"
-                value={shopData.tenCuaHang}
+                name="diaChi"
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent ${
+                  formErrors.diaChi ? "border-red-500" : "border-gray-300"
+                } ${!editMode ? "bg-gray-50" : ""}`}
+                value={shopData.diaChi}
                 onChange={handleChange}
                 disabled={!editMode}
               />
+              {formErrors.diaChi && (
+                <p className="text-red-600 text-sm mt-1">{formErrors.diaChi}</p>
+              )}
             </div>
 
-            {/* Grid 2 columns */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Địa Chỉ</span>
-                </label>
-                <input
-                  type="text"
-                  name="diaChi"
-                  className="input input-bordered"
-                  value={shopData.diaChi}
-                  onChange={handleChange}
-                  disabled={!editMode}
-                />
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">
-                    Số Điện Thoại
-                  </span>
-                </label>
-                <input
-                  type="tel"
-                  name="soDienThoai"
-                  className="input input-bordered"
-                  value={shopData.soDienThoai}
-                  onChange={handleChange}
-                  disabled={!editMode}
-                />
-              </div>
-            </div>
-
-            {/* Tọa độ */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Kinh Độ</span>
-                </label>
-                <input
-                  type="number"
-                  name="kinhDo"
-                  step="0.0001"
-                  className="input input-bordered"
-                  value={shopData.kinhDo}
-                  onChange={handleChange}
-                  disabled={!editMode}
-                />
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Vĩ Độ</span>
-                </label>
-                <input
-                  type="number"
-                  name="viDo"
-                  step="0.0001"
-                  className="input input-bordered"
-                  value={shopData.viDo}
-                  onChange={handleChange}
-                  disabled={!editMode}
-                />
-              </div>
-            </div>
-
-            {/* Mô Tả */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-semibold">Mô Tả</span>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Số Điện Thoại
               </label>
-              <textarea
-                name="moTa"
-                className="textarea textarea-bordered h-24"
-                value={shopData.moTa}
+              <input
+                type="tel"
+                name="soDienThoai"
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent ${
+                  formErrors.soDienThoai ? "border-red-500" : "border-gray-300"
+                } ${!editMode ? "bg-gray-50" : ""}`}
+                value={shopData.soDienThoai}
                 onChange={handleChange}
                 disabled={!editMode}
-              ></textarea>
+              />
+              {formErrors.soDienThoai && (
+                <p className="text-red-600 text-sm mt-1">
+                  {formErrors.soDienThoai}
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Actions */}
-          {editMode && (
-            <div className="card-actions justify-end gap-2 mt-6">
-              <button
-                onClick={() => {
-                  setEditMode(false);
-                  loadShopData();
-                }}
-                className="btn btn-ghost"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleSave}
-                className="btn btn-primary"
-                disabled={saving}
-              >
-                {saving ? "Đang lưu..." : "Lưu"}
-              </button>
-            </div>
-          )}
+          {/* Ảnh Cửa Hàng */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Link Ảnh Cửa Hàng
+            </label>
+            <input
+              type="text"
+              name="anhCuaHang"
+              placeholder="https://example.com/shop-image.jpg"
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent ${
+                formErrors.anhCuaHang ? "border-red-500" : "border-gray-300"
+              } ${!editMode ? "bg-gray-50" : ""}`}
+              value={shopData.anhCuaHang}
+              onChange={handleChange}
+              disabled={!editMode}
+            />
+            {formErrors.anhCuaHang && (
+              <p className="text-red-600 text-sm mt-1">
+                {formErrors.anhCuaHang}
+              </p>
+            )}
+
+            {/* Preview Image */}
+            {shopData.anhCuaHang && (
+              <div className="mt-3 border border-gray-200 rounded-lg overflow-hidden">
+                <img
+                  src={getShopImageUrl(shopData.anhCuaHang)}
+                  alt="Shop preview"
+                  className="w-full h-48 object-cover"
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Mô Tả */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Mô Tả
+            </label>
+            <textarea
+              name="moTa"
+              className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent h-32 ${
+                !editMode ? "bg-gray-50" : ""
+              }`}
+              value={shopData.moTa}
+              onChange={handleChange}
+              disabled={!editMode}
+            ></textarea>
+          </div>
         </div>
+
+        {/* Actions */}
+        {editMode && (
+          <div className="flex gap-3 justify-end mt-6 pt-6 border-t border-gray-200">
+            <button
+              onClick={handleCancel}
+              className="flex items-center gap-2 px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+            >
+              <FaTimes />
+              Hủy
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-2 px-6 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors font-medium disabled:opacity-50"
+            >
+              {saving ? (
+                <>
+                  <FaSpinner className="animate-spin" />
+                  Đang lưu...
+                </>
+              ) : (
+                <>
+                  <FaSave />
+                  Lưu
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Status Card */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title mb-4">📊 Trạng Thái</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="stat bg-base-200 rounded-lg">
-              <div className="stat-title">Trạng Thái Cửa Hàng</div>
-              <div className="stat-value text-lg text-success">
-                {shopData.trangThai === "HOAT_DONG"
-                  ? "✅ Hoạt động"
-                  : "⏳ Chờ duyệt"}
-              </div>
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-6">
+          Trạng Thái Cửa Hàng
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="border border-gray-200 rounded-lg p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <FaCheckCircle className="text-[#8e2800] text-2xl" />
+              <p className="text-sm text-gray-600">Trạng Thái</p>
             </div>
-            <div className="stat bg-base-200 rounded-lg">
-              <div className="stat-title">Ngày Tạo</div>
-              <div className="stat-value text-base">
-                {shopData.ngayTao
-                  ? new Date(shopData.ngayTao).toLocaleDateString("vi-VN")
-                  : "N/A"}
-              </div>
+            <p
+              className={`text-lg font-bold ${
+                shopData.trangThai === "HOAT_DONG"
+                  ? "text-green-600"
+                  : "text-yellow-600"
+              }`}
+            >
+              {shopData.trangThai === "HOAT_DONG" ? "Hoạt động" : "Chờ duyệt"}
+            </p>
+          </div>
+
+          <div className="border border-gray-200 rounded-lg p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <FaCalendar className="text-[#8e2800] text-2xl" />
+              <p className="text-sm text-gray-600">Ngày Tạo</p>
             </div>
-            <div className="stat bg-base-200 rounded-lg">
-              <div className="stat-title">Chủ Sở Hữu</div>
-              <div className="stat-value text-base">{user?.hoTen}</div>
+            <p className="text-lg font-bold text-gray-800">
+              {shopData.ngayTao
+                ? new Date(shopData.ngayTao).toLocaleDateString("vi-VN")
+                : "N/A"}
+            </p>
+          </div>
+
+          <div className="border border-gray-200 rounded-lg p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <FaUser className="text-[#8e2800] text-2xl" />
+              <p className="text-sm text-gray-600">Chủ Sở Hữu</p>
             </div>
+            <p className="text-lg font-bold text-gray-800">{user?.hoTen}</p>
           </div>
         </div>
       </div>
 
       {/* Help Card */}
-      <div className="alert alert-info">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          className="stroke-current shrink-0 w-6 h-6"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          ></path>
-        </svg>
-        <span>
-          Cập nhật thông tin cửa hàng của bạn để khách hàng có thể tìm thấy dễ
-          dàng hơn
-        </span>
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 flex items-start gap-3">
+        <FaFileAlt className="text-blue-600 text-2xl flex-shrink-0 mt-1" />
+        <div>
+          <p className="font-semibold text-blue-800 mb-1">Lưu ý</p>
+          <p className="text-blue-700">
+            Cập nhật thông tin cửa hàng của bạn để khách hàng có thể tìm thấy dễ
+            dàng hơn. Hãy đảm bảo thông tin luôn chính xác và đầy đủ.
+          </p>
+        </div>
       </div>
     </div>
   );
