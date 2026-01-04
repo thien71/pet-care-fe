@@ -1,4 +1,4 @@
-// src/api/authApi.js (UPDATED - COMPLETE VERSION)
+// src/api/authApi.js
 import apiClient, { decodeToken, isTokenExpired } from "./apiClient";
 
 export const authService = {
@@ -6,7 +6,7 @@ export const authService = {
 
   /**
    * Đăng ký tài khoản mới
-   * Sẽ gửi email verification
+   * Sẽ gửi email OTP
    */
   register: async (userData) => {
     return await apiClient.post("/auth/register", userData);
@@ -15,17 +15,19 @@ export const authService = {
   // ==================== XÁC THỰC EMAIL ====================
 
   /**
-   * Xác thực email bằng token
+   * Xác thực email bằng OTP
+   * @param {string} email
+   * @param {string} otp - Mã OTP 6 số
    */
-  verifyEmail: async (token) => {
-    return await apiClient.get(`/auth/verify-email?token=${token}`);
+  verifyOTP: async (email, otp) => {
+    return await apiClient.post("/auth/verify-otp", { email, otp });
   },
 
   /**
-   * Gửi lại email xác thực
+   * Gửi lại mã OTP
    */
-  resendVerification: async (email) => {
-    return await apiClient.post("/auth/resend-verification", { email });
+  resendOTP: async (email) => {
+    return await apiClient.post("/auth/resend-otp", { email });
   },
 
   // ==================== ĐĂNG NHẬP ====================
@@ -37,14 +39,11 @@ export const authService = {
     const response = await apiClient.post("/auth/login", { email, matKhau });
 
     if (response.accessToken) {
-      // Lưu tokens
       localStorage.setItem("accessToken", response.accessToken);
       localStorage.setItem("refreshToken", response.refreshToken);
 
-      // Decode token để lấy thông tin user
       const decoded = decodeToken(response.accessToken);
 
-      // Merge decoded info với user data từ server
       const userData = {
         ...response.user,
         tokenInfo: decoded,
@@ -58,20 +57,16 @@ export const authService = {
 
   /**
    * Đăng nhập bằng Google
-   * @param {Object} googleProfile - { id, email, name, picture }
    */
   loginWithGoogle: async (googleProfile) => {
     const response = await apiClient.post("/auth/google", { googleProfile });
 
     if (response.accessToken) {
-      // Lưu tokens
       localStorage.setItem("accessToken", response.accessToken);
       localStorage.setItem("refreshToken", response.refreshToken);
 
-      // Decode token
       const decoded = decodeToken(response.accessToken);
 
-      // Merge data
       const userData = {
         ...response.user,
         tokenInfo: decoded,
@@ -108,7 +103,6 @@ export const authService = {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
-
     window.location.href = "/login";
   },
 
@@ -129,23 +123,17 @@ export const authService = {
 
   // ==================== HELPERS ====================
 
-  /**
-   * Lấy thông tin user từ localStorage
-   */
   getCurrentUser: () => {
     const userStr = localStorage.getItem("user");
     if (!userStr) return null;
 
     try {
       const user = JSON.parse(userStr);
-
-      // Kiểm tra token còn hạn không
       const token = localStorage.getItem("accessToken");
       if (!token || isTokenExpired(token)) {
         authService.logout();
         return null;
       }
-
       return user;
     } catch (error) {
       console.error("Error parsing user data:", error);
@@ -153,59 +141,38 @@ export const authService = {
     }
   },
 
-  /**
-   * Kiểm tra đã login chưa
-   */
   isAuthenticated: () => {
     const token = localStorage.getItem("accessToken");
     return token && !isTokenExpired(token);
   },
 
-  /**
-   * Kiểm tra email đã verify chưa
-   */
   isEmailVerified: () => {
     const user = authService.getCurrentUser();
     return user?.emailVerified === true;
   },
 
-  /**
-   * Lấy thông tin từ token
-   */
   getTokenInfo: () => {
     const token = localStorage.getItem("accessToken");
     return decodeToken(token);
   },
 
-  /**
-   * Kiểm tra user có vai trò cụ thể
-   */
   hasRole: (roleName) => {
     const user = authService.getCurrentUser();
     if (!user?.VaiTros) return false;
     return user.VaiTros.some((vt) => vt.tenVaiTro === roleName);
   },
 
-  /**
-   * Kiểm tra user có ít nhất 1 trong các vai trò
-   */
   hasAnyRole: (roleNames) => {
     const user = authService.getCurrentUser();
     if (!user?.VaiTros) return false;
     return user.VaiTros.some((vt) => roleNames.includes(vt.tenVaiTro));
   },
 
-  /**
-   * Lấy tất cả vai trò
-   */
   getRoles: () => {
     const user = authService.getCurrentUser();
     return user?.VaiTros?.map((vt) => vt.tenVaiTro) || [];
   },
 
-  /**
-   * Lấy vai trò chính (ưu tiên cao nhất)
-   */
   getPrimaryRole: () => {
     const roles = authService.getRoles();
     if (roles.includes("QUAN_TRI_VIEN")) return "QUAN_TRI_VIEN";
@@ -216,17 +183,11 @@ export const authService = {
     return null;
   },
 
-  /**
-   * Kiểm tra user có shop không
-   */
   hasShop: () => {
     const user = authService.getCurrentUser();
     return user?.maCuaHang !== null && user?.maCuaHang !== undefined;
   },
 
-  /**
-   * Lấy thông tin shop
-   */
   getShopInfo: () => {
     const user = authService.getCurrentUser();
     return user?.CuaHang || null;

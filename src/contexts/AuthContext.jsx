@@ -1,14 +1,16 @@
-// src/contexts/AuthContext.jsx (FINAL VERSION)
-import {
-  createContext,
-  useState,
-  useEffect,
-  useContext,
-  useCallback,
-} from "react";
-import authService from "../api/authApi";
+// src/contexts/AuthContext.jsx
+import { createContext, useContext, useState, useEffect } from "react";
+import { authService } from "../api/authApi";
 
-export const AuthContext = createContext();
+const AuthContext = createContext();
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -33,49 +35,48 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, []);
 
-  // ==================== ĐĂNG KÝ ====================
+  // ==================== AUTH METHODS ====================
 
-  const register = useCallback(async (userData) => {
+  /**
+   * Đăng ký
+   */
+  const register = async (userData) => {
     try {
       const response = await authService.register(userData);
       return response;
     } catch (error) {
       throw error;
     }
-  }, []);
+  };
 
-  // ==================== XÁC THỰC EMAIL ====================
-
-  const verifyEmail = useCallback(async (token) => {
+  /**
+   * Xác thực OTP
+   */
+  const verifyOTP = async (email, otp) => {
     try {
-      const response = await authService.verifyEmail(token);
-
-      // Cập nhật user state nếu đang đăng nhập
-      const currentUser = authService.getCurrentUser();
-      if (currentUser) {
-        currentUser.emailVerified = true;
-        localStorage.setItem("user", JSON.stringify(currentUser));
-        setUser(currentUser);
-      }
-
+      const response = await authService.verifyOTP(email, otp);
       return response;
     } catch (error) {
       throw error;
     }
-  }, []);
+  };
 
-  const resendVerification = useCallback(async (email) => {
+  /**
+   * Gửi lại OTP
+   */
+  const resendOTP = async (email) => {
     try {
-      const response = await authService.resendVerification(email);
+      const response = await authService.resendOTP(email);
       return response;
     } catch (error) {
       throw error;
     }
-  }, []);
+  };
 
-  // ==================== ĐĂNG NHẬP ====================
-
-  const login = useCallback(async (email, matKhau) => {
+  /**
+   * Đăng nhập
+   */
+  const login = async (email, matKhau) => {
     try {
       const response = await authService.login(email, matKhau);
       setUser(response.user);
@@ -83,9 +84,12 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       throw error;
     }
-  }, []);
+  };
 
-  const loginWithGoogle = useCallback(async (googleProfile) => {
+  /**
+   * Đăng nhập bằng Google
+   */
+  const loginWithGoogle = async (googleProfile) => {
     try {
       const response = await authService.loginWithGoogle(googleProfile);
       setUser(response.user);
@@ -93,130 +97,117 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       throw error;
     }
-  }, []);
+  };
 
-  // ==================== QUÊN / ĐẶT LẠI MẬT KHẨU ====================
-
-  const forgotPassword = useCallback(async (email) => {
+  /**
+   * Quên mật khẩu
+   */
+  const forgotPassword = async (email) => {
     try {
       const response = await authService.forgotPassword(email);
       return response;
     } catch (error) {
       throw error;
     }
-  }, []);
+  };
 
-  const resetPassword = useCallback(async (token, newPassword) => {
+  /**
+   * Đặt lại mật khẩu
+   */
+  const resetPassword = async (token, newPassword) => {
     try {
       const response = await authService.resetPassword(token, newPassword);
       return response;
     } catch (error) {
       throw error;
     }
-  }, []);
+  };
 
-  // ==================== ĐĂNG XUẤT ====================
-
-  const logout = useCallback(() => {
+  /**
+   * Đăng xuất
+   */
+  const logout = () => {
     authService.logout();
     setUser(null);
-  }, []);
+  };
 
-  // ==================== HELPERS ====================
+  /**
+   * Chuyển sang giao diện khách hàng
+   */
+  const switchToCustomerView = () => {
+    window.location.href = "/";
+  };
 
-  const hasRole = useCallback(
-    (roleName) => {
-      if (!user?.VaiTros) return false;
-      return user.VaiTros.some((vt) => vt.tenVaiTro === roleName);
-    },
-    [user]
-  );
+  // ==================== ROLE CHECKING ====================
 
-  const hasAnyRole = useCallback(
-    (roleNames) => {
-      if (!user?.VaiTros) return false;
-      return user.VaiTros.some((vt) => roleNames.includes(vt.tenVaiTro));
-    },
-    [user]
-  );
+  /**
+   * Kiểm tra user có vai trò cụ thể
+   */
+  const hasRole = (roleName) => {
+    return authService.hasRole(roleName);
+  };
 
-  const getRoles = useCallback(() => {
-    return user?.VaiTros?.map((vt) => vt.tenVaiTro) || [];
-  }, [user]);
+  /**
+   * Kiểm tra user có ít nhất 1 trong các vai trò
+   */
+  const canAccess = (allowedRoles) => {
+    return authService.hasAnyRole(allowedRoles);
+  };
 
-  const getPrimaryRole = useCallback(() => {
-    const roles = getRoles();
-    if (roles.includes("QUAN_TRI_VIEN")) return "QUAN_TRI_VIEN";
-    if (roles.includes("CHU_CUA_HANG")) return "CHU_CUA_HANG";
-    if (roles.includes("LE_TAN")) return "LE_TAN";
-    if (roles.includes("KY_THUAT_VIEN")) return "KY_THUAT_VIEN";
-    if (roles.includes("KHACH_HANG")) return "KHACH_HANG";
-    return null;
-  }, [getRoles]);
+  /**
+   * Lấy tất cả vai trò
+   */
+  const getRoles = () => {
+    return authService.getRoles();
+  };
 
-  const canAccess = useCallback(
-    (requiredRoles) => {
-      if (!requiredRoles || requiredRoles.length === 0) return true;
-      return hasAnyRole(requiredRoles);
-    },
-    [hasAnyRole]
-  );
+  /**
+   * Lấy vai trò chính
+   */
+  const getPrimaryRole = () => {
+    return authService.getPrimaryRole();
+  };
 
-  const hasShop = useCallback(() => {
-    return user?.maCuaHang !== null && user?.maCuaHang !== undefined;
-  }, [user]);
+  /**
+   * Kiểm tra user có shop không
+   */
+  const hasShop = () => {
+    return authService.hasShop();
+  };
 
-  const getShopInfo = useCallback(() => {
-    return user?.CuaHang || null;
-  }, [user]);
+  /**
+   * Lấy thông tin shop
+   */
+  const getShopInfo = () => {
+    return authService.getShopInfo();
+  };
 
-  const isEmailVerified = useCallback(() => {
-    return user?.emailVerified === true;
-  }, [user]);
+  // ==================== CONTEXT VALUE ====================
 
-  // Context value
   const value = {
     user,
     loading,
+    isAuthenticated: !!user && authService.isAuthenticated(),
 
-    // Auth actions
+    // Auth methods
     register,
+    verifyOTP,
+    resendOTP,
     login,
     loginWithGoogle,
     logout,
-
-    // Email verification
-    verifyEmail,
-    resendVerification,
-    isEmailVerified,
-
-    // Password reset
     forgotPassword,
     resetPassword,
+    switchToCustomerView,
 
-    // Role helpers
+    // Role methods
     hasRole,
-    hasAnyRole,
+    canAccess,
     getRoles,
     getPrimaryRole,
-    canAccess,
-
-    // Shop helpers
     hasShop,
     getShopInfo,
-
-    // Status
-    isAuthenticated: authService.isAuthenticated(),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-// Custom hook
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return context;
 };

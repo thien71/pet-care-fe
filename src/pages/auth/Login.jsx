@@ -1,6 +1,6 @@
 // src/pages/auth/Login.jsx
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import { useAuth } from "../../contexts/AuthContext";
@@ -10,6 +10,7 @@ import Logo from "@/components/common/Logo";
 const Login = () => {
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -17,8 +18,20 @@ const Login = () => {
   });
 
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Hiển thị message từ navigation state (từ verify success)
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccess(location.state.message);
+      // Clear message sau 5 giây
+      setTimeout(() => setSuccess(""), 5000);
+      // Clear state để không hiển thị lại khi refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const handleChange = (e) => {
     setFormData({
@@ -31,6 +44,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
     setLoading(true);
 
     try {
@@ -64,6 +78,7 @@ const Login = () => {
   const handleGoogleSuccess = async (credentialResponse) => {
     setLoading(true);
     setError("");
+    setSuccess("");
 
     try {
       const decoded = jwtDecode(credentialResponse.credential);
@@ -128,6 +143,13 @@ const Login = () => {
               <p className="text-gray-600 text-sm mb-6">
                 Đăng nhập để tiếp tục
               </p>
+
+              {/* Success Alert */}
+              {success && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm animate-fade-in">
+                  ✅ {success}
+                </div>
+              )}
 
               {/* Error Alert */}
               {error && (
