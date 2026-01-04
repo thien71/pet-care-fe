@@ -382,7 +382,7 @@ const ShopSettings = () => {
 
       {/* Help Card */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 flex items-start gap-3">
-        <FaFileAlt className="text-blue-600 text-2xl flex-shrink-0 mt-1" />
+        <FaFileAlt className="text-blue-600 text-2xl shrink-0 mt-1" />
         <div>
           <p className="font-semibold text-blue-800 mb-1">Lưu ý</p>
           <p className="text-blue-700">
