@@ -1,4 +1,4 @@
-// src/pages/auth/Register.jsx (UPDATED - WITH MODAL)
+// src/pages/auth/Register.jsx
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -6,20 +6,18 @@ import EmailVerificationModal from "../../components/auth/EmailVerificationModal
 
 const Register = () => {
   const { register } = useAuth();
+
   const [formData, setFormData] = useState({
     hoTen: "",
     email: "",
     matKhau: "",
     confirmPassword: "",
-    maVaiTro: 1, // Mặc định là KHACH_HANG
   });
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-  // ==================== MODAL STATE ====================
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
 
@@ -37,6 +35,11 @@ const Register = () => {
       return false;
     }
 
+    if (!formData.email.trim()) {
+      setError("Vui lòng nhập email");
+      return false;
+    }
+
     if (formData.matKhau.length < 6) {
       setError("Mật khẩu phải có ít nhất 6 ký tự");
       return false;
@@ -44,11 +47,6 @@ const Register = () => {
 
     if (formData.matKhau !== formData.confirmPassword) {
       setError("Mật khẩu xác nhận không khớp");
-      return false;
-    }
-
-    if (!agreedToTerms) {
-      setError("Vui lòng đồng ý với điều khoản dịch vụ");
       return false;
     }
 
@@ -66,19 +64,15 @@ const Register = () => {
       const { confirmPassword, ...registerData } = formData;
       await register(registerData);
 
-      // ✅ Hiển thị modal xác nhận email thay vì chuyển trang
       setRegisteredEmail(formData.email);
       setShowVerificationModal(true);
 
-      // Reset form
       setFormData({
         hoTen: "",
         email: "",
         matKhau: "",
         confirmPassword: "",
-        maVaiTro: 1,
       });
-      setAgreedToTerms(false);
     } catch (err) {
       setError(err.message || "Đăng ký thất bại");
     } finally {
@@ -86,196 +80,154 @@ const Register = () => {
     }
   };
 
-  const handleCloseModal = () => {
-    setShowVerificationModal(false);
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-green-50 via-teal-50 to-blue-50 px-4 py-8">
-      <div className="max-w-2xl w-full">
-        <div className="card bg-base-100 shadow-2xl">
-          <div className="card-body">
-            {/* Header */}
-            <div className="text-center mb-6">
-              <div className="text-6xl mb-4">🐾</div>
-              <h1 className="text-3xl font-bold text-primary mb-2">
-                Tạo Tài Khoản Mới
-              </h1>
-              <p className="text-gray-600">
-                Gia nhập cộng đồng yêu thú cưng Đà Nẵng
-              </p>
-            </div>
+    <div className="min-h-screen bg-white flex">
+      {/* Left - Image/Banner */}
+      <div className="hidden lg:flex lg:w-1/2 bg-linear-to-br from-[#8e2800] to-[#c43a0e] items-center justify-center p-8">
+        <div className="text-center text-white max-w-md">
+          <div className="text-8xl mb-6">🐾</div>
+          <h1 className="text-4xl font-bold mb-4">Pet Care Da Nang</h1>
+          <p className="text-xl text-white/90">
+            Gia nhập cộng đồng yêu thú cưng và nhận những dịch vụ tốt nhất
+          </p>
+        </div>
+      </div>
+
+      {/* Right - Register Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          {/* Mobile Header */}
+          <div className="lg:hidden text-center mb-8">
+            <div className="text-5xl mb-3">🐾</div>
+            <h1 className="text-2xl font-bold text-gray-800">
+              Pet Care Da Nang
+            </h1>
+          </div>
+
+          {/* Form Container */}
+          <div className="bg-white">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              Tạo Tài Khoản Mới
+            </h2>
+            <p className="text-gray-600 text-sm mb-6">Đăng ký để bắt đầu</p>
 
             {/* Error Alert */}
             {error && (
-              <div className="alert alert-error mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="stroke-current shrink-0 h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <span>{error}</span>
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                {error}
               </div>
             )}
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Grid 2 columns */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Họ tên */}
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">Họ và tên *</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="hoTen"
-                    placeholder="Nguyễn Văn A"
-                    className="input input-bordered w-full"
-                    value={formData.hoTen}
-                    onChange={handleChange}
-                    required
-                    disabled={loading}
-                  />
-                </div>
-
-                {/* Email */}
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">Email *</span>
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="example@email.com"
-                    className="input input-bordered w-full"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    disabled={loading}
-                  />
-                </div>
-
-                {/* Password */}
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">Mật khẩu *</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      name="matKhau"
-                      placeholder="••••••••"
-                      className="input input-bordered w-full pr-12"
-                      value={formData.matKhau}
-                      onChange={handleChange}
-                      required
-                      minLength={6}
-                      disabled={loading}
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
-                      onClick={() => setShowPassword(!showPassword)}
-                      tabIndex={-1}
-                    >
-                      {showPassword ? "🙈" : "👁️"}
-                    </button>
-                  </div>
-                  <label className="label">
-                    <span className="label-text-alt">Tối thiểu 6 ký tự</span>
-                  </label>
-                </div>
-
-                {/* Confirm Password */}
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">
-                      Xác nhận mật khẩu *
-                    </span>
-                  </label>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="confirmPassword"
-                    placeholder="••••••••"
-                    className="input input-bordered w-full"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    required
-                    disabled={loading}
-                  />
-                </div>
+              {/* Họ tên */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Họ và tên
+                </label>
+                <input
+                  type="text"
+                  name="hoTen"
+                  value={formData.hoTen}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8e2800] focus:ring-2 focus:ring-[#8e2800]/20 transition"
+                  placeholder="Nguyễn Văn A"
+                  required
+                  disabled={loading}
+                />
               </div>
 
-              {/* Terms */}
-              <div className="form-control">
-                <label className="label cursor-pointer justify-start gap-3">
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-primary"
-                    checked={agreedToTerms}
-                    onChange={(e) => setAgreedToTerms(e.target.checked)}
-                    required
-                  />
-                  <span className="label-text">
-                    Tôi đồng ý với{" "}
-                    <a href="#" className="link link-primary">
-                      Điều khoản dịch vụ
-                    </a>{" "}
-                    và{" "}
-                    <a href="#" className="link link-primary">
-                      Chính sách bảo mật
-                    </a>
-                  </span>
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
                 </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8e2800] focus:ring-2 focus:ring-[#8e2800]/20 transition"
+                  placeholder="example@email.com"
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mật khẩu
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="matKhau"
+                    value={formData.matKhau}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8e2800] focus:ring-2 focus:ring-[#8e2800]/20 transition"
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                  >
+                    {showPassword ? "🙈" : "👁️"}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Tối thiểu 6 ký tự</p>
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Xác nhận mật khẩu
+                </label>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8e2800] focus:ring-2 focus:ring-[#8e2800]/20 transition"
+                  placeholder="••••••••"
+                  required
+                  disabled={loading}
+                />
               </div>
 
               {/* Submit Button */}
               <button
                 type="submit"
-                className="btn btn-primary w-full"
                 disabled={loading}
+                className="w-full bg-[#8e2800] text-white py-2.5 rounded-lg font-semibold hover:bg-[#6b2000] transition disabled:opacity-50"
               >
-                {loading ? (
-                  <>
-                    <span className="loading loading-spinner"></span>
-                    Đang xử lý...
-                  </>
-                ) : (
-                  <>
-                    <span>✨</span>
-                    Đăng ký
-                  </>
-                )}
+                {loading ? "Đang xử lý..." : "Đăng Ký"}
               </button>
             </form>
 
             {/* Login Link */}
-            <div className="text-center mt-4">
-              <p className="text-sm text-gray-600">
-                Đã có tài khoản?{" "}
-                <Link to="/login" className="link link-primary font-medium">
-                  Đăng nhập ngay
-                </Link>
-              </p>
-            </div>
+            <p className="text-center text-gray-600 text-sm mt-6">
+              Đã có tài khoản?
+              <Link
+                to="/login"
+                className="text-[#8e2800] font-semibold hover:underline"
+              >
+                Đăng nhập ngay
+              </Link>
+            </p>
           </div>
         </div>
       </div>
 
-      {/* ==================== EMAIL VERIFICATION MODAL ==================== */}
+      {/* Modal */}
       <EmailVerificationModal
         isOpen={showVerificationModal}
         email={registeredEmail}
-        onClose={handleCloseModal}
+        onClose={() => setShowVerificationModal(false)}
       />
     </div>
   );

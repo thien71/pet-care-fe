@@ -2,26 +2,24 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 
-const EmailVerificationModal = ({
-  isOpen,
-  email,
-  onClose,
-  onVerifySuccess,
-}) => {
-  const [timeLeft, setTimeLeft] = useState(180); // 3 phút = 180 giây
+const EmailVerificationModal = ({ isOpen, email, onClose }) => {
+  const [timeLeft, setTimeLeft] = useState(180); // 3 phút
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resendSuccess, setResendSuccess] = useState(false);
   const { resendVerification } = useAuth();
 
-  // Countdown timer
+  // Countdown timer - Auto close sau 3 phút
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setTimeLeft(180);
+      return;
+    }
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          onClose();
           return 0;
         }
         return prev - 1;
@@ -29,7 +27,7 @@ const EmailVerificationModal = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -40,11 +38,13 @@ const EmailVerificationModal = ({
   const handleResend = async () => {
     setLoading(true);
     setError("");
+    setResendSuccess(false);
 
     try {
       await resendVerification(email);
-      // Reset timer
       setTimeLeft(180);
+      setResendSuccess(true);
+      setTimeout(() => setResendSuccess(false), 3000);
     } catch (err) {
       setError(err.message || "Không thể gửi lại email");
     } finally {
@@ -54,81 +54,77 @@ const EmailVerificationModal = ({
 
   if (!isOpen) return null;
 
+  // ✅ Nút gửi lại bị khoá cho đến khi countdown = 0 (hoặc đang loading)
+  const canResend = timeLeft === 0 && !loading;
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
         {/* Header */}
-        <div className="bg-linear-to-r from-blue-500 to-blue-600 p-8 text-white text-center">
-          <div className="text-5xl mb-4">📧</div>
-          <h2 className="text-2xl font-bold">Xác Thực Email</h2>
+        <div className="bg-linear-to-r from-[#8e2800] to-[#c43a0e] p-6 text-white text-center">
+          <div className="text-4xl mb-3">📧</div>
+          <h2 className="text-xl font-bold">Xác Thực Email</h2>
         </div>
 
         {/* Content */}
-        <div className="p-8">
+        <div className="p-6">
+          {/* Thông báo chính */}
           <div className="text-center mb-6">
-            <p className="text-gray-700 mb-2">
-              Chúng tôi đã gửi email xác thực đến:
+            <p className="text-gray-700 text-sm mb-2">
+              Vui lòng kiểm tra email để xác thực
             </p>
-            <p className="text-lg font-semibold text-blue-600">{email}</p>
+            <p className="text-sm text-gray-600">{email}</p>
           </div>
 
-          {/* Instructions */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <div className="flex gap-3">
-              <div className="text-2xl shrink-0">1️⃣</div>
-              <div className="text-sm text-blue-800">
-                <p className="font-semibold mb-1">Kiểm tra email của bạn</p>
-                <p>Bao gồm cả thư mục Spam nếu không thấy</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <div className="flex gap-3">
-              <div className="text-2xl shrink-0">2️⃣</div>
-              <div className="text-sm text-green-800">
-                <p className="font-semibold mb-1">Click link xác thực</p>
-                <p>Bạn sẽ được tự động đăng nhập</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Error Alert */}
+          {/* Error */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
               {error}
             </div>
           )}
 
+          {/* Success */}
+          {resendSuccess && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
+              ✅ Email đã được gửi lại
+            </div>
+          )}
+
           {/* Timer */}
           <div className="text-center mb-6">
-            <p className="text-gray-600 mb-2">Modal sẽ đóng trong</p>
-            <div className="text-3xl font-bold text-blue-600 font-mono">
+            <p className="text-gray-600 text-xs mb-2">
+              {timeLeft === 0
+                ? "Bạn có thể gửi lại email"
+                : "Gửi lại email sau:"}
+            </p>
+            <div className="text-3xl font-bold text-[#8e2800] font-mono">
               {formatTime(timeLeft)}
             </div>
           </div>
 
-          {/* Resend Button */}
-          <button
-            onClick={handleResend}
-            disabled={loading}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition disabled:opacity-50 mb-3"
-          >
-            {loading ? "Đang gửi..." : "Gửi Lại Email"}
-          </button>
+          {/* Buttons */}
+          <div className="space-y-3">
+            {/* Resend Button - Disable nếu còn countdown hoặc đang loading */}
+            <button
+              onClick={handleResend}
+              disabled={!canResend || loading}
+              className={`w-full font-semibold py-2.5 rounded-lg transition ${
+                canResend
+                  ? "bg-[#8e2800] text-white hover:bg-[#6b2000]"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+            >
+              {loading ? "Đang gửi..." : "Gửi Lại Email"}
+            </button>
 
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 rounded-lg transition"
-          >
-            Đóng
-          </button>
-        </div>
-
-        {/* Footer Tips */}
-        <div className="bg-gray-50 p-4 text-center text-xs text-gray-600 border-t">
-          <p>💡 Sau khi click link xác thực, bạn sẽ được tự động đăng nhập</p>
+            {/* Close Button */}
+            <button
+              onClick={onClose}
+              className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2.5 rounded-lg transition"
+            >
+              Đóng
+            </button>
+          </div>
         </div>
       </div>
     </div>
