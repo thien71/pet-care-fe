@@ -1,4 +1,4 @@
-// src/contexts/AuthContext.jsx (FRONTEND - UPDATED)
+// src/contexts/AuthContext.jsx (FINAL VERSION)
 import {
   createContext,
   useState,
@@ -6,27 +6,25 @@ import {
   useContext,
   useCallback,
 } from "react";
-import authApi from "../api/authApi";
-import { useNavigate } from "react-router-dom";
+import authService from "../api/authApi";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   // Load user từ localStorage khi app khởi động
   useEffect(() => {
     const loadUser = () => {
       try {
-        const currentUser = authApi.getCurrentUser();
+        const currentUser = authService.getCurrentUser();
         if (currentUser) {
           setUser(currentUser);
         }
       } catch (error) {
         console.error("Error loading user:", error);
-        authApi.logout();
+        authService.logout();
       } finally {
         setLoading(false);
       }
@@ -35,73 +33,97 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, []);
 
-  // Đăng nhập
-  const login = useCallback(
-    async (email, matKhau) => {
-      try {
-        const response = await authApi.login(email, matKhau);
-        setUser(response.user);
+  // ==================== ĐĂNG KÝ ====================
 
-        // ⭐ Lấy danh sách vai trò từ user
-        const roles = response.user.VaiTros?.map((vt) => vt.tenVaiTro) || [];
-        console.log("🔐 User roles after login:", roles);
-
-        // ⭐ Điều hướng dựa trên vai trò ƯU TIÊN
-        if (roles.includes("QUAN_TRI_VIEN")) {
-          navigate("/admin/dashboard");
-        } else if (roles.includes("CHU_CUA_HANG")) {
-          navigate("/owner/dashboard");
-        } else if (roles.includes("LE_TAN")) {
-          navigate("/staff/dashboard");
-        } else if (roles.includes("KY_THUAT_VIEN")) {
-          navigate("/tech/dashboard");
-        } else if (roles.includes("KHACH_HANG")) {
-          navigate("/");
-        } else {
-          navigate("/");
-        }
-
-        return response;
-      } catch (error) {
-        throw error;
-      }
-    },
-    [navigate]
-  );
-
-  // Đăng ký
   const register = useCallback(async (userData) => {
     try {
-      const response = await authApi.register(userData);
+      const response = await authService.register(userData);
       return response;
     } catch (error) {
       throw error;
     }
   }, []);
 
-  // Đăng xuất
+  // ==================== XÁC THỰC EMAIL ====================
+
+  const verifyEmail = useCallback(async (token) => {
+    try {
+      const response = await authService.verifyEmail(token);
+
+      // Cập nhật user state nếu đang đăng nhập
+      const currentUser = authService.getCurrentUser();
+      if (currentUser) {
+        currentUser.emailVerified = true;
+        localStorage.setItem("user", JSON.stringify(currentUser));
+        setUser(currentUser);
+      }
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
+  const resendVerification = useCallback(async (email) => {
+    try {
+      const response = await authService.resendVerification(email);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
+  // ==================== ĐĂNG NHẬP ====================
+
+  const login = useCallback(async (email, matKhau) => {
+    try {
+      const response = await authService.login(email, matKhau);
+      setUser(response.user);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
+  const loginWithGoogle = useCallback(async (googleProfile) => {
+    try {
+      const response = await authService.loginWithGoogle(googleProfile);
+      setUser(response.user);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
+  // ==================== QUÊN / ĐẶT LẠI MẬT KHẨU ====================
+
+  const forgotPassword = useCallback(async (email) => {
+    try {
+      const response = await authService.forgotPassword(email);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
+  const resetPassword = useCallback(async (token, newPassword) => {
+    try {
+      const response = await authService.resetPassword(token, newPassword);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
+  // ==================== ĐĂNG XUẤT ====================
+
   const logout = useCallback(() => {
-    authApi.logout();
+    authService.logout();
     setUser(null);
-    navigate("/login");
-  }, [navigate]);
+  }, []);
 
-  // ⭐ Chuyển về giao diện khách hàng
-  const switchToCustomerView = useCallback(() => {
-    navigate("/");
-  }, [navigate]);
+  // ==================== HELPERS ====================
 
-  // ⭐ Chuyển về giao diện quản lý shop
-  const switchToOwnerView = useCallback(() => {
-    navigate("/owner/dashboard");
-  }, [navigate]);
-
-  // ⭐ Kiểm tra user có shop không
-  const hasShop = useCallback(() => {
-    return user?.maCuaHang !== null && user?.maCuaHang !== undefined;
-  }, [user]);
-
-  // ⭐ Kiểm tra user có vai trò cụ thể
   const hasRole = useCallback(
     (roleName) => {
       if (!user?.VaiTros) return false;
@@ -110,7 +132,6 @@ export const AuthProvider = ({ children }) => {
     [user]
   );
 
-  // ⭐ Kiểm tra user có ít nhất 1 trong các vai trò
   const hasAnyRole = useCallback(
     (roleNames) => {
       if (!user?.VaiTros) return false;
@@ -119,12 +140,10 @@ export const AuthProvider = ({ children }) => {
     [user]
   );
 
-  // ⭐ Lấy tất cả vai trò của user
   const getRoles = useCallback(() => {
     return user?.VaiTros?.map((vt) => vt.tenVaiTro) || [];
   }, [user]);
 
-  // ⭐ Lấy vai trò chính (ưu tiên: Admin > Owner > Staff > Customer)
   const getPrimaryRole = useCallback(() => {
     const roles = getRoles();
     if (roles.includes("QUAN_TRI_VIEN")) return "QUAN_TRI_VIEN";
@@ -135,7 +154,6 @@ export const AuthProvider = ({ children }) => {
     return null;
   }, [getRoles]);
 
-  // ⭐ Kiểm tra quyền truy cập (cho ProtectedRoute)
   const canAccess = useCallback(
     (requiredRoles) => {
       if (!requiredRoles || requiredRoles.length === 0) return true;
@@ -144,21 +162,51 @@ export const AuthProvider = ({ children }) => {
     [hasAnyRole]
   );
 
+  const hasShop = useCallback(() => {
+    return user?.maCuaHang !== null && user?.maCuaHang !== undefined;
+  }, [user]);
+
+  const getShopInfo = useCallback(() => {
+    return user?.CuaHang || null;
+  }, [user]);
+
+  const isEmailVerified = useCallback(() => {
+    return user?.emailVerified === true;
+  }, [user]);
+
+  // Context value
   const value = {
     user,
     loading,
-    login,
+
+    // Auth actions
     register,
+    login,
+    loginWithGoogle,
     logout,
+
+    // Email verification
+    verifyEmail,
+    resendVerification,
+    isEmailVerified,
+
+    // Password reset
+    forgotPassword,
+    resetPassword,
+
+    // Role helpers
     hasRole,
     hasAnyRole,
     getRoles,
     getPrimaryRole,
     canAccess,
+
+    // Shop helpers
     hasShop,
-    switchToCustomerView,
-    switchToOwnerView,
-    isAuthenticated: authApi.isAuthenticated(),
+    getShopInfo,
+
+    // Status
+    isAuthenticated: authService.isAuthenticated(),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
