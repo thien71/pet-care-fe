@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../../api/authApi";
+import { showToast } from "@/utils/toast";
+import { TiTick } from "react-icons/ti";
 
 const EmailVerificationModal = ({ isOpen, email, onClose }) => {
   const navigate = useNavigate();
@@ -9,7 +11,6 @@ const EmailVerificationModal = ({ isOpen, email, onClose }) => {
   const [timeLeft, setTimeLeft] = useState(180); // 3 phút
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [resendSuccess, setResendSuccess] = useState(false);
   const [verifySuccess, setVerifySuccess] = useState(false);
 
   // Refs cho các input OTP
@@ -53,7 +54,6 @@ const EmailVerificationModal = ({ isOpen, email, onClose }) => {
 
   // Xử lý thay đổi OTP
   const handleOtpChange = (index, value) => {
-    // Chỉ cho phép nhập số
     if (value && !/^\d$/.test(value)) return;
 
     const newOtp = [...otp];
@@ -61,7 +61,6 @@ const EmailVerificationModal = ({ isOpen, email, onClose }) => {
     setOtp(newOtp);
     setError("");
 
-    // Auto focus sang ô tiếp theo
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -76,10 +75,8 @@ const EmailVerificationModal = ({ isOpen, email, onClose }) => {
   const handleKeyDown = (index, e) => {
     if (e.key === "Backspace") {
       if (!otp[index] && index > 0) {
-        // Nếu ô hiện tại rỗng, focus về ô trước
         inputRefs.current[index - 1]?.focus();
       } else {
-        // Xóa ô hiện tại
         const newOtp = [...otp];
         newOtp[index] = "";
         setOtp(newOtp);
@@ -96,13 +93,10 @@ const EmailVerificationModal = ({ isOpen, email, onClose }) => {
     e.preventDefault();
     const pastedData = e.clipboardData.getData("text").trim();
 
-    // Chỉ chấp nhận 6 số
     if (/^\d{6}$/.test(pastedData)) {
       const newOtp = pastedData.split("");
       setOtp(newOtp);
       inputRefs.current[5]?.focus();
-
-      // Auto submit
       handleVerify(pastedData);
     }
   };
@@ -123,14 +117,16 @@ const EmailVerificationModal = ({ isOpen, email, onClose }) => {
       await authService.verifyOTP(email, otpValue);
       setVerifySuccess(true);
 
+      showToast.success("Xác thực email thành công!");
+
       // Chuyển sang trang login sau 2 giây
       setTimeout(() => {
-        navigate("/login", {
-          state: { message: "Xác thực thành công! Vui lòng đăng nhập." },
-        });
+        navigate("/login");
       }, 2000);
     } catch (err) {
-      setError(err.message || "Mã OTP không đúng");
+      const errorMsg = err.message || "Mã OTP không đúng";
+      setError(errorMsg);
+      showToast.error(errorMsg);
       setOtp(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
     } finally {
@@ -142,18 +138,23 @@ const EmailVerificationModal = ({ isOpen, email, onClose }) => {
   const handleResend = async () => {
     setLoading(true);
     setError("");
-    setResendSuccess(false);
+
+    const loadingToast = showToast.loading("Đang gửi mã OTP mới...");
 
     try {
       await authService.resendOTP(email);
       setTimeLeft(180);
       setOtp(["", "", "", "", "", ""]);
-      setResendSuccess(true);
-      inputRefs.current[0]?.focus();
 
-      setTimeout(() => setResendSuccess(false), 3000);
+      showToast.dismiss(loadingToast);
+      showToast.success("Mã OTP mới đã được gửi đến email của bạn");
+
+      inputRefs.current[0]?.focus();
     } catch (err) {
-      setError(err.message || "Không thể gửi lại mã OTP");
+      showToast.dismiss(loadingToast);
+      const errorMsg = err.message || "Không thể gửi lại mã OTP";
+      setError(errorMsg);
+      showToast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -169,7 +170,9 @@ const EmailVerificationModal = ({ isOpen, email, onClose }) => {
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
           <div className="p-8 text-center">
-            <div className="text-6xl mb-4 animate-bounce">✅</div>
+            <div className="flex justify-center text-6xl mb-4 animate-bounce">
+              <TiTick size={64} className="text-green-500" />
+            </div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">
               Xác Thực Thành Công!
             </h2>
@@ -209,13 +212,6 @@ const EmailVerificationModal = ({ isOpen, email, onClose }) => {
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm text-center">
               {error}
-            </div>
-          )}
-
-          {/* Success */}
-          {resendSuccess && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm text-center">
-              ✅ Mã OTP mới đã được gửi
             </div>
           )}
 

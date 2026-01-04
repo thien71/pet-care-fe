@@ -6,6 +6,7 @@ import { jwtDecode } from "jwt-decode";
 import { useAuth } from "../../contexts/AuthContext";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import Logo from "@/components/common/Logo";
+import { showToast } from "@/utils/toast";
 
 const Login = () => {
   const { login, loginWithGoogle } = useAuth();
@@ -18,16 +19,13 @@ const Login = () => {
   });
 
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Hiển thị message từ navigation state (từ verify success)
+  // Hiển thị toast message từ navigation state
   useEffect(() => {
     if (location.state?.message) {
-      setSuccess(location.state.message);
-      // Clear message sau 5 giây
-      setTimeout(() => setSuccess(""), 5000);
+      showToast.success(location.state.message);
       // Clear state để không hiển thị lại khi refresh
       window.history.replaceState({}, document.title);
     }
@@ -44,7 +42,6 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
     setLoading(true);
 
     try {
@@ -57,19 +54,24 @@ const Login = () => {
       }
 
       const roles = response.user.VaiTros?.map((vt) => vt.tenVaiTro) || [];
-      if (roles.includes("QUAN_TRI_VIEN")) {
-        navigate("/admin/dashboard");
-      } else if (roles.includes("CHU_CUA_HANG")) {
-        navigate("/owner/dashboard");
-      } else if (roles.includes("LE_TAN")) {
-        navigate("/staff/dashboard");
-      } else if (roles.includes("KY_THUAT_VIEN")) {
-        navigate("/tech/dashboard");
-      } else {
-        navigate("/");
-      }
+
+      // Delay một chút để user thấy toast
+      setTimeout(() => {
+        if (roles.includes("QUAN_TRI_VIEN")) {
+          navigate("/admin/dashboard");
+        } else if (roles.includes("CHU_CUA_HANG")) {
+          navigate("/owner/dashboard");
+        } else if (roles.includes("LE_TAN")) {
+          navigate("/staff/dashboard");
+        } else if (roles.includes("KY_THUAT_VIEN")) {
+          navigate("/tech/dashboard");
+        } else {
+          navigate("/");
+        }
+      }, 0);
     } catch (err) {
       setError(err.message || "Đăng nhập thất bại");
+      showToast.error(err.message || "Đăng nhập thất bại");
     } finally {
       setLoading(false);
     }
@@ -78,7 +80,8 @@ const Login = () => {
   const handleGoogleSuccess = async (credentialResponse) => {
     setLoading(true);
     setError("");
-    setSuccess("");
+
+    const loadingToast = showToast.loading("Đang đăng nhập bằng Google...");
 
     try {
       const decoded = jwtDecode(credentialResponse.credential);
@@ -91,16 +94,24 @@ const Login = () => {
 
       const response = await loginWithGoogle(googleProfile);
 
+      showToast.dismiss(loadingToast);
+      showToast.success(`Đăng nhập thành công!`);
+
       const roles = response.user.VaiTros?.map((vt) => vt.tenVaiTro) || [];
-      if (roles.includes("QUAN_TRI_VIEN")) {
-        navigate("/admin/dashboard");
-      } else if (roles.includes("CHU_CUA_HANG")) {
-        navigate("/owner/dashboard");
-      } else {
-        navigate("/");
-      }
+
+      setTimeout(() => {
+        if (roles.includes("QUAN_TRI_VIEN")) {
+          navigate("/admin/dashboard");
+        } else if (roles.includes("CHU_CUA_HANG")) {
+          navigate("/owner/dashboard");
+        } else {
+          navigate("/");
+        }
+      }, 500);
     } catch (err) {
+      showToast.dismiss(loadingToast);
       setError(err.message || "Đăng nhập Google thất bại");
+      showToast.error(err.message || "Đăng nhập Google thất bại");
     } finally {
       setLoading(false);
     }
@@ -143,13 +154,6 @@ const Login = () => {
               <p className="text-gray-600 text-sm mb-6">
                 Đăng nhập để tiếp tục
               </p>
-
-              {/* Success Alert */}
-              {success && (
-                <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm animate-fade-in">
-                  ✅ {success}
-                </div>
-              )}
 
               {/* Error Alert */}
               {error && (
@@ -239,7 +243,9 @@ const Login = () => {
                 <div className="flex justify-center mb-6">
                   <GoogleLogin
                     onSuccess={handleGoogleSuccess}
-                    onError={() => setError("Đăng nhập Google thất bại")}
+                    onError={() => {
+                      showToast.error("Đăng nhập Google thất bại");
+                    }}
                     size="large"
                     text="signin_with"
                     locale="vi"

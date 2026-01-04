@@ -5,6 +5,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import EmailVerificationModal from "../../components/auth/EmailVerificationModal";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import Logo from "@/components/common/Logo";
+import { showToast } from "@/utils/toast";
 
 const Register = () => {
   const { register } = useAuth();
@@ -59,12 +60,20 @@ const Register = () => {
     e.preventDefault();
     setError("");
 
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      showToast.error("Vui lòng kiểm tra lại thông tin");
+      return;
+    }
 
     setLoading(true);
+    const loadingToast = showToast.loading("Đang tạo tài khoản...");
+
     try {
       const { confirmPassword, ...registerData } = formData;
       await register(registerData);
+
+      showToast.dismiss(loadingToast);
+      showToast.success("Đăng ký thành công! Kiểm tra email để nhận mã OTP");
 
       setRegisteredEmail(formData.email);
       setShowVerificationModal(true);
@@ -76,7 +85,10 @@ const Register = () => {
         confirmPassword: "",
       });
     } catch (err) {
-      setError(err.message || "Đăng ký thất bại");
+      showToast.dismiss(loadingToast);
+      const errorMsg = err.message || "Đăng ký thất bại";
+      setError(errorMsg);
+      showToast.error(errorMsg);
     } finally {
       setLoading(false);
     }
