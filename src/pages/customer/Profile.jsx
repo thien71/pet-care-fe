@@ -1,4 +1,4 @@
-// src/pages/customer/Profile.jsx
+// src/pages/customer/Profile.jsx - FIX Avatar Logic
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { userService } from "../../api";
@@ -7,29 +7,48 @@ import { FaSave, FaCamera, FaEdit } from "react-icons/fa";
 import { showToast } from "../../utils/toast";
 
 const Profile = () => {
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const { user: authUser } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [user, setUser] = useState(null); // ⭐ Dữ liệu từ DATABASE
   const [formData, setFormData] = useState({
     hoTen: "",
     soDienThoai: "",
     diaChi: "",
-    avatar: null,
   });
-  const [preview, setPreview] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null); // ⭐ File chọn từ input
+  const [previewFromFile, setPreviewFromFile] = useState(null); // ⭐ Preview từ FileReader (base64)
   const [errors, setErrors] = useState({});
 
+  // ⭐ FETCH DATA FROM DATABASE
   useEffect(() => {
-    if (user) {
-      setFormData({
-        hoTen: user.hoTen || "",
-        soDienThoai: user.soDienThoai || "",
-        diaChi: user.diaChi || "",
-        avatar: user.avatar || null,
-      });
-      setPreview(user.avatar);
+    const fetchUserProfile = async () => {
+      try {
+        setLoading(true);
+        console.log("📡 Fetching user profile from database...");
+
+        const response = await userService.getProfile();
+        console.log("✅ Profile data from database:", response);
+
+        setUser(response);
+        setFormData({
+          hoTen: response.hoTen || "",
+          soDienThoai: response.soDienThoai || "",
+          diaChi: response.diaChi || "",
+        });
+      } catch (err) {
+        console.error("❌ Fetch profile error:", err);
+        showToast.error("Không thể tải thông tin cá nhân");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (authUser) {
+      fetchUserProfile();
     }
-  }, [user]);
+  }, [authUser]);
 
   const validate = () => {
     const newErrors = {};
@@ -53,6 +72,8 @@ const Profile = () => {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
+    console.log("📁 File selected:", file?.name);
+
     if (file) {
       if (!file.type.startsWith("image/")) {
         showToast.error("Vui lòng chọn file ảnh");
@@ -63,9 +84,14 @@ const Profile = () => {
         return;
       }
 
-      setFormData({ ...formData, avatar: file });
+      setAvatarFile(file);
+
+      // ⭐ Preview từ FileReader (base64)
       const reader = new FileReader();
-      reader.onloadend = () => setPreview(reader.result);
+      reader.onloadend = () => {
+        console.log("✅ Preview set from FileReader");
+        setPreviewFromFile(reader.result);
+      };
       reader.readAsDataURL(file);
     }
   };
@@ -78,19 +104,115 @@ const Profile = () => {
       return;
     }
 
-    setLoading(true);
+    setSubmitting(true);
     try {
-      await userService.updateProfile(formData);
-      showToast.success("Cập nhật thông tin thành công!");
+      let updateData;
+
+      if (avatarFile) {
+        console.log("📤 Uploading with avatar file");
+        const formDataToSend = new FormData();
+        formDataToSend.append("hoTen", formData.hoTen);
+        formDataToSend.append("soDienThoai", formData.soDienThoai);
+        formDataToSend.append("diaChi", formData.diaChi);
+        formDataToSend.append("avatar", avatarFile);
+        updateData = formDataToSend;
+      } else {
+        console.log("📝 Uploading without avatar (JSON)");
+        updateData = formData;
+      }
+
+      // ⭐ Call API
+      const response = await userService.updateProfile(updateData);
+      console.log("✅ Update API Response:", response);
+
+      // ⭐ IMPORTANT: Update user state từ response
+      if (response && response.data) {
+        console.log("🔄 Updating user state with response data");
+        setUser(response.data);
+        setFormData({
+          hoTen: response.data.hoTen || "",
+          soDienThoai: response.data.soDienThoai || "",
+          diaChi: response.data.diaChi || "",
+        });
+
+        // ⭐ Clear preview từ file khi save thành công
+        setAvatarFile(null);
+        setPreviewFromFile(null);
+
+        // ⭐ Update localStorage too
+        const userData = {
+          ...response.data,
+          tokenInfo: authUser?.tokenInfo,
+        };
+        localStorage.setItem("user", JSON.stringify(userData));
+        console.log("💾 LocalStorage updated");
+      }
+
       setEditing(false);
+      setErrors({});
+
+      setTimeout(() => {
+        showToast.success("Cập nhật thông tin thành công!");
+      }, 100);
     } catch (err) {
+      console.error("❌ Update profile error:", err);
       showToast.error(err.message || "Cập nhật thất bại");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  console.log("User", user);
+  // ⭐ LOGIC: Lấy avatar từ 2 source
+  // Priority 1: Preview từ FileReader khi edit + chọn ảnh
+  // Priority 2: Avatar từ database (user state)
+  const getDisplayAvatar = () => {
+    if (previewFromFile) {
+      console.log("📸 Using preview from FileReader");
+      return previewFromFile;
+    }
+    if (user?.avatar) {
+      console.log("🖼️ Using avatar from database:", user.avatar);
+      return user.avatar;
+    }
+    return null;
+  };
+
+  const displayAvatar = getDisplayAvatar();
+
+  // ⭐ Show loading state
+  if (loading) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] bg-gray-50">
+        <CustomerSidebar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-[#8e2800] border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="mt-4 text-gray-600">Đang tải dữ liệu...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // ⭐ Show error state
+  if (!user) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] bg-gray-50">
+        <CustomerSidebar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-red-600">Không thể tải thông tin cá nhân</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 bg-[#8e2800] text-white rounded-lg"
+            >
+              Thử lại
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] bg-gray-50">
@@ -111,7 +233,7 @@ const Profile = () => {
             {!editing && (
               <button
                 onClick={() => setEditing(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors font-medium"
               >
                 <FaEdit />
                 <span>Chỉnh sửa</span>
@@ -120,18 +242,26 @@ const Profile = () => {
           </div>
 
           {/* Profile Card */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
             <form onSubmit={handleSubmit}>
               <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Avatar Section */}
                 <div className="md:col-span-1 flex flex-col items-center">
                   <div className="relative group">
-                    <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200">
-                      {preview ? (
+                    <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200 bg-gray-100 flex items-center justify-center">
+                      {displayAvatar ? (
                         <img
-                          src={preview}
+                          key={displayAvatar}
+                          src={displayAvatar}
                           alt="Avatar"
                           className="w-full h-full object-cover"
+                          onLoad={() => console.log("✅ Avatar img loaded")}
+                          onError={(e) => {
+                            console.error(
+                              "❌ Avatar img error:",
+                              displayAvatar
+                            );
+                          }}
                         />
                       ) : (
                         <div className="w-full h-full bg-[#8e2800] flex items-center justify-center text-white text-4xl font-bold">
@@ -141,7 +271,7 @@ const Profile = () => {
                     </div>
 
                     {editing && (
-                      <label className="absolute bottom-0 right-0 w-10 h-10 bg-[#8e2800] rounded-full flex items-center justify-center cursor-pointer hover:bg-[#6d1f00] transition-colors">
+                      <label className="absolute bottom-0 right-0 w-10 h-10 bg-[#8e2800] rounded-full flex items-center justify-center cursor-pointer hover:bg-[#6d1f00] transition-colors shadow-md">
                         <FaCamera className="text-white" />
                         <input
                           type="file"
@@ -260,19 +390,26 @@ const Profile = () => {
                     type="button"
                     onClick={() => {
                       setEditing(false);
+                      setAvatarFile(null);
+                      setPreviewFromFile(null);
+                      setFormData({
+                        hoTen: user?.hoTen || "",
+                        soDienThoai: user?.soDienThoai || "",
+                        diaChi: user?.diaChi || "",
+                      });
                       setErrors({});
                     }}
-                    disabled={loading}
-                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                    disabled={submitting}
+                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
                   >
                     Hủy
                   </button>
                   <button
                     type="submit"
-                    disabled={loading}
-                    className="flex items-center gap-2 px-6 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors disabled:opacity-50"
+                    disabled={submitting}
+                    className="flex items-center gap-2 px-6 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors disabled:opacity-50 font-medium"
                   >
-                    {loading ? (
+                    {submitting ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         <span>Đang lưu...</span>
@@ -295,9 +432,8 @@ const Profile = () => {
               <p className="text-sm text-gray-600">Ngày tham gia</p>
               <p className="text-lg font-semibold text-gray-800 mt-1">
                 {user?.ngayTao
-                  ? user.ngayTao
-                  : // ? new Date(user.ngayTao).toLocaleDateString("vi-VN")
-                    "N/A"}
+                  ? new Date(user.ngayTao).toLocaleDateString("vi-VN")
+                  : "N/A"}
               </p>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">

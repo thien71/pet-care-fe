@@ -21,8 +21,6 @@ const RegisterShop = () => {
     diaChi: "",
     soDienThoai: "",
     moTa: "",
-    kinhDo: "",
-    viDo: "",
   });
   const [files, setFiles] = useState({
     giayPhepKD: null,
@@ -55,22 +53,6 @@ const RegisterShop = () => {
       newErrors.soDienThoai = "Vui lòng nhập số điện thoại";
     } else if (!/^(0[3|5|7|8|9])+([0-9]{8})$/.test(formData.soDienThoai)) {
       newErrors.soDienThoai = "Số điện thoại không hợp lệ";
-    }
-
-    if (
-      formData.kinhDo &&
-      (isNaN(formData.kinhDo) ||
-        formData.kinhDo < -180 ||
-        formData.kinhDo > 180)
-    ) {
-      newErrors.kinhDo = "Kinh độ không hợp lệ (-180 đến 180)";
-    }
-
-    if (
-      formData.viDo &&
-      (isNaN(formData.viDo) || formData.viDo < -90 || formData.viDo > 90)
-    ) {
-      newErrors.viDo = "Vĩ độ không hợp lệ (-90 đến 90)";
     }
 
     if (!files.giayPhepKD) {
@@ -182,7 +164,7 @@ const RegisterShop = () => {
       <div className="flex min-h-[calc(100vh-4rem)] bg-gray-50">
         <CustomerSidebar />
         <main className="flex-1 flex items-center justify-center p-8">
-          <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+          <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full text-center border border-gray-200">
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <FaCheckCircle className="text-5xl text-green-600" />
             </div>
@@ -273,7 +255,7 @@ const RegisterShop = () => {
           {/* Form */}
           <form
             onSubmit={handleSubmit}
-            className="bg-white rounded-lg shadow-md p-6 space-y-6"
+            className="bg-white rounded-lg shadow-md p-6 space-y-5 border border-gray-200"
           >
             {/* Thông tin cơ bản */}
             <div>
@@ -282,30 +264,31 @@ const RegisterShop = () => {
               </h3>
 
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tên cửa hàng <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="tenCuaHang"
-                    value={formData.tenCuaHang}
-                    onChange={handleInputChange}
-                    placeholder="Ví dụ: Pet Care Premium Đà Nẵng"
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors ${
-                      errors.tenCuaHang
-                        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                        : "border-gray-300 focus:border-[#8e2800] focus:ring-[#8e2800]"
-                    }`}
-                  />
-                  {errors.tenCuaHang && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {errors.tenCuaHang}
-                    </p>
-                  )}
-                </div>
+                {/* Top Row: 3 columns */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tên cửa hàng <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="tenCuaHang"
+                      value={formData.tenCuaHang}
+                      onChange={handleInputChange}
+                      placeholder="Tên cửa hàng"
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors ${
+                        errors.tenCuaHang
+                          ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:border-[#8e2800] focus:ring-[#8e2800]"
+                      }`}
+                    />
+                    {errors.tenCuaHang && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.tenCuaHang}
+                      </p>
+                    )}
+                  </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Địa chỉ <span className="text-red-500">*</span>
@@ -315,7 +298,7 @@ const RegisterShop = () => {
                       name="diaChi"
                       value={formData.diaChi}
                       onChange={handleInputChange}
-                      placeholder="Địa chỉ cửa hàng"
+                      placeholder="Địa chỉ"
                       className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors ${
                         errors.diaChi
                           ? "border-red-500 focus:border-red-500 focus:ring-red-500"
@@ -353,54 +336,7 @@ const RegisterShop = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Kinh độ
-                    </label>
-                    <input
-                      type="number"
-                      name="kinhDo"
-                      value={formData.kinhDo}
-                      onChange={handleInputChange}
-                      placeholder="107.5930"
-                      step="0.000001"
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors ${
-                        errors.kinhDo
-                          ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                          : "border-gray-300 focus:border-[#8e2800] focus:ring-[#8e2800]"
-                      }`}
-                    />
-                    {errors.kinhDo && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {errors.kinhDo}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Vĩ độ
-                    </label>
-                    <input
-                      type="number"
-                      name="viDo"
-                      value={formData.viDo}
-                      onChange={handleInputChange}
-                      placeholder="16.0544"
-                      step="0.000001"
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors ${
-                        errors.viDo
-                          ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                          : "border-gray-300 focus:border-[#8e2800] focus:ring-[#8e2800]"
-                      }`}
-                    />
-                    {errors.viDo && (
-                      <p className="mt-1 text-sm text-red-500">{errors.viDo}</p>
-                    )}
-                  </div>
-                </div>
-
+                {/* Description */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Mô tả cửa hàng
@@ -409,7 +345,7 @@ const RegisterShop = () => {
                     name="moTa"
                     value={formData.moTa}
                     onChange={handleInputChange}
-                    rows={4}
+                    rows={3}
                     placeholder="Mô tả chi tiết về cửa hàng của bạn..."
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8e2800] focus:ring-1 focus:ring-[#8e2800] resize-none"
                   />
@@ -417,7 +353,7 @@ const RegisterShop = () => {
               </div>
             </div>
 
-            {/* Tài liệu */}
+            {/* Tài liệu - Moved up */}
             <div>
               <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
                 Tài liệu đăng ký
