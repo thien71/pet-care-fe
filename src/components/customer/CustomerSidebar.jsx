@@ -1,18 +1,16 @@
-// src/components/customer/CustomerSidebar.jsx
+// src/components/customer/CustomerSidebar.jsx - FIXED AVATAR DISPLAY
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import {
-  FaUser,
-  FaHistory,
-  FaStore,
-  FaChevronRight,
-  FaShoppingBag,
-} from "react-icons/fa";
+import { FaUser, FaHistory, FaStore, FaShoppingBag } from "react-icons/fa";
+import { getAvatarUrl } from "../../utils/constants";
 
 const CustomerSidebar = () => {
   const location = useLocation();
   const { user, hasShop } = useAuth();
   const userHasShop = hasShop();
+
+  // ⭐ Chuyển đổi avatar path → full URL
+  const avatarUrl = getAvatarUrl(user?.avatar);
 
   const isActive = (path) => location.pathname === path;
 
@@ -53,11 +51,22 @@ const CustomerSidebar = () => {
       {/* User Info Card */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center gap-3">
-          {user?.avatar ? (
+          {/* ⭐ FIXED: Avatar với full URL */}
+          {avatarUrl ? (
             <img
-              src={user.avatar}
-              alt={user.hoTen}
+              src={avatarUrl}
+              alt={user?.hoTen}
               className="w-12 h-12 rounded-full object-cover"
+              onError={(e) => {
+                // Fallback nếu ảnh lỗi
+                e.target.style.display = "none";
+                const fallback = document.createElement("div");
+                fallback.className =
+                  "w-12 h-12 bg-[#8e2800] text-white rounded-full flex items-center justify-center font-bold text-lg";
+                fallback.textContent =
+                  user?.hoTen?.charAt(0).toUpperCase() || "?";
+                e.target.parentElement.appendChild(fallback);
+              }}
             />
           ) : (
             <div className="w-12 h-12 bg-[#8e2800] text-white rounded-full flex items-center justify-center font-bold text-lg">

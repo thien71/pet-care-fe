@@ -1,3 +1,4 @@
+// src/components/common/Header.jsx - FIXED AVATAR DISPLAY
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useState, useRef, useEffect } from "react";
@@ -7,13 +8,13 @@ import {
   FaCalendarAlt,
   FaHistory,
   FaSearch,
-  FaBell,
   FaUser,
   FaSignOutAlt,
   FaBars,
   FaTimes,
 } from "react-icons/fa";
 import Logo from "@/components/common/Logo";
+import { getAvatarUrl } from "../../utils/constants";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -22,6 +23,9 @@ const Header = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const userMenuRef = useRef(null);
+
+  // ⭐ Chuyển đổi avatar path → full URL
+  const avatarUrl = getAvatarUrl(user?.avatar);
 
   // Đóng menu khi click ngoài
   useEffect(() => {
@@ -99,9 +103,28 @@ const Header = () => {
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                    <div className="w-8 h-8 bg-[#8e2800] text-white rounded-full flex items-center justify-center font-semibold">
-                      {user?.hoTen?.charAt(0).toUpperCase() || "?"}
-                    </div>
+                    {/* ⭐ FIXED: Avatar với full URL */}
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={user?.hoTen}
+                        className="w-8 h-8 rounded-full object-cover"
+                        onError={(e) => {
+                          // Fallback nếu ảnh lỗi
+                          e.target.style.display = "none";
+                          const fallback = document.createElement("div");
+                          fallback.className =
+                            "w-8 h-8 bg-[#8e2800] text-white rounded-full flex items-center justify-center font-semibold text-sm";
+                          fallback.textContent =
+                            user?.hoTen?.charAt(0).toUpperCase() || "?";
+                          e.target.parentElement.appendChild(fallback);
+                        }}
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-[#8e2800] text-white rounded-full flex items-center justify-center font-semibold">
+                        {user?.hoTen?.charAt(0).toUpperCase() || "?"}
+                      </div>
+                    )}
                     <span className="hidden lg:block font-medium text-gray-700">
                       {user?.hoTen || "User"}
                     </span>

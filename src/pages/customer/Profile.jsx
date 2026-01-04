@@ -1,24 +1,25 @@
-// src/pages/customer/Profile.jsx - FIX Avatar Logic
+// src/pages/customer/Profile.jsx - FIXED AVATAR DISPLAY
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { userService } from "../../api";
 import CustomerSidebar from "../../components/customer/CustomerSidebar";
 import { FaSave, FaCamera, FaEdit } from "react-icons/fa";
 import { showToast } from "../../utils/toast";
+import { getAvatarUrl } from "../../utils/constants";
 
 const Profile = () => {
   const { user: authUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [user, setUser] = useState(null); // ⭐ Dữ liệu từ DATABASE
+  const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
     hoTen: "",
     soDienThoai: "",
     diaChi: "",
   });
-  const [avatarFile, setAvatarFile] = useState(null); // ⭐ File chọn từ input
-  const [previewFromFile, setPreviewFromFile] = useState(null); // ⭐ Preview từ FileReader (base64)
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [previewFromFile, setPreviewFromFile] = useState(null);
   const [errors, setErrors] = useState({});
 
   // ⭐ FETCH DATA FROM DATABASE
@@ -121,11 +122,9 @@ const Profile = () => {
         updateData = formData;
       }
 
-      // ⭐ Call API
       const response = await userService.updateProfile(updateData);
       console.log("✅ Update API Response:", response);
 
-      // ⭐ IMPORTANT: Update user state từ response
       if (response && response.data) {
         console.log("🔄 Updating user state with response data");
         setUser(response.data);
@@ -139,7 +138,7 @@ const Profile = () => {
         setAvatarFile(null);
         setPreviewFromFile(null);
 
-        // ⭐ Update localStorage too
+        // ⭐ Update localStorage
         const userData = {
           ...response.data,
           tokenInfo: authUser?.tokenInfo,
@@ -162,24 +161,29 @@ const Profile = () => {
     }
   };
 
-  // ⭐ LOGIC: Lấy avatar từ 2 source
-  // Priority 1: Preview từ FileReader khi edit + chọn ảnh
-  // Priority 2: Avatar từ database (user state)
+  // ⭐ FIXED: Chuyển đổi path → full URL
   const getDisplayAvatar = () => {
+    // Priority 1: Preview từ FileReader khi đang edit + chọn ảnh mới
     if (previewFromFile) {
       console.log("📸 Using preview from FileReader");
       return previewFromFile;
     }
+
+    // Priority 2: Avatar từ database
     if (user?.avatar) {
-      console.log("🖼️ Using avatar from database:", user.avatar);
-      return user.avatar;
+      console.log("🖼️ Avatar from DB:", user.avatar);
+      const fullUrl = getAvatarUrl(user.avatar);
+      console.log("🔗 Converted to full URL:", fullUrl);
+      return fullUrl;
     }
+
+    console.log("⚠️ No avatar found");
     return null;
   };
 
   const displayAvatar = getDisplayAvatar();
 
-  // ⭐ Show loading state
+  // ⭐ Loading state
   if (loading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] bg-gray-50">
@@ -194,7 +198,7 @@ const Profile = () => {
     );
   }
 
-  // ⭐ Show error state
+  // ⭐ Error state
   if (!user) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] bg-gray-50">
@@ -251,16 +255,24 @@ const Profile = () => {
                     <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200 bg-gray-100 flex items-center justify-center">
                       {displayAvatar ? (
                         <img
-                          key={displayAvatar}
                           src={displayAvatar}
                           alt="Avatar"
                           className="w-full h-full object-cover"
-                          onLoad={() => console.log("✅ Avatar img loaded")}
+                          onLoad={() =>
+                            console.log("✅ Avatar loaded successfully")
+                          }
                           onError={(e) => {
                             console.error(
-                              "❌ Avatar img error:",
+                              "❌ Avatar load error:",
                               displayAvatar
                             );
+                            // ⭐ Fallback: Hiển thị chữ cái đầu nếu ảnh lỗi
+                            e.target.style.display = "none";
+                            e.target.parentElement.innerHTML = `
+                              <div class="w-full h-full bg-[#8e2800] flex items-center justify-center text-white text-4xl font-bold">
+                                ${user?.hoTen?.charAt(0).toUpperCase() || "?"}
+                              </div>
+                            `;
                           }}
                         />
                       ) : (
@@ -282,9 +294,6 @@ const Profile = () => {
                       </label>
                     )}
                   </div>
-                  <p className="mt-4 text-sm text-gray-500 text-center">
-                    {editing ? "Click để đổi ảnh" : "Ảnh đại diện"}
-                  </p>
                 </div>
 
                 {/* Form Fields */}
