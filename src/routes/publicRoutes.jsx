@@ -6,6 +6,7 @@ import HomePage from "@/pages/home/HomePage";
 import ShopServiceDetail from "@/pages/services/ShopServiceDetail";
 import ServiceDetail from "@/pages/services/ServiceDetail";
 import SearchResults from "@/pages/search/SearchResults";
+import Profile from "@/pages/customer/Profile";
 
 export const publicRoutes = [
   {
@@ -26,10 +27,6 @@ export const publicRoutes = [
   },
   {
     path: "profile",
-    element: <ProtectedRoute>{/* <ProfilePage /> */}</ProtectedRoute>,
-  },
-  {
-    path: "settings",
-    element: <ProtectedRoute>{/* <SettingsPage /> */}</ProtectedRoute>,
+    element: <ProtectedRoute>{<Profile />}</ProtectedRoute>,
   },
 ];

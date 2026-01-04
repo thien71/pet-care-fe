@@ -24,14 +24,6 @@ export const customerRoutes = [
     ),
   },
   {
-    path: "customer/pets",
-    element: (
-      <ProtectedRoute allowedRoles={["KHACH_HANG"]}>
-        {/* <PetsPage /> */}
-      </ProtectedRoute>
-    ),
-  },
-  {
     path: "customer/register-shop",
     element: (
       <ProtectedRoute allowedRoles={["KHACH_HANG"]}>
