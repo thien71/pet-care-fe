@@ -1,25 +1,27 @@
-// src/pages/auth/Register.jsx
+// src/pages/auth/Register.jsx (UPDATED - WITH MODAL)
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import EmailVerificationModal from "../../components/auth/EmailVerificationModal";
 
 const Register = () => {
   const { register } = useAuth();
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     hoTen: "",
     email: "",
     matKhau: "",
     confirmPassword: "",
-    // soDienThoai: "",
-    // diaChi: "",
     maVaiTro: 1, // Mặc định là KHACH_HANG
   });
+
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  // ==================== MODAL STATE ====================
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
 
   const handleChange = (e) => {
     setFormData({
@@ -30,18 +32,26 @@ const Register = () => {
   };
 
   const validateForm = () => {
+    if (!formData.hoTen.trim()) {
+      setError("Vui lòng nhập họ và tên");
+      return false;
+    }
+
     if (formData.matKhau.length < 6) {
       setError("Mật khẩu phải có ít nhất 6 ký tự");
       return false;
     }
+
     if (formData.matKhau !== formData.confirmPassword) {
       setError("Mật khẩu xác nhận không khớp");
       return false;
     }
+
     if (!agreedToTerms) {
       setError("Vui lòng đồng ý với điều khoản dịch vụ");
       return false;
     }
+
     return true;
   };
 
@@ -56,12 +66,19 @@ const Register = () => {
       const { confirmPassword, ...registerData } = formData;
       await register(registerData);
 
-      setSuccess(true);
+      // ✅ Hiển thị modal xác nhận email thay vì chuyển trang
+      setRegisteredEmail(formData.email);
+      setShowVerificationModal(true);
 
-      // Chuyển đến trang login sau 2s
-      setTimeout(() => {
-        navigate("/login");
-      }, 2000);
+      // Reset form
+      setFormData({
+        hoTen: "",
+        email: "",
+        matKhau: "",
+        confirmPassword: "",
+        maVaiTro: 1,
+      });
+      setAgreedToTerms(false);
     } catch (err) {
       setError(err.message || "Đăng ký thất bại");
     } finally {
@@ -69,25 +86,9 @@ const Register = () => {
     }
   };
 
-  // Success modal
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-green-50 to-teal-50 px-4">
-        <div className="card w-96 bg-base-100 shadow-2xl">
-          <div className="card-body items-center text-center">
-            <div className="text-6xl mb-4">✅</div>
-            <h2 className="card-title text-success">Đăng ký thành công!</h2>
-            <p className="text-gray-600">
-              Tài khoản của bạn đã được tạo. Đang chuyển đến trang đăng nhập...
-            </p>
-            <div className="mt-4">
-              <span className="loading loading-spinner loading-md text-primary"></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleCloseModal = () => {
+    setShowVerificationModal(false);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-green-50 via-teal-50 to-blue-50 px-4 py-8">
@@ -162,41 +163,6 @@ const Register = () => {
                     disabled={loading}
                   />
                 </div>
-
-                {/* Số điện thoại */}
-                {/* <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">
-                      Số điện thoại
-                    </span>
-                  </label>
-                  <input
-                    type="tel"
-                    name="soDienThoai"
-                    placeholder="0123456789"
-                    className="input input-bordered w-full"
-                    value={formData.soDienThoai}
-                    onChange={handleChange}
-                    pattern="[0-9]{10}"
-                    disabled={loading}
-                  />
-                </div> */}
-
-                {/* Địa chỉ */}
-                {/* <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">Địa chỉ</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="diaChi"
-                    placeholder="Đà Nẵng"
-                    className="input input-bordered w-full"
-                    value={formData.diaChi}
-                    onChange={handleChange}
-                    disabled={loading}
-                  />
-                </div> */}
 
                 {/* Password */}
                 <div className="form-control">
@@ -304,6 +270,13 @@ const Register = () => {
           </div>
         </div>
       </div>
+
+      {/* ==================== EMAIL VERIFICATION MODAL ==================== */}
+      <EmailVerificationModal
+        isOpen={showVerificationModal}
+        email={registeredEmail}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 };

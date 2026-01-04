@@ -3,6 +3,7 @@ import AuthPage from "@/pages/auth/AuthPage";
 import VerifyEmail from "@/pages/auth/VerifyEmail";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
 import ResetPassword from "@/pages/auth/ResetPassword";
+import Register from "@/pages/auth/Register";
 
 export const authRoutes = [
   {
@@ -12,6 +13,7 @@ export const authRoutes = [
   {
     path: "/register",
     element: <AuthPage />,
+    // element: <Register />,
   },
   {
     path: "/verify-email",

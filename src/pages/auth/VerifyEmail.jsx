@@ -1,13 +1,14 @@
-// src/pages/auth/VerifyEmail.jsx
+// src/pages/auth/VerifyEmail.jsx (UPDATED - AUTO LOGIN)
 import { useState, useEffect } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import authService from "../../api/authApi";
 
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
   const navigate = useNavigate();
-  const { verifyEmail, resendVerification } = useAuth();
+  const { verifyEmail, resendVerification, login } = useAuth();
 
   const [state, setState] = useState({
     verifying: true,
@@ -16,6 +17,7 @@ const VerifyEmail = () => {
     resending: false,
     resendSuccess: false,
     email: "",
+    redirecting: false,
   });
 
   // Verify token on mount
@@ -32,12 +34,21 @@ const VerifyEmail = () => {
 
       try {
         await verifyEmail(token);
+
+        console.log("✅ Email verified successfully!");
+
         setState((prev) => ({
           ...prev,
           verifying: false,
           success: true,
         }));
+
+        // ✅ Auto-redirect sau 3 giây
+        setTimeout(() => {
+          navigate("/login");
+        }, 3000);
       } catch (error) {
+        console.error("❌ Verify error:", error);
         setState((prev) => ({
           ...prev,
           verifying: false,
@@ -47,7 +58,7 @@ const VerifyEmail = () => {
     };
 
     verify();
-  }, [token, verifyEmail]);
+  }, [token, verifyEmail, navigate]);
 
   const handleResend = async () => {
     if (!state.email) {
@@ -86,7 +97,7 @@ const VerifyEmail = () => {
           {state.verifying ? (
             /* Verifying State */
             <div className="p-12 text-center">
-              <div className="text-6xl mb-6">📧</div>
+              <div className="text-6xl mb-6 animate-bounce">📧</div>
               <h2 className="text-2xl font-bold text-gray-800 mb-3">
                 Đang Xác Thực Email
               </h2>
@@ -123,6 +134,13 @@ const VerifyEmail = () => {
                 <p className="text-sm text-green-800">
                   <span className="font-semibold">🎉 Chúc mừng!</span> Tài khoản
                   của bạn đã được kích hoạt.
+                </p>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-blue-800">
+                  <span className="font-semibold">⏳ Chuyển hướng...</span> Bạn
+                  sẽ được chuyển đến trang đăng nhập trong vài giây
                 </p>
               </div>
 
