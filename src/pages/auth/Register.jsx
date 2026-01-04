@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import EmailVerificationModal from "../../components/auth/EmailVerificationModal";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import Logo from "@/components/common/Logo";
 
 const Register = () => {
   const { register } = useAuth();
@@ -85,10 +87,12 @@ const Register = () => {
       {/* Left - Image/Banner */}
       <div className="hidden lg:flex lg:w-1/2 bg-linear-to-br from-[#8e2800] to-[#c43a0e] items-center justify-center p-8">
         <div className="text-center text-white max-w-md">
-          <div className="text-8xl mb-6">🐾</div>
+          <div className="text-8xl mb-6">
+            <Logo className="border border-white rounded-full" />
+          </div>
           <h1 className="text-4xl font-bold mb-4">Pet Care Da Nang</h1>
           <p className="text-xl text-white/90">
-            Gia nhập cộng đồng yêu thú cưng và nhận những dịch vụ tốt nhất
+            Gia nhập và nhận những dịch vụ tốt nhất
           </p>
         </div>
       </div>
@@ -98,7 +102,9 @@ const Register = () => {
         <div className="w-full max-w-md">
           {/* Mobile Header */}
           <div className="lg:hidden text-center mb-8">
-            <div className="text-5xl mb-3">🐾</div>
+            <div className="text-5xl mb-3">
+              <Logo className="border border-white rounded-full" />
+            </div>
             <h1 className="text-2xl font-bold text-gray-800">
               Pet Care Da Nang
             </h1>
@@ -130,8 +136,8 @@ const Register = () => {
                   name="hoTen"
                   value={formData.hoTen}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8e2800] focus:ring-2 focus:ring-[#8e2800]/20 transition"
-                  placeholder="Nguyễn Văn A"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8e2800] transition"
+                  placeholder="Nhập họ tên"
                   required
                   disabled={loading}
                 />
@@ -147,8 +153,8 @@ const Register = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8e2800] focus:ring-2 focus:ring-[#8e2800]/20 transition"
-                  placeholder="example@email.com"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8e2800] transition"
+                  placeholder="Nhập email của bạn"
                   required
                   disabled={loading}
                 />
@@ -165,7 +171,7 @@ const Register = () => {
                     name="matKhau"
                     value={formData.matKhau}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8e2800] focus:ring-2 focus:ring-[#8e2800]/20 transition"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8e2800] transition"
                     placeholder="••••••••"
                     required
                     minLength={6}
@@ -176,7 +182,11 @@ const Register = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
                   >
-                    {showPassword ? "🙈" : "👁️"}
+                    {showPassword ? (
+                      <FaEyeSlash className="text-[#8e2800]" />
+                    ) : (
+                      <FaEye className="text-[#8e2800]" />
+                    )}
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Tối thiểu 6 ký tự</p>
@@ -192,7 +202,7 @@ const Register = () => {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8e2800] focus:ring-2 focus:ring-[#8e2800]/20 transition"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8e2800] transition"
                   placeholder="••••••••"
                   required
                   disabled={loading}
@@ -211,7 +221,7 @@ const Register = () => {
 
             {/* Login Link */}
             <p className="text-center text-gray-600 text-sm mt-6">
-              Đã có tài khoản?
+              Đã có tài khoản?{" "}
               <Link
                 to="/login"
                 className="text-[#8e2800] font-semibold hover:underline"

@@ -4,6 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import { useAuth } from "../../contexts/AuthContext";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import Logo from "@/components/common/Logo";
 
 const Login = () => {
   const { login, loginWithGoogle } = useAuth();
@@ -97,11 +99,11 @@ const Login = () => {
         {/* Left - Image/Banner */}
         <div className="hidden lg:flex lg:w-1/2 bg-linear-to-br from-[#8e2800] to-[#c43a0e] items-center justify-center p-8">
           <div className="text-center text-white max-w-md">
-            <div className="text-8xl mb-6">🐾</div>
+            <div className="text-8xl mb-6">
+              <Logo className="border border-white rounded-full" />
+            </div>
             <h1 className="text-4xl font-bold mb-4">Pet Care Da Nang</h1>
-            <p className="text-xl text-white/90">
-              Chăm sóc thú cưng của bạn là ưu tiên của chúng tôi
-            </p>
+            <p className="text-xl text-white/90">Chăm sóc thú cưng của bạn</p>
           </div>
         </div>
 
@@ -110,7 +112,9 @@ const Login = () => {
           <div className="w-full max-w-md">
             {/* Mobile Header */}
             <div className="lg:hidden text-center mb-8">
-              <div className="text-5xl mb-3">🐾</div>
+              <div className="text-5xl mb-3">
+                <Logo className="border border-white rounded-full" />
+              </div>
               <h1 className="text-2xl font-bold text-gray-800">
                 Pet Care Da Nang
               </h1>
@@ -144,8 +148,8 @@ const Login = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8e2800] focus:ring-2 focus:ring-[#8e2800]/20 transition"
-                    placeholder="example@email.com"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8e2800] transition"
+                    placeholder="Nhập email của bạn"
                     required
                     disabled={loading}
                   />
@@ -162,7 +166,7 @@ const Login = () => {
                       name="matKhau"
                       value={formData.matKhau}
                       onChange={handleChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8e2800] focus:ring-2 focus:ring-[#8e2800]/20 transition"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8e2800] transition"
                       placeholder="••••••••"
                       required
                       disabled={loading}
@@ -172,20 +176,17 @@ const Login = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
                     >
-                      {showPassword ? "🙈" : "👁️"}
+                      {showPassword ? (
+                        <FaEyeSlash className="text-[#8e2800]" />
+                      ) : (
+                        <FaEye className="text-[#8e2800]" />
+                      )}
                     </button>
                   </div>
                 </div>
 
                 {/* Remember & Forgot */}
-                <div className="flex items-center justify-between text-sm">
-                  <label className="flex items-center text-gray-600">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 rounded border-gray-300 mr-2"
-                    />
-                    Ghi nhớ đăng nhập
-                  </label>
+                <div className="flex items-center justify-end text-sm">
                   <Link
                     to="/forgot-password"
                     className="text-[#8e2800] hover:underline font-medium"
