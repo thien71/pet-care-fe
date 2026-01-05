@@ -1,17 +1,50 @@
-// src/layouts/OwnerLayout.jsx
 import { Outlet } from "react-router-dom";
-import Sidebar from "../components/common/Sidebar";
+import Sidebar from "@/components/common/Sidebar";
+import { MdDashboard, MdMiscellaneousServices } from "react-icons/md";
+import { FaCalendarAlt, FaUserTie, FaCalendar, FaChartLine, FaCreditCard, FaCog } from "react-icons/fa";
 
 const OwnerLayout = () => {
   const menuItems = [
-    { path: "/owner/dashboard", label: "Dashboard", icon: "📊" },
-    { path: "/owner/bookings", label: "Quản lý đặt hẹn", icon: "📅" },
-    { path: "/owner/employees", label: "Quản lý nhân viên", icon: "👥" },
-    { path: "/owner/services", label: "Quản lý dịch vụ", icon: "✨" },
-    { path: "/owner/schedule", label: "Lịch làm việc", icon: "📆" },
-    { path: "/owner/statistics", label: "Thống kê", icon: "📈" },
-    { path: "/owner/payments", label: "Thanh toán", icon: "💳" },
-    { path: "/owner/settings", label: "Cài đặt cửa hàng", icon: "⚙️" },
+    {
+      path: "/owner/dashboard",
+      label: "Dashboard",
+      icon: <MdDashboard />,
+    },
+    {
+      path: "/owner/bookings",
+      label: "Quản lý đặt hẹn",
+      icon: <FaCalendarAlt />,
+    },
+    {
+      path: "/owner/employees",
+      label: "Quản lý nhân viên",
+      icon: <FaUserTie />,
+    },
+    {
+      path: "/owner/services",
+      label: "Quản lý dịch vụ",
+      icon: <MdMiscellaneousServices />,
+    },
+    {
+      path: "/owner/schedule",
+      label: "Lịch làm việc",
+      icon: <FaCalendar />,
+    },
+    {
+      path: "/owner/statistics",
+      label: "Thống kê",
+      icon: <FaChartLine />,
+    },
+    {
+      path: "/owner/payments",
+      label: "Thanh toán",
+      icon: <FaCreditCard />,
+    },
+    {
+      path: "/owner/settings",
+      label: "Cài đặt cửa hàng",
+      icon: <FaCog />,
+    },
   ];
 
   return (

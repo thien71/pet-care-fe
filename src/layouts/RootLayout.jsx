@@ -1,6 +1,5 @@
-// src/layouts/RootLayout.jsx
 import { Outlet } from "react-router-dom";
-import { AuthProvider } from "../contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const RootLayout = () => {
   return (

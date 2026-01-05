@@ -1,8 +1,8 @@
-// src/components/common/Sidebar.jsx - UPDATED THEME
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useState, useRef, useEffect } from "react";
-import { getAvatarUrl } from "../../utils/constants";
+import { getAvatarUrl } from "@/utils/constants";
+import { FaPaw, FaUser } from "react-icons/fa";
 
 const Sidebar = ({ items = [] }) => {
   const location = useLocation();
@@ -14,14 +14,15 @@ const Sidebar = ({ items = [] }) => {
     return location.pathname === path || location.pathname.startsWith(path + "/");
   };
 
-  const tenVaiTro = user?.VaiTros?.[0]?.tenVaiTro;
+  const roles = user?.VaiTros || [];
+  const chuCuaHangRole = roles.find((r) => r.tenVaiTro === "CHU_CUA_HANG");
+  const tenVaiTro = chuCuaHangRole?.tenVaiTro || roles[0]?.tenVaiTro;
+
   const maCuaHang = user?.maCuaHang;
 
   const canSwitchToCustomerView = tenVaiTro === "CHU_CUA_HANG" || (tenVaiTro === "KHACH_HANG" && maCuaHang);
-
   const isChuCuaHang = tenVaiTro === "CHU_CUA_HANG";
 
-  // Tính toán home path
   let homePath = "/";
   if (tenVaiTro === "QUAN_TRI_VIEN") {
     homePath = "/admin/dashboard";
@@ -32,12 +33,9 @@ const Sidebar = ({ items = [] }) => {
   } else if (tenVaiTro === "KY_THUAT_VIEN") {
     homePath = "/tech/dashboard";
   }
-  console.log("home path", homePath);
 
-  // Lấy avatar URL
   const avatarUrl = getAvatarUrl(user?.avatar);
 
-  // Đóng dropdown khi click ngoài
   useEffect(() => {
     if (!showDropdown) return;
 
@@ -54,44 +52,62 @@ const Sidebar = ({ items = [] }) => {
   return (
     <aside className="w-64 bg-white shadow-lg h-screen fixed left-0 top-0 overflow-y-auto flex flex-col border-r border-gray-200">
       {/* Logo */}
-      <div className="p-6 border-b border-gray-200">
-        <Link to={homePath} className="flex items-center gap-3 text-xl font-bold group">
-          <span className="text-3xl group-hover:scale-110 transition-transform">🐾</span>
+      <div className="p-5 border-b border-gray-200">
+        <Link to={homePath} className="flex items-center gap-2 text-lg font-bold group">
+          <div className="w-10 h-10 bg-[#8e2800] rounded-4xl flex items-center justify-center group-hover:scale-105 transition-transform">
+            <FaPaw className="text-white text-xl" />
+          </div>
           <span className="text-[#8e2800]">Pet Care</span>
         </Link>
       </div>
 
       {/* Menu Items */}
-      <nav className="p-4 flex-1">
+      <nav className="p-3 flex-1">
         <ul className="space-y-2">
           {items.map((item, idx) => (
             <li key={idx}>
               <Link
                 to={item.path}
                 className={`
-                  flex items-center gap-3 p-3 rounded-lg transition-all group
-                  ${isActive(item.path) ? "bg-[#8e2800] text-white shadow-md" : "text-gray-700 hover:bg-gray-100"}
+                  flex items-center gap-3 py-2 px-3 rounded-lg transition-all group text-sm
+                  ${isActive(item.path) ? "bg-[#8e2800] text-white" : "text-gray-700 hover:bg-gray-100"}
                 `}
               >
-                <span className={`text-xl ${isActive(item.path) ? "text-white" : "text-[#8e2800]"}`}>{item.icon}</span>
+                <span className={`text-lg ${isActive(item.path) ? "text-white" : "text-[#8e2800]"}`}>{item.icon}</span>
                 <span className={`font-medium ${isActive(item.path) ? "text-white" : "text-gray-800"}`}>{item.label}</span>
               </Link>
             </li>
           ))}
+
+          {/* ⭐ Thông tin cá nhân - Thêm vào cuối menu */}
+          <li>
+            <Link
+              to={`${homePath.split("/").slice(0, 2).join("/")}/profile`}
+              className={`
+                flex items-center gap-3 py-2 px-3 rounded-lg transition-all group text-sm
+                ${isActive("/profile") ? "bg-[#8e2800] text-white" : "text-gray-700 hover:bg-gray-100"}
+              `}
+            >
+              <span className={`text-lg ${isActive("/profile") ? "text-white" : "text-[#8e2800]"}`}>
+                <FaUser />
+              </span>
+              <span className={`font-medium ${isActive("/profile") ? "text-white" : "text-gray-800"}`}>Thông tin cá nhân</span>
+            </Link>
+          </li>
         </ul>
       </nav>
 
       {/* User Dropdown */}
-      <div className="p-4 border-t border-gray-200 bg-white">
+      <div className="p-3 border-t border-gray-200 bg-white">
         <div ref={dropdownRef} className={`dropdown dropdown-top w-full ${showDropdown ? "dropdown-open" : ""}`}>
           <label
             tabIndex={0}
             role="button"
-            className="btn btn-ghost w-full justify-start gap-3 hover:bg-gray-100 transition-colors"
+            className="btn btn-ghost w-full justify-start gap-2 hover:bg-gray-100 transition-colors h-auto py-2 px-3 text-sm"
             onClick={() => setShowDropdown(!showDropdown)}
           >
             {/* Avatar */}
-            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200 bg-gray-100 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-200 bg-gray-100 flex items-center justify-center shrink-0">
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
@@ -100,14 +116,14 @@ const Sidebar = ({ items = [] }) => {
                   onError={(e) => {
                     e.target.style.display = "none";
                     e.target.parentElement.innerHTML = `
-                      <div class="w-full h-full bg-[#8e2800] flex items-center justify-center text-white text-lg font-bold">
+                      <div class="w-full h-full bg-[#8e2800] flex items-center justify-center text-white text-sm font-bold">
                         ${user?.hoTen?.charAt(0).toUpperCase() || "?"}
                       </div>
                     `;
                   }}
                 />
               ) : (
-                <div className="w-full h-full bg-[#8e2800] flex items-center justify-center text-white text-lg font-bold">
+                <div className="w-full h-full bg-[#8e2800] flex items-center justify-center text-white text-sm font-bold">
                   {user?.hoTen?.charAt(0).toUpperCase() || "?"}
                 </div>
               )}
@@ -115,14 +131,14 @@ const Sidebar = ({ items = [] }) => {
 
             {/* User Info */}
             <div className="flex flex-col items-start flex-1 min-w-0">
-              <span className="font-semibold text-sm truncate max-w-[120px] text-gray-800">{user?.hoTen || "User"}</span>
-              <span className="text-xs text-gray-500 truncate max-w-[120px]">{user?.email}</span>
+              <span className="font-semibold text-xs truncate max-w-[120px] text-gray-800">{user?.hoTen || "User"}</span>
+              <span className="text-[10px] text-gray-500 truncate max-w-[120px]">{user?.email}</span>
             </div>
 
             {/* Arrow */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className={`h-5 w-5 transition-transform duration-200 text-gray-600 shrink-0 ${showDropdown ? "rotate-180" : ""}`}
+              className={`h-4 w-4 transition-transform duration-200 text-gray-600 shrink-0 ${showDropdown ? "rotate-180" : ""}`}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -132,7 +148,7 @@ const Sidebar = ({ items = [] }) => {
           </label>
 
           {/* Dropdown Menu */}
-          <ul tabIndex={0} className="dropdown-content z-50 menu p-3 shadow-lg bg-white rounded-box w-full border border-gray-200">
+          <ul tabIndex={0} className="dropdown-content z-50 menu p-2 shadow-lg bg-white rounded-lg w-full border border-gray-200">
             {/* Về trang chủ */}
             {canSwitchToCustomerView && (
               <li>
@@ -141,7 +157,7 @@ const Sidebar = ({ items = [] }) => {
                     setShowDropdown(false);
                     switchToCustomerView();
                   }}
-                  className="gap-2 text-gray-700 hover:bg-gray-100"
+                  className="gap-2 text-gray-700 hover:bg-gray-100 text-sm py-2"
                 >
                   <span>🏠</span>
                   Về trang chủ
@@ -149,18 +165,14 @@ const Sidebar = ({ items = [] }) => {
               </li>
             )}
 
-            {/* Thông tin cá nhân - FIXED: Relative path */}
-            <li>
-              <Link to="profile" onClick={() => setShowDropdown(false)} className="gap-2 text-gray-700 hover:bg-gray-100">
-                <span>👤</span>
-                Thông tin cá nhân
-              </Link>
-            </li>
-
             {/* Cài đặt cửa hàng - chỉ chủ cửa hàng */}
             {isChuCuaHang && (
               <li>
-                <Link to="/owner/settings" onClick={() => setShowDropdown(false)} className="gap-2 text-gray-700 hover:bg-gray-100">
+                <Link
+                  to="/owner/settings"
+                  onClick={() => setShowDropdown(false)}
+                  className="gap-2 text-gray-700 hover:bg-gray-100 text-sm py-2"
+                >
                   <span>⚙️</span>
                   Cài đặt cửa hàng
                 </Link>
@@ -176,7 +188,7 @@ const Sidebar = ({ items = [] }) => {
                   setShowDropdown(false);
                   logout();
                 }}
-                className="text-error gap-2 hover:bg-red-50"
+                className="text-error gap-2 hover:bg-red-50 text-sm py-2"
               >
                 <span>🚪</span>
                 Đăng xuất

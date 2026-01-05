@@ -1,11 +1,19 @@
-// src/layouts/StaffLayout.jsx - UPDATED cho Lễ Tân
 import { Outlet } from "react-router-dom";
-import Sidebar from "../components/common/Sidebar";
+import Sidebar from "@/components/common/Sidebar";
+import { FaClipboardList, FaCalendar } from "react-icons/fa";
 
 const StaffLayout = () => {
   const menuItems = [
-    { path: "/staff/dashboard", label: "Quản Lý Đơn Đặt", icon: "📋" },
-    { path: "/staff/schedule", label: "Lịch Làm Việc", icon: "📅" },
+    {
+      path: "/staff/dashboard",
+      label: "Quản Lý Đơn Đặt",
+      icon: <FaClipboardList />,
+    },
+    {
+      path: "/staff/schedule",
+      label: "Lịch Làm Việc",
+      icon: <FaCalendar />,
+    },
   ];
 
   return (

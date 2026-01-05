@@ -1,11 +1,19 @@
-// src/layouts/TechnicianLayout.jsx
 import { Outlet } from "react-router-dom";
-import Sidebar from "../components/common/Sidebar";
+import Sidebar from "@/components/common/Sidebar";
+import { FaTools, FaCalendar } from "react-icons/fa";
 
 const TechnicianLayout = () => {
   const menuItems = [
-    { path: "/tech/dashboard", label: "Công Việc Của Tôi", icon: "🔧" },
-    { path: "/tech/schedule", label: "Lịch Làm Việc", icon: "📅" },
+    {
+      path: "/tech/dashboard",
+      label: "Công Việc Của Tôi",
+      icon: <FaTools />,
+    },
+    {
+      path: "/tech/schedule",
+      label: "Lịch Làm Việc",
+      icon: <FaCalendar />,
+    },
   ];
 
   return (
