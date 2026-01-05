@@ -84,10 +84,24 @@ export const serviceService = {
   },
 
   addServiceToShop: async (serviceData) => {
+    if (serviceData instanceof FormData) {
+      return await apiClient.post("/services/shop", serviceData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+    }
     return await apiClient.post("/services/shop", serviceData);
   },
 
   updateShopService: async (id, serviceData) => {
+    if (serviceData instanceof FormData) {
+      return await apiClient.put(`/services/shop/${id}`, serviceData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+    }
     return await apiClient.put(`/services/shop/${id}`, serviceData);
   },
 
