@@ -2,39 +2,26 @@
 import apiClient, { decodeToken, isTokenExpired } from "./apiClient";
 
 export const authService = {
-  // ==================== ĐĂNG KÝ ====================
+  // ==================== ĐĂNG KÝ GỬI OTP====================
 
-  /**
-   * Đăng ký tài khoản mới
-   * Sẽ gửi email OTP
-   */
   register: async (userData) => {
     return await apiClient.post("/auth/register", userData);
   },
 
   // ==================== XÁC THỰC EMAIL ====================
 
-  /**
-   * Xác thực email bằng OTP
-   * @param {string} email
-   * @param {string} otp - Mã OTP 6 số
-   */
   verifyOTP: async (email, otp) => {
     return await apiClient.post("/auth/verify-otp", { email, otp });
   },
 
-  /**
-   * Gửi lại mã OTP
-   */
+  // Gửi lại OTP
   resendOTP: async (email) => {
     return await apiClient.post("/auth/resend-otp", { email });
   },
 
   // ==================== ĐĂNG NHẬP ====================
 
-  /**
-   * Đăng nhập thường (email/password)
-   */
+  // Đăng nhập thường (email/password)
   login: async (email, matKhau) => {
     const response = await apiClient.post("/auth/login", { email, matKhau });
 
@@ -55,9 +42,7 @@ export const authService = {
     return response;
   },
 
-  /**
-   * Đăng nhập bằng Google
-   */
+  // Đăng nhập bằng Google
   loginWithGoogle: async (googleProfile) => {
     const response = await apiClient.post("/auth/google", { googleProfile });
 
@@ -80,16 +65,12 @@ export const authService = {
 
   // ==================== QUÊN / ĐẶT LẠI MẬT KHẨU ====================
 
-  /**
-   * Gửi email reset password
-   */
+  // Gửi email reset password
   forgotPassword: async (email) => {
     return await apiClient.post("/auth/forgot-password", { email });
   },
 
-  /**
-   * Đặt lại mật khẩu bằng token
-   */
+  // Đặt lại mật khẩu bằng token
   resetPassword: async (token, newPassword) => {
     return await apiClient.post("/auth/reset-password", {
       token,

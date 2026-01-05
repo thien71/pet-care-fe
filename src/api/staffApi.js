@@ -2,34 +2,39 @@
 import apiClient from "./apiClient";
 
 export const staffService = {
-  // ==================== LỊCH LÀM VIỆC ====================
+  // ==================== SCHEDULE ====================
   getMySchedule: async (params) => {
     return await apiClient.get("/staff/schedule", { params });
   },
 
-  // ==================== QUẢN LÝ ĐẶT HẸN ====================
-  getShopBookings: async (params) => {
-    return await apiClient.get("/staff/bookings", { params });
+  // ==================== EMPLOYEE MANAGEMENT ====================
+  getEmployees: async () => {
+    return await apiClient.get("/staff/employees");
   },
 
-  confirmBooking: async (id) => {
-    return await apiClient.put(`/staff/bookings/${id}/confirm`);
+  addEmployee: async (employeeData) => {
+    return await apiClient.post("/staff/employees", employeeData);
   },
 
-  assignTechnician: async (id, technicianData) => {
-    return await apiClient.put(
-      `/staff/bookings/${id}/assign-technician`,
-      technicianData
-    );
+  deleteEmployee: async (id) => {
+    return await apiClient.delete(`/staff/employees/${id}`);
   },
 
-  updateBookingStatus: async (id, statusData) => {
-    return await apiClient.put(`/staff/bookings/${id}/status`, statusData);
+  // ==================== SHIFT MANAGEMENT ====================
+  getShifts: async (params) => {
+    return await apiClient.get("/staff/shifts", { params });
   },
 
-  // ==================== KHÁCH HÀNG ====================
-  getShopCustomers: async () => {
-    return await apiClient.get("/staff/customers");
+  assignShift: async (shiftData) => {
+    return await apiClient.post("/staff/shifts", shiftData);
+  },
+
+  bulkAssignShifts: async (shiftsData) => {
+    return await apiClient.post("/staff/shifts/bulk", shiftsData);
+  },
+
+  removeShift: async (id) => {
+    return await apiClient.delete(`/staff/shifts/${id}`);
   },
 };
 

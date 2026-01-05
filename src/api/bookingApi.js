@@ -3,88 +3,43 @@ import apiClient from "./apiClient";
 
 export const bookingService = {
   // ==================== PUBLIC ROUTES ====================
-  getPublicShops: async (params) => {
-    return await apiClient.get("/booking/public/shops", { params });
-  },
-
-  getPublicPetTypes: async () => {
-    return await apiClient.get("/booking/public/pet-types");
-  },
-
-  getPublicServices: async () => {
-    return await apiClient.get("/booking/public/services");
-  },
-
-  getTopShops: async (limit = 10) => {
-    return await apiClient.get("/booking/public/top-shops", {
-      params: { limit },
-    });
-  },
-
-  getAllShopServices: async (params) => {
-    return await apiClient.get("/booking/public/shop-services", { params });
-  },
-
-  getShopServiceDetail: async (shopServiceId) => {
-    return await apiClient.get(`/booking/public/shop-service/${shopServiceId}`);
-  },
-
-  getServiceDetail: async (serviceId) => {
-    return await apiClient.get(`/booking/service/${serviceId}`);
-  },
-
-  getShopProfile: async (shopId) => {
-    return await apiClient.get(`/booking/shop/${shopId}/profile`);
-  },
-
   getAvailableSlots: async (shopId, params) => {
-    return await apiClient.get(`/booking/shop/${shopId}/available-slots`, {
-      params,
-    });
+    return await apiClient.get(`/bookings/slots/${shopId}`, { params });
   },
 
-  // ==================== CUSTOMER ROUTES ====================
-  getShopServicesByPetType: async (shopId, petTypeId) => {
-    return await apiClient.get(
-      `/booking/shop/${shopId}/services/pet-type/${petTypeId}`
-    );
-  },
-
+  // ==================== CUSTOMER ====================
   createBooking: async (bookingData) => {
-    return await apiClient.post("/booking/create", bookingData);
+    return await apiClient.post("/bookings", bookingData);
   },
 
   getMyBookings: async (params) => {
-    return await apiClient.get("/booking/my-bookings", { params });
+    return await apiClient.get("/bookings/my", { params });
   },
 
-  // ==================== STAFF/OWNER ROUTES ====================
+  // ==================== STAFF/OWNER ====================
   getShopBookings: async (params) => {
-    return await apiClient.get("/booking/shop-bookings", { params });
+    return await apiClient.get("/bookings/shop", { params });
   },
 
   confirmBooking: async (id) => {
-    return await apiClient.put(`/booking/${id}/confirm`);
+    return await apiClient.put(`/bookings/${id}/confirm`);
   },
 
   assignTechnician: async (id, technicianData) => {
-    return await apiClient.put(
-      `/booking/${id}/assign-technician`,
-      technicianData
-    );
+    return await apiClient.put(`/bookings/${id}/assign`, technicianData);
   },
 
   updateBookingStatus: async (id, statusData) => {
-    return await apiClient.put(`/booking/${id}/status`, statusData);
+    return await apiClient.put(`/bookings/${id}/status`, statusData);
   },
 
-  // ==================== TECHNICIAN ROUTES ====================
+  // ==================== TECHNICIAN ====================
   getMyAssignments: async (params) => {
-    return await apiClient.get("/booking/my-assignments", { params });
+    return await apiClient.get("/bookings/my-assignments", { params });
   },
 
   updateMyAssignment: async (id, assignmentData) => {
-    return await apiClient.put(`/booking/${id}/my-assignment`, assignmentData);
+    return await apiClient.put(`/bookings/${id}/my-assignment`, assignmentData);
   },
 };
 

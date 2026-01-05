@@ -2,14 +2,12 @@
 import apiClient from "./apiClient";
 
 export const userService = {
-  // Lấy thông tin profile
+  // ==================== PROFILE ====================
   getProfile: async () => {
     return await apiClient.get("/users/profile");
   },
 
-  // Cập nhật profile (hỗ trợ FormData khi có upload file)
   updateProfile: async (userData) => {
-    // Nếu userData là FormData (có file upload)
     if (userData instanceof FormData) {
       return await apiClient.put("/users/profile", userData, {
         headers: {
@@ -17,14 +15,36 @@ export const userService = {
         },
       });
     }
-
-    // Nếu userData là JSON object
     return await apiClient.put("/users/profile", userData);
   },
 
-  // Đổi mật khẩu
   changePassword: async (passwordData) => {
     return await apiClient.put("/users/change-password", passwordData);
+  },
+
+  // ==================== ADMIN - USERS ====================
+  getUsers: async (params) => {
+    return await apiClient.get("/users", { params });
+  },
+
+  getUserById: async (id) => {
+    return await apiClient.get(`/users/${id}`);
+  },
+
+  updateUser: async (id, userData) => {
+    return await apiClient.put(`/users/${id}`, userData);
+  },
+
+  deleteUser: async (id) => {
+    return await apiClient.delete(`/users/${id}`);
+  },
+
+  addRoleToUser: async (data) => {
+    return await apiClient.post("/users/add-role", data);
+  },
+
+  removeRoleFromUser: async (data) => {
+    return await apiClient.post("/users/remove-role", data);
   },
 };
 
