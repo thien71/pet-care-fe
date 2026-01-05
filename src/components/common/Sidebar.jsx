@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useRef, useEffect } from "react";
 import { getAvatarUrl } from "@/utils/constants";
-import { FaPaw, FaUser } from "react-icons/fa";
+import { FaHome, FaPaw, FaSignOutAlt, FaUser } from "react-icons/fa";
 
 const Sidebar = ({ items = [] }) => {
   const location = useLocation();
@@ -103,7 +103,7 @@ const Sidebar = ({ items = [] }) => {
           <label
             tabIndex={0}
             role="button"
-            className="btn btn-ghost w-full justify-start gap-2 hover:bg-gray-100 transition-colors h-auto py-2 px-3 text-sm"
+            className="btn btn-ghost w-full justify-start gap-2 hover:bg-gray-100 hover:border-white rounded-lg transition-colors h-auto py-2 px-3 text-sm"
             onClick={() => setShowDropdown(!showDropdown)}
           >
             {/* Avatar */}
@@ -157,29 +157,15 @@ const Sidebar = ({ items = [] }) => {
                     setShowDropdown(false);
                     switchToCustomerView();
                   }}
-                  className="gap-2 text-gray-700 hover:bg-gray-100 text-sm py-2"
+                  className="gap-2 text-sm text-gray-700 font-medium hover:bg-gray-100 rounded-lg p-2"
                 >
-                  <span>🏠</span>
+                  <FaHome className="text-[#8e2800]" />
                   Về trang chủ
                 </button>
               </li>
             )}
 
-            {/* Cài đặt cửa hàng - chỉ chủ cửa hàng */}
-            {isChuCuaHang && (
-              <li>
-                <Link
-                  to="/owner/settings"
-                  onClick={() => setShowDropdown(false)}
-                  className="gap-2 text-gray-700 hover:bg-gray-100 text-sm py-2"
-                >
-                  <span>⚙️</span>
-                  Cài đặt cửa hàng
-                </Link>
-              </li>
-            )}
-
-            <div className="divider my-1"></div>
+            <div className="divider my-0.5"></div>
 
             {/* Đăng xuất */}
             <li>
@@ -188,9 +174,9 @@ const Sidebar = ({ items = [] }) => {
                   setShowDropdown(false);
                   logout();
                 }}
-                className="text-error gap-2 hover:bg-red-50 text-sm py-2"
+                className="text-red-600 gap-2 font-medium hover:bg-red-50 rounded-lg p-2 text-sm"
               >
-                <span>🚪</span>
+                <FaSignOutAlt />
                 Đăng xuất
               </button>
             </li>
