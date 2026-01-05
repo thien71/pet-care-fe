@@ -32,6 +32,8 @@ const ShopSettings = () => {
     soDienThoai: "",
     moTa: "",
     anhCuaHang: "",
+    trangThai: "",
+    ngayTao: "",
   });
   const [editMode, setEditMode] = useState(false);
   const [formErrors, setFormErrors] = useState({});
@@ -44,13 +46,14 @@ const ShopSettings = () => {
     try {
       setLoading(true);
       const res = await shopService.getShopInfo();
-      // const res = await apiClient.get("/owner/shop-info");
       setShopData({
         tenCuaHang: res.data.tenCuaHang || "",
         diaChi: res.data.diaChi || "",
         soDienThoai: res.data.soDienThoai || "",
         moTa: res.data.moTa || "",
         anhCuaHang: res.data.anhCuaHang || "",
+        trangThai: res.data.trangThai || "",
+        ngayTao: res.data.ngayTao || "",
       });
       setError("");
     } catch (err) {
@@ -102,7 +105,6 @@ const ShopSettings = () => {
     try {
       setSaving(true);
       await shopService.updateShopInfo(shopData);
-      // await apiClient.put("/owner/shop-info", shopData);
       setSuccess("Cập nhật thông tin cửa hàng thành công!");
       setEditMode(false);
       setError("");
