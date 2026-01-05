@@ -23,6 +23,10 @@ export const serviceService = {
     return await apiClient.get(`/services/public/shops/${shopServiceId}`);
   },
 
+  getShopServicesByPetType: async (shopId, petTypeId) => {
+    return await apiClient.get(`/services/shops/${shopId}/pet-type/${petTypeId}`);
+  },
+
   // ==================== ADMIN - ROLES ====================
   getRoles: async () => {
     return await apiClient.get("/services/roles");

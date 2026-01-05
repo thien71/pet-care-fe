@@ -1,15 +1,9 @@
 // src/pages/customer/RegisterShop.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { customerService } from "../../api";
+import { shopService } from "@/api";
 import CustomerSidebar from "../../components/customer/CustomerSidebar";
-import {
-  FaStore,
-  FaCheckCircle,
-  FaUpload,
-  FaTimes,
-  FaImage,
-} from "react-icons/fa";
+import { FaStore, FaCheckCircle, FaUpload, FaTimes, FaImage } from "react-icons/fa";
 import { showToast } from "../../utils/toast";
 
 const RegisterShop = () => {
@@ -85,12 +79,7 @@ const RegisterShop = () => {
 
     if (file) {
       // Validate file type
-      const validTypes = [
-        "image/jpeg",
-        "image/jpg",
-        "image/png",
-        "application/pdf",
-      ];
+      const validTypes = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
       if (!validTypes.includes(file.type)) {
         showToast.error("Chỉ chấp nhận file ảnh (JPEG, PNG) hoặc PDF");
         return;
@@ -145,7 +134,7 @@ const RegisterShop = () => {
         if (file) formDataWithFiles.append(key, file);
       });
 
-      await customerService.registerShop(formDataWithFiles);
+      await shopService.registerShop(formDataWithFiles);
       setSuccess(true);
       showToast.success("Đăng ký thành công! Chờ admin duyệt.");
 
@@ -168,13 +157,8 @@ const RegisterShop = () => {
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <FaCheckCircle className="text-5xl text-green-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              Đăng ký thành công!
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Cửa hàng của bạn đang chờ duyệt. Admin sẽ kiểm tra thông tin trong
-              vòng 24-48 giờ.
-            </p>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Đăng ký thành công!</h2>
+            <p className="text-gray-600 mb-6">Cửa hàng của bạn đang chờ duyệt. Admin sẽ kiểm tra thông tin trong vòng 24-48 giờ.</p>
             <div className="flex items-center justify-center">
               <div className="w-8 h-8 border-4 border-[#8e2800] border-t-transparent rounded-full animate-spin"></div>
             </div>
@@ -200,11 +184,7 @@ const RegisterShop = () => {
               </div>
             </div>
           ) : (
-            <img
-              src={preview}
-              alt={label}
-              className="w-full h-32 object-cover"
-            />
+            <img src={preview} alt={label} className="w-full h-32 object-cover" />
           )}
           <button
             type="button"
@@ -243,25 +223,16 @@ const RegisterShop = () => {
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-2">
               <FaStore className="text-3xl text-[#8e2800]" />
-              <h1 className="text-2xl font-bold text-gray-800">
-                Đăng ký cửa hàng
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-800">Đăng ký cửa hàng</h1>
             </div>
-            <p className="text-gray-600">
-              Mở rộng kinh doanh với nền tảng Pet Care Da Nang
-            </p>
+            <p className="text-gray-600">Mở rộng kinh doanh với nền tảng Pet Care Da Nang</p>
           </div>
 
           {/* Form */}
-          <form
-            onSubmit={handleSubmit}
-            className="bg-white rounded-lg shadow-md p-6 space-y-5 border border-gray-200"
-          >
+          <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-5 border border-gray-200">
             {/* Thông tin cơ bản */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
-                Thông tin cơ bản
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Thông tin cơ bản</h3>
 
               <div className="space-y-4">
                 {/* Top Row: 3 columns */}
@@ -282,11 +253,7 @@ const RegisterShop = () => {
                           : "border-gray-300 focus:border-[#8e2800] focus:ring-[#8e2800]"
                       }`}
                     />
-                    {errors.tenCuaHang && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {errors.tenCuaHang}
-                      </p>
-                    )}
+                    {errors.tenCuaHang && <p className="mt-1 text-sm text-red-500">{errors.tenCuaHang}</p>}
                   </div>
 
                   <div>
@@ -305,11 +272,7 @@ const RegisterShop = () => {
                           : "border-gray-300 focus:border-[#8e2800] focus:ring-[#8e2800]"
                       }`}
                     />
-                    {errors.diaChi && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {errors.diaChi}
-                      </p>
-                    )}
+                    {errors.diaChi && <p className="mt-1 text-sm text-red-500">{errors.diaChi}</p>}
                   </div>
 
                   <div>
@@ -328,19 +291,13 @@ const RegisterShop = () => {
                           : "border-gray-300 focus:border-[#8e2800] focus:ring-[#8e2800]"
                       }`}
                     />
-                    {errors.soDienThoai && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {errors.soDienThoai}
-                      </p>
-                    )}
+                    {errors.soDienThoai && <p className="mt-1 text-sm text-red-500">{errors.soDienThoai}</p>}
                   </div>
                 </div>
 
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Mô tả cửa hàng
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Mô tả cửa hàng</label>
                   <textarea
                     name="moTa"
                     value={formData.moTa}
@@ -355,9 +312,7 @@ const RegisterShop = () => {
 
             {/* Tài liệu - Moved up */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
-                Tài liệu đăng ký
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Tài liệu đăng ký</h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FileUploadBox
@@ -368,12 +323,7 @@ const RegisterShop = () => {
                   error={errors.giayPhepKD}
                 />
 
-                <FileUploadBox
-                  name="anhCuaHang"
-                  label="Ảnh cửa hàng"
-                  preview={previews.anhCuaHang}
-                  error={errors.anhCuaHang}
-                />
+                <FileUploadBox name="anhCuaHang" label="Ảnh cửa hàng" preview={previews.anhCuaHang} error={errors.anhCuaHang} />
 
                 <FileUploadBox
                   name="cccdMatTruoc"
@@ -383,21 +333,14 @@ const RegisterShop = () => {
                   error={errors.cccdMatTruoc}
                 />
 
-                <FileUploadBox
-                  name="cccdMatSau"
-                  label="CCCD mặt sau"
-                  required
-                  preview={previews.cccdMatSau}
-                  error={errors.cccdMatSau}
-                />
+                <FileUploadBox name="cccdMatSau" label="CCCD mặt sau" required preview={previews.cccdMatSau} error={errors.cccdMatSau} />
               </div>
             </div>
 
             {/* Info Box */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
-                <strong>Lưu ý:</strong> Admin sẽ kiểm tra thông tin và duyệt đơn
-                trong vòng 24-48 giờ. Vui lòng cung cấp đầy đủ và chính xác
+                <strong>Lưu ý:</strong> Admin sẽ kiểm tra thông tin và duyệt đơn trong vòng 24-48 giờ. Vui lòng cung cấp đầy đủ và chính xác
                 thông tin để quá trình duyệt diễn ra nhanh chóng.
               </p>
             </div>

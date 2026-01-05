@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import apiClient from "../../api/apiClient";
+import { serviceService } from "@/api";
 import {
   FaSearch,
   FaFilter,
@@ -24,9 +24,7 @@ const SearchResults = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
   const [sortBy, setSortBy] = useState(searchParams.get("sortBy") || "newest");
-  const [currentPage, setCurrentPage] = useState(
-    parseInt(searchParams.get("page")) || 1
-  );
+  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get("page")) || 1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
@@ -36,9 +34,7 @@ const SearchResults = () => {
     min: searchParams.get("minPrice") || "",
     max: searchParams.get("maxPrice") || "",
   });
-  const [selectedPetType, setSelectedPetType] = useState(
-    searchParams.get("petType") || ""
-  );
+  const [selectedPetType, setSelectedPetType] = useState(searchParams.get("petType") || "");
 
   const itemsPerPage = 12;
 
@@ -76,9 +72,7 @@ const SearchResults = () => {
       if (priceRange.max) params.maxPrice = priceRange.max;
       if (selectedPetType) params.petType = selectedPetType;
 
-      const res = await apiClient.get("/booking/public/shop-services", {
-        params,
-      });
+      const res = await serviceService.getAllShopServices(params);
 
       setServices(res.data || []);
       setTotal(res.total || 0);
@@ -174,17 +168,13 @@ const SearchResults = () => {
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition lg:hidden ${
-                  hasActiveFilters
-                    ? "bg-[#8e2800] text-white"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                  hasActiveFilters ? "bg-[#8e2800] text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
                 }`}
               >
                 <FaFilter />
                 Bộ lọc
                 {hasActiveFilters && (
-                  <span className="bg-white text-[#8e2800] rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
-                    !
-                  </span>
+                  <span className="bg-white text-[#8e2800] rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">!</span>
                 )}
               </button>
 
@@ -232,10 +222,7 @@ const SearchResults = () => {
                   <FaFilter className="text-[#8e2800]" />
                   Bộ lọc
                 </h3>
-                <button
-                  onClick={() => setShowFilters(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
+                <button onClick={() => setShowFilters(false)} className="text-gray-500 hover:text-gray-700">
                   <FaTimes className="text-xl" />
                 </button>
               </div>
@@ -269,10 +256,7 @@ const SearchResults = () => {
                   Bộ lọc
                 </h3>
                 {hasActiveFilters && (
-                  <button
-                    onClick={handleClearFilters}
-                    className="text-xs text-[#8e2800] hover:underline font-medium"
-                  >
+                  <button onClick={handleClearFilters} className="text-xs text-[#8e2800] hover:underline font-medium">
                     Xóa tất cả
                   </button>
                 )}
@@ -291,10 +275,7 @@ const SearchResults = () => {
           <main className="flex-1">
             {/* Breadcrumb */}
             <div className="text-sm text-gray-600 mb-4">
-              <span
-                className="hover:text-[#8e2800] cursor-pointer"
-                onClick={() => navigate("/")}
-              >
+              <span className="hover:text-[#8e2800] cursor-pointer" onClick={() => navigate("/")}>
                 Trang chủ
               </span>
               <span className="mx-2">/</span>
@@ -312,12 +293,8 @@ const SearchResults = () => {
             ) : services.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-2xl">
                 <FaSearch className="text-6xl text-gray-300 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Không tìm thấy kết quả
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Thử thay đổi từ khóa hoặc bộ lọc
-                </p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Không tìm thấy kết quả</h3>
+                <p className="text-gray-600 mb-6">Thử thay đổi từ khóa hoặc bộ lọc</p>
                 <button
                   onClick={() => navigate("/")}
                   className="px-6 py-3 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition"
@@ -332,9 +309,7 @@ const SearchResults = () => {
                     <ServiceCard
                       key={service.maDichVuShop}
                       service={service}
-                      onClick={() =>
-                        navigate(`/service/${service.maDichVuShop}`)
-                      }
+                      onClick={() => navigate(`/service/${service.maDichVuShop}`)}
                     />
                   ))}
                 </div>
@@ -353,11 +328,7 @@ const SearchResults = () => {
                     <div className="flex gap-2">
                       {Array.from({ length: totalPages }, (_, i) => i + 1)
                         .filter((page) => {
-                          return (
-                            page === 1 ||
-                            page === totalPages ||
-                            Math.abs(page - currentPage) <= 1
-                          );
+                          return page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1;
                         })
                         .map((page, idx, arr) => {
                           const prevPage = arr[idx - 1];
@@ -365,9 +336,7 @@ const SearchResults = () => {
 
                           return (
                             <div key={page} className="flex items-center gap-2">
-                              {showEllipsis && (
-                                <span className="text-gray-400">...</span>
-                              )}
+                              {showEllipsis && <span className="text-gray-400">...</span>}
                               <button
                                 onClick={() => handlePageChange(page)}
                                 className={`w-10 h-10 rounded-lg font-medium transition ${
@@ -402,12 +371,7 @@ const SearchResults = () => {
 };
 
 // Filter Panel Component - ⭐ AUTO-APPLY khi tick
-const FilterPanel = ({
-  priceRange,
-  onPriceRangeChange,
-  selectedPetType,
-  onPetTypeChange,
-}) => {
+const FilterPanel = ({ priceRange, onPriceRangeChange, selectedPetType, onPetTypeChange }) => {
   const petTypes = [
     { value: "", label: "Tất cả" },
     { value: "cho", label: "Chó" },
@@ -436,10 +400,7 @@ const FilterPanel = ({
         </h4>
         <div className="space-y-2">
           {petTypes.map((type) => (
-            <label
-              key={type.value}
-              className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition"
-            >
+            <label key={type.value} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition">
               <input
                 type="radio"
                 name="petType"
@@ -471,8 +432,7 @@ const ServiceCard = ({ service, onClick }) => {
             alt={service.tenDichVu}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
             onError={(e) => {
-              e.target.src =
-                "https://via.placeholder.com/400x300?text=" + service.tenDichVu;
+              e.target.src = "https://via.placeholder.com/400x300?text=" + service.tenDichVu;
             }}
           />
         ) : (
@@ -488,16 +448,12 @@ const ServiceCard = ({ service, onClick }) => {
       </div>
 
       <div className="p-5">
-        <h3 className="font-bold text-lg text-gray-900 line-clamp-2 mb-3 group-hover:text-[#8e2800] transition">
-          {service.tenDichVu}
-        </h3>
+        <h3 className="font-bold text-lg text-gray-900 line-clamp-2 mb-3 group-hover:text-[#8e2800] transition">{service.tenDichVu}</h3>
 
         <div className="space-y-2 mb-4">
           <div className="flex items-start gap-2 text-sm text-gray-600">
             <FaStore className="text-[#8e2800] mt-1 shrink-0" />
-            <span className="line-clamp-1 font-medium">
-              {service.tenCuaHang}
-            </span>
+            <span className="line-clamp-1 font-medium">{service.tenCuaHang}</span>
           </div>
           <div className="flex items-start gap-2 text-xs text-gray-500">
             <FaMapMarkerAlt className="text-[#8e2800] mt-0.5 shrink-0" />
@@ -511,9 +467,7 @@ const ServiceCard = ({ service, onClick }) => {
               <FaStar className="text-yellow-400 text-sm" />
               <span className="font-bold text-gray-900">{service.rating}</span>
             </div>
-            <span className="text-xs text-gray-500">
-              ({service.reviewCount})
-            </span>
+            <span className="text-xs text-gray-500">({service.reviewCount})</span>
           </div>
           <div className="flex items-center gap-1 text-xs text-gray-500">
             <FaClock className="text-[#8e2800]" />

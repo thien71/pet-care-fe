@@ -1,7 +1,7 @@
 // src/pages/customer/Profile.jsx - FIXED AVATAR DISPLAY
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { userService } from "../../api";
+import { userService } from "@/api";
 import CustomerSidebar from "../../components/customer/CustomerSidebar";
 import { FaSave, FaCamera, FaEdit } from "react-icons/fa";
 import { showToast } from "../../utils/toast";
@@ -60,10 +60,7 @@ const Profile = () => {
       newErrors.hoTen = "Họ tên phải có ít nhất 3 ký tự";
     }
 
-    if (
-      formData.soDienThoai &&
-      !/^(0[3|5|7|8|9])+([0-9]{8})$/.test(formData.soDienThoai)
-    ) {
+    if (formData.soDienThoai && !/^(0[3|5|7|8|9])+([0-9]{8})$/.test(formData.soDienThoai)) {
       newErrors.soDienThoai = "Số điện thoại không hợp lệ";
     }
 
@@ -206,10 +203,7 @@ const Profile = () => {
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <p className="text-red-600">Không thể tải thông tin cá nhân</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 bg-[#8e2800] text-white rounded-lg"
-            >
+            <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 bg-[#8e2800] text-white rounded-lg">
               Thử lại
             </button>
           </div>
@@ -227,12 +221,8 @@ const Profile = () => {
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">
-                Thông tin cá nhân
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Quản lý thông tin tài khoản của bạn
-              </p>
+              <h1 className="text-2xl font-bold text-gray-800">Thông tin cá nhân</h1>
+              <p className="text-gray-600 mt-1">Quản lý thông tin tài khoản của bạn</p>
             </div>
             {!editing && (
               <button
@@ -258,14 +248,9 @@ const Profile = () => {
                           src={displayAvatar}
                           alt="Avatar"
                           className="w-full h-full object-cover"
-                          onLoad={() =>
-                            console.log("✅ Avatar loaded successfully")
-                          }
+                          onLoad={() => console.log("✅ Avatar loaded successfully")}
                           onError={(e) => {
-                            console.error(
-                              "❌ Avatar load error:",
-                              displayAvatar
-                            );
+                            console.error("❌ Avatar load error:", displayAvatar);
                             // ⭐ Fallback: Hiển thị chữ cái đầu nếu ảnh lỗi
                             e.target.style.display = "none";
                             e.target.parentElement.innerHTML = `
@@ -285,12 +270,7 @@ const Profile = () => {
                     {editing && (
                       <label className="absolute bottom-0 right-0 w-10 h-10 bg-[#8e2800] rounded-full flex items-center justify-center cursor-pointer hover:bg-[#6d1f00] transition-colors shadow-md">
                         <FaCamera className="text-white" />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageChange}
-                          className="hidden"
-                        />
+                        <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
                       </label>
                     )}
                   </div>
@@ -300,18 +280,14 @@ const Profile = () => {
                 <div className="md:col-span-2 space-y-4">
                   {/* Email (readonly) */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                     <input
                       type="email"
                       value={user?.email || ""}
                       disabled
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
                     />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Email không thể thay đổi
-                    </p>
+                    <p className="mt-1 text-xs text-gray-500">Email không thể thay đổi</p>
                   </div>
 
                   {/* Họ tên */}
@@ -322,9 +298,7 @@ const Profile = () => {
                     <input
                       type="text"
                       value={formData.hoTen}
-                      onChange={(e) =>
-                        setFormData({ ...formData, hoTen: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, hoTen: e.target.value })}
                       disabled={!editing}
                       className={`w-full px-4 py-2 border rounded-lg transition-colors ${
                         editing
@@ -333,18 +307,12 @@ const Profile = () => {
                       } ${errors.hoTen ? "border-red-500" : ""}`}
                       placeholder="Nhập họ và tên"
                     />
-                    {errors.hoTen && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {errors.hoTen}
-                      </p>
-                    )}
+                    {errors.hoTen && <p className="mt-1 text-sm text-red-500">{errors.hoTen}</p>}
                   </div>
 
                   {/* Số điện thoại */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Số điện thoại
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Số điện thoại</label>
                     <input
                       type="tel"
                       value={formData.soDienThoai}
@@ -362,23 +330,15 @@ const Profile = () => {
                       } ${errors.soDienThoai ? "border-red-500" : ""}`}
                       placeholder="0912345678"
                     />
-                    {errors.soDienThoai && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {errors.soDienThoai}
-                      </p>
-                    )}
+                    {errors.soDienThoai && <p className="mt-1 text-sm text-red-500">{errors.soDienThoai}</p>}
                   </div>
 
                   {/* Địa chỉ */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Địa chỉ
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Địa chỉ</label>
                     <textarea
                       value={formData.diaChi}
-                      onChange={(e) =>
-                        setFormData({ ...formData, diaChi: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, diaChi: e.target.value })}
                       disabled={!editing}
                       rows={3}
                       className={`w-full px-4 py-2 border rounded-lg transition-colors resize-none ${
@@ -440,16 +400,12 @@ const Profile = () => {
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
               <p className="text-sm text-gray-600">Ngày tham gia</p>
               <p className="text-lg font-semibold text-gray-800 mt-1">
-                {user?.ngayTao
-                  ? new Date(user.ngayTao).toLocaleDateString("vi-VN")
-                  : "N/A"}
+                {user?.ngayTao ? new Date(user.ngayTao).toLocaleDateString("vi-VN") : "N/A"}
               </p>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
               <p className="text-sm text-gray-600">Trạng thái tài khoản</p>
-              <span className="inline-block mt-1 px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
-                Hoạt động
-              </span>
+              <span className="inline-block mt-1 px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">Hoạt động</span>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
               <p className="text-sm text-gray-600">Email đã xác thực</p>

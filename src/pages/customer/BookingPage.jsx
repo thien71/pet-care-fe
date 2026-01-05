@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import apiClient from "../../api/apiClient";
+import { serviceService, bookingService, shopService } from "@/api";
 import { IoIosArrowBack } from "react-icons/io";
 import { TiTick } from "react-icons/ti";
 import {
@@ -70,8 +71,7 @@ const BookingPage = () => {
 
   // ⭐ SMART PET TYPE DETECTION - FIXED
   const detectPetTypeFromService = (serviceName, petTypesArray) => {
-    if (!serviceName || !petTypesArray || petTypesArray.length === 0)
-      return null;
+    if (!serviceName || !petTypesArray || petTypesArray.length === 0) return null;
 
     const lowerName = serviceName.toLowerCase();
 
@@ -87,16 +87,9 @@ const BookingPage = () => {
 
     for (const [petTypeName, keywords] of Object.entries(petTypeKeywords)) {
       if (keywords.some((keyword) => lowerName.includes(keyword))) {
-        const petType = petTypesArray.find(
-          (pt) => pt.tenLoai.toLowerCase() === petTypeName
-        );
+        const petType = petTypesArray.find((pt) => pt.tenLoai.toLowerCase() === petTypeName);
         if (petType) {
-          console.log(
-            "✅ Detected pet type:",
-            petType.tenLoai,
-            "for service:",
-            serviceName
-          );
+          console.log("✅ Detected pet type:", petType.tenLoai, "for service:", serviceName);
           return petType.maLoai;
         }
       }
@@ -114,9 +107,7 @@ const BookingPage = () => {
   // ⭐ AUTO-SELECT SHOP FROM PRE-FILL
   useEffect(() => {
     if (preselectedShopId && shops.length > 0) {
-      const shop = shops.find(
-        (s) => s.maCuaHang === parseInt(preselectedShopId)
-      );
+      const shop = shops.find((s) => s.maCuaHang === parseInt(preselectedShopId));
       if (shop) {
         console.log("✅ Auto-selected shop:", shop.tenCuaHang);
         setSelectedShop(shop);
@@ -126,16 +117,8 @@ const BookingPage = () => {
 
   // ⭐ AUTO-DETECT PET TYPE - FIXED WITH PROPER DEPENDENCIES
   useEffect(() => {
-    if (
-      selectedShop &&
-      petTypes.length > 0 &&
-      preselectedServiceName &&
-      !currentPet.maLoai
-    ) {
-      const detectedPetType = detectPetTypeFromService(
-        preselectedServiceName,
-        petTypes
-      );
+    if (selectedShop && petTypes.length > 0 && preselectedServiceName && !currentPet.maLoai) {
+      const detectedPetType = detectPetTypeFromService(preselectedServiceName, petTypes);
 
       if (detectedPetType) {
         console.log("✅ Setting pet type to:", detectedPetType);
@@ -163,14 +146,8 @@ const BookingPage = () => {
 
   // ⭐ AUTO-SELECT SERVICE AFTER SERVICES LOADED
   useEffect(() => {
-    if (
-      preselectedServiceId &&
-      availableServices.length > 0 &&
-      currentPet.dichVuIds.length === 0
-    ) {
-      const service = availableServices.find(
-        (s) => s.maDichVuShop === parseInt(preselectedServiceId)
-      );
+    if (preselectedServiceId && availableServices.length > 0 && currentPet.dichVuIds.length === 0) {
+      const service = availableServices.find((s) => s.maDichVuShop === parseInt(preselectedServiceId));
 
       if (service) {
         console.log("✅ Auto-selected service:", service.tenDichVu);
@@ -194,10 +171,7 @@ const BookingPage = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      const [shopsRes, petTypesRes] = await Promise.all([
-        apiClient.get("/booking/public/shops"),
-        apiClient.get("/booking/public/pet-types"),
-      ]);
+      const [shopsRes, petTypesRes] = await Promise.all([shopService.getPublicShops(), serviceService.getPublicPetTypes()]);
       setShops(shopsRes.data || []);
       setPetTypes(petTypesRes.data || []);
       console.log("✅ Loaded pet types:", petTypesRes.data);
@@ -212,9 +186,7 @@ const BookingPage = () => {
   const loadServicesByPetType = async () => {
     try {
       console.log("📡 Loading services for pet type:", currentPet.maLoai);
-      const res = await apiClient.get(
-        `/booking/shop/${selectedShop.maCuaHang}/services/pet-type/${currentPet.maLoai}`
-      );
+      const res = await serviceService.getShopServicesByPetType(selectedShop.maCuaHang, currentPet.maLoai);
       setAvailableServices(res.data || []);
 
       // ⭐ LƯU VÀO CACHE
@@ -235,10 +207,7 @@ const BookingPage = () => {
 
   const loadAvailableTimeSlots = async () => {
     try {
-      const res = await apiClient.get(
-        `/booking/shop/${selectedShop.maCuaHang}/available-slots`,
-        { params: { date: booking.ngayHen } }
-      );
+      const res = await bookingService.getAvailableSlots(selectedShop.maCuaHang, { date: booking.ngayHen });
       setAvailableTimeSlots(res.slots || []);
     } catch (err) {
       console.error("Load time slots error:", err);
@@ -271,9 +240,7 @@ const BookingPage = () => {
   const handleServiceToggle = (serviceId) => {
     setCurrentPet((prev) => ({
       ...prev,
-      dichVuIds: prev.dichVuIds.includes(serviceId)
-        ? prev.dichVuIds.filter((id) => id !== serviceId)
-        : [...prev.dichVuIds, serviceId],
+      dichVuIds: prev.dichVuIds.includes(serviceId) ? prev.dichVuIds.filter((id) => id !== serviceId) : [...prev.dichVuIds, serviceId],
     }));
   };
 
@@ -295,8 +262,7 @@ const BookingPage = () => {
     const errors = {};
     if (!currentPet.ten.trim()) errors.ten = "Vui lòng nhập tên";
     if (!currentPet.maLoai) errors.maLoai = "Vui lòng chọn loài";
-    if (currentPet.dichVuIds.length === 0)
-      errors.services = "Vui lòng chọn ít nhất 1 dịch vụ";
+    if (currentPet.dichVuIds.length === 0) errors.services = "Vui lòng chọn ít nhất 1 dịch vụ";
 
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
@@ -305,11 +271,7 @@ const BookingPage = () => {
 
     if (editingPetId) {
       // ⭐ UPDATE existing pet
-      setPets((prev) =>
-        prev.map((p) =>
-          p.id === editingPetId ? { ...currentPet, id: editingPetId } : p
-        )
-      );
+      setPets((prev) => prev.map((p) => (p.id === editingPetId ? { ...currentPet, id: editingPetId } : p)));
       setEditingPetId(null);
     } else {
       // ADD new pet
@@ -360,13 +322,12 @@ const BookingPage = () => {
         })),
       };
 
-      await apiClient.post("/booking/create", payload);
+      await bookingService.createBooking(payload);
+      // await apiClient.post("/booking/create", payload);
       setSuccess(true);
       setTimeout(() => navigate("/customer/history"), 2000);
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Đặt lịch thất bại. Vui lòng thử lại."
-      );
+      setError(err.response?.data?.message || "Đặt lịch thất bại. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -411,15 +372,9 @@ const BookingPage = () => {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center bg-white rounded-2xl shadow-xl p-12 max-w-md">
           <div className="text-6xl mb-6">✅</div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Đặt lịch thành công!
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Cửa hàng sẽ xác nhận đơn của bạn trong ít phút
-          </p>
-          <div className="animate-pulse text-gray-500">
-            Đang chuyển hướng...
-          </div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Đặt lịch thành công!</h2>
+          <p className="text-gray-600 mb-6">Cửa hàng sẽ xác nhận đơn của bạn trong ít phút</p>
+          <div className="animate-pulse text-gray-500">Đang chuyển hướng...</div>
         </div>
       </div>
     );
@@ -462,29 +417,17 @@ const BookingPage = () => {
                   <div className="flex items-center gap-2">
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
-                        currentStep >= step.num
-                          ? "bg-gray-900 text-white"
-                          : "bg-gray-200 text-gray-500"
+                        currentStep >= step.num ? "bg-gray-900 text-white" : "bg-gray-200 text-gray-500"
                       }`}
                     >
                       {step.num}
                     </div>
-                    <span
-                      className={`hidden md:block text-sm font-medium ${
-                        currentStep >= step.num
-                          ? "text-gray-900"
-                          : "text-gray-500"
-                      }`}
-                    >
+                    <span className={`hidden md:block text-sm font-medium ${currentStep >= step.num ? "text-gray-900" : "text-gray-500"}`}>
                       {step.label}
                     </span>
                   </div>
                   {idx < steps.length - 1 && (
-                    <div
-                      className={`w-8 md:w-12 h-0.5 mx-2 ${
-                        currentStep > step.num ? "bg-gray-900" : "bg-gray-200"
-                      }`}
-                    />
+                    <div className={`w-8 md:w-12 h-0.5 mx-2 ${currentStep > step.num ? "bg-gray-900" : "bg-gray-200"}`} />
                   )}
                 </div>
               ))}
@@ -510,10 +453,7 @@ const BookingPage = () => {
               <p className="text-red-800 font-medium">Có lỗi xảy ra</p>
               <p className="text-red-700 text-sm">{error}</p>
             </div>
-            <button
-              onClick={() => setError("")}
-              className="text-red-600 hover:text-red-800"
-            >
+            <button onClick={() => setError("")} className="text-red-600 hover:text-red-800">
               ×
             </button>
           </div>
@@ -552,9 +492,7 @@ const BookingPage = () => {
                   )}
                   <div className="p-6 border-t border-gray-100">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
-                      <span className="line-clamp-2">
-                        {selectedShop.tenCuaHang}
-                      </span>
+                      <span className="line-clamp-2">{selectedShop.tenCuaHang}</span>
                       <button
                         onClick={() => setShopModalOpen(true)}
                         className="flex items-center gap-1 px-5 py-1.5 bg-blue-100 text-blue-700 rounded-full font-medium text-sm hover:bg-blue-200 hover:text-blue-800 transition-all duration-200 shrink-0 cursor-pointer"
@@ -566,9 +504,7 @@ const BookingPage = () => {
                     <div className="space-y-3 text-sm text-gray-700">
                       <p className="flex items-start gap-3">
                         <FaMapMarkerAlt className="shrink-0 text-red-400 mt-1 text-base" />
-                        <span className="line-clamp-2">
-                          {selectedShop.diaChi}
-                        </span>
+                        <span className="line-clamp-2">{selectedShop.diaChi}</span>
                       </p>
                       <p className="flex items-center gap-3">
                         <FaPhoneAlt className="text-green-600 text-base" />
@@ -588,27 +524,17 @@ const BookingPage = () => {
               {currentStep === 1 && (
                 <div className="space-y-2">
                   <h2 className="text-xl font-bold text-gray-900">
-                    {editingPetId
-                      ? "✏️ Chỉnh Sửa Thú Cưng"
-                      : "Thông Tin Thú Cưng & Dịch Vụ"}
+                    {editingPetId ? "✏️ Chỉnh Sửa Thú Cưng" : "Thông Tin Thú Cưng & Dịch Vụ"}
                   </h2>
 
                   {!selectedShop ? (
-                    <div className="text-center py-12 text-gray-500">
-                      Vui lòng chọn cửa hàng trước
-                    </div>
+                    <div className="text-center py-12 text-gray-500">Vui lòng chọn cửa hàng trước</div>
                   ) : (
                     <>
                       {editingPetId && (
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-1 flex items-center justify-between">
-                          <p className="text-sm text-yellow-800">
-                            ✏️ Đang chỉnh sửa thú cưng. Cập nhật thông tin và
-                            bấm "Cập Nhật".
-                          </p>
-                          <button
-                            onClick={handleCancelEdit}
-                            className="text-sm text-yellow-700 hover:underline font-medium cursor-pointer"
-                          >
+                          <p className="text-sm text-yellow-800">✏️ Đang chỉnh sửa thú cưng. Cập nhật thông tin và bấm "Cập Nhật".</p>
+                          <button onClick={handleCancelEdit} className="text-sm text-yellow-700 hover:underline font-medium cursor-pointer">
                             Hủy
                           </button>
                         </div>
@@ -619,14 +545,10 @@ const BookingPage = () => {
                         <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr_1fr] gap-6 h-96">
                           {/* COLUMN 1: Pet Info */}
                           <div className="space-y-3 overflow-y-auto">
-                            <h3 className="font-bold text-gray-900 text-sm mb-3">
-                              🐾 Thông Tin Thú Cưng
-                            </h3>
+                            <h3 className="font-bold text-gray-900 text-sm mb-3">🐾 Thông Tin Thú Cưng</h3>
 
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Loài *
-                              </label>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Loài *</label>
                               <select
                                 value={currentPet.maLoai}
                                 onChange={(e) =>
@@ -637,9 +559,7 @@ const BookingPage = () => {
                                   })
                                 }
                                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-gray-900 ${
-                                  formErrors.maLoai
-                                    ? "border-red-500"
-                                    : "border-gray-300"
+                                  formErrors.maLoai ? "border-red-500" : "border-gray-300"
                                 }`}
                               >
                                 <option value="">-- Chọn loài --</option>
@@ -649,17 +569,11 @@ const BookingPage = () => {
                                   </option>
                                 ))}
                               </select>
-                              {formErrors.maLoai && (
-                                <p className="text-xs text-red-600 mt-1">
-                                  {formErrors.maLoai}
-                                </p>
-                              )}
+                              {formErrors.maLoai && <p className="text-xs text-red-600 mt-1">{formErrors.maLoai}</p>}
                             </div>
 
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Tên thú cưng *
-                              </label>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Tên thú cưng *</label>
                               <input
                                 type="text"
                                 placeholder="VD: Milu"
@@ -671,23 +585,15 @@ const BookingPage = () => {
                                   })
                                 }
                                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-gray-900 ${
-                                  formErrors.ten
-                                    ? "border-red-500"
-                                    : "border-gray-300"
+                                  formErrors.ten ? "border-red-500" : "border-gray-300"
                                 }`}
                                 autoFocus
                               />
-                              {formErrors.ten && (
-                                <p className="text-xs text-red-600 mt-1">
-                                  {formErrors.ten}
-                                </p>
-                              )}
+                              {formErrors.ten && <p className="text-xs text-red-600 mt-1">{formErrors.ten}</p>}
                             </div>
 
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Tuổi
-                              </label>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Tuổi</label>
                               <input
                                 type="number"
                                 placeholder="VD: 2"
@@ -704,9 +610,7 @@ const BookingPage = () => {
                             </div>
 
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Đặc điểm
-                              </label>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Đặc điểm</label>
                               <textarea
                                 placeholder="Màu sắc, đặc điểm nhận dạng..."
                                 value={currentPet.dacDiem}
@@ -724,30 +628,21 @@ const BookingPage = () => {
 
                           {/* COLUMN 2: Services */}
                           <div className="space-y-3 overflow-y-auto pr-2">
-                            <h3 className="font-bold text-gray-900 text-sm mb-3">
-                              ✨ Chọn Dịch Vụ *
-                            </h3>
+                            <h3 className="font-bold text-gray-900 text-sm mb-3">✨ Chọn Dịch Vụ *</h3>
 
                             {!currentPet.maLoai ? (
                               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
-                                <p className="text-sm text-yellow-800">
-                                  Vui lòng chọn loài thú cưng trước
-                                </p>
+                                <p className="text-sm text-yellow-800">Vui lòng chọn loài thú cưng trước</p>
                               </div>
                             ) : availableServices.length === 0 ? (
                               <div className="text-center py-8">
                                 <div className="animate-spin w-8 h-8 border-4 border-gray-300 border-t-gray-900 rounded-full mx-auto mb-2" />
-                                <p className="text-sm text-gray-500">
-                                  Đang tải...
-                                </p>
+                                <p className="text-sm text-gray-500">Đang tải...</p>
                               </div>
                             ) : (
                               <div className="space-y-2 max-h-96">
                                 {sortedServices.map((service) => {
-                                  const isSelected =
-                                    currentPet.dichVuIds.includes(
-                                      service.maDichVuShop
-                                    );
+                                  const isSelected = currentPet.dichVuIds.includes(service.maDichVuShop);
                                   return (
                                     <label
                                       key={service.maDichVuShop}
@@ -760,38 +655,17 @@ const BookingPage = () => {
                                       <input
                                         type="checkbox"
                                         checked={isSelected}
-                                        onChange={() =>
-                                          handleServiceToggle(
-                                            service.maDichVuShop
-                                          )
-                                        }
+                                        onChange={() => handleServiceToggle(service.maDichVuShop)}
                                         className="w-5 h-5 mt-0.5 accent-gray-900"
                                       />
                                       <div className="flex-1 min-w-0">
-                                        <p
-                                          className={`font-medium mb-1 ${
-                                            isSelected
-                                              ? "text-white"
-                                              : "text-gray-900"
-                                          }`}
-                                        >
+                                        <p className={`font-medium mb-1 ${isSelected ? "text-white" : "text-gray-900"}`}>
                                           {isSelected && "📌 "}
                                           {service.tenDichVu}
                                         </p>
-                                        <p
-                                          className={`text-sm ${
-                                            isSelected
-                                              ? "text-gray-200"
-                                              : "text-gray-600"
-                                          }`}
-                                        >
-                                          💰{" "}
-                                          {parseInt(service.gia).toLocaleString(
-                                            "vi-VN"
-                                          )}
-                                          đ
-                                          {service.thoiLuong &&
-                                            ` • ⏱️ ${service.thoiLuong}p`}
+                                        <p className={`text-sm ${isSelected ? "text-gray-200" : "text-gray-600"}`}>
+                                          💰 {parseInt(service.gia).toLocaleString("vi-VN")}đ
+                                          {service.thoiLuong && ` • ⏱️ ${service.thoiLuong}p`}
                                         </p>
                                       </div>
                                     </label>
@@ -799,11 +673,7 @@ const BookingPage = () => {
                                 })}
                               </div>
                             )}
-                            {formErrors.services && (
-                              <p className="text-xs text-red-600 mt-2">
-                                {formErrors.services}
-                              </p>
-                            )}
+                            {formErrors.services && <p className="text-xs text-red-600 mt-2">{formErrors.services}</p>}
                           </div>
 
                           {/* ⭐ COLUMN 3: Pet List */}
@@ -814,24 +684,18 @@ const BookingPage = () => {
                             </h3>
                             {pets.length === 0 ? (
                               <div className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg px-4 py-6 text-center">
-                                <p className="text-sm text-gray-500">
-                                  Chưa có thú cưng nào
-                                </p>
+                                <p className="text-sm text-gray-500">Chưa có thú cưng nào</p>
                               </div>
                             ) : (
                               <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
                                 {pets.map((pet) => {
-                                  const petType = petTypes.find(
-                                    (t) => t.maLoai === parseInt(pet.maLoai)
-                                  );
+                                  const petType = petTypes.find((t) => t.maLoai === parseInt(pet.maLoai));
                                   const isEditing = editingPetId === pet.id;
                                   return (
                                     <div
                                       key={pet.id}
                                       className={`border rounded-lg p-2 transition-all shadow-sm hover:shadow-md ${
-                                        isEditing
-                                          ? "border-yellow-400 bg-yellow-50"
-                                          : "border-blue-200 bg-blue-50"
+                                        isEditing ? "border-yellow-400 bg-yellow-50" : "border-blue-200 bg-blue-50"
                                       }`}
                                     >
                                       <div className="mb-3">
@@ -853,9 +717,7 @@ const BookingPage = () => {
                                             {pet.tuoi && ` • ${pet.tuoi} tuổi`}
                                           </p>
                                           <button
-                                            onClick={() =>
-                                              handleRemovePet(pet.id)
-                                            }
+                                            onClick={() => handleRemovePet(pet.id)}
                                             className="p-1 rounded-lg hover:bg-gray-100 text-red-600 hover:text-red-800 transition-colors"
                                           >
                                             <FaTrash className="text-base" />
@@ -864,13 +726,9 @@ const BookingPage = () => {
                                       </div>
                                       <ul className="text-sm text-gray-700 space-y-1">
                                         {pet.dichVuIds.map((serviceId) => {
-                                          const service =
-                                            servicesCache[serviceId]; // ⭐ SỬ DỤNG CACHE
+                                          const service = servicesCache[serviceId]; // ⭐ SỬ DỤNG CACHE
                                           return service ? (
-                                            <li
-                                              key={serviceId}
-                                              className="line-clamp-1 flex items-center gap-1"
-                                            >
+                                            <li key={serviceId} className="line-clamp-1 flex items-center gap-1">
                                               <FaCheckCircle className="text-green-500 text-xs" />
                                               {service.tenDichVu}
                                             </li>
@@ -913,14 +771,10 @@ const BookingPage = () => {
               {/* STEP 2: Date & Time */}
               {currentStep === 2 && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-bold text-gray-900">
-                    Chọn Ngày & Giờ
-                  </h2>
+                  <h2 className="text-xl font-bold text-gray-900">Chọn Ngày & Giờ</h2>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ngày hẹn *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Ngày hẹn *</label>
                     <input
                       type="date"
                       value={booking.ngayHen}
@@ -938,13 +792,9 @@ const BookingPage = () => {
 
                   {booking.ngayHen && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Khung giờ *
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Khung giờ *</label>
                       {availableTimeSlots.length === 0 ? (
-                        <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">
-                          Đang tải khung giờ...
-                        </p>
+                        <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">Đang tải khung giờ...</p>
                       ) : (
                         <div className="grid grid-cols-3 gap-2">
                           {availableTimeSlots.map((slot) => (
@@ -966,9 +816,7 @@ const BookingPage = () => {
                               }`}
                             >
                               {slot.gioBatDau}
-                              {!slot.available && (
-                                <div className="text-xs">Hết</div>
-                              )}
+                              {!slot.available && <div className="text-xs">Hết</div>}
                             </button>
                           ))}
                         </div>
@@ -981,45 +829,30 @@ const BookingPage = () => {
               {/* STEP 3: Confirmation */}
               {currentStep === 3 && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-bold text-gray-900">
-                    Xác Nhận Đặt Lịch
-                  </h2>
+                  <h2 className="text-xl font-bold text-gray-900">Xác Nhận Đặt Lịch</h2>
 
                   <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Ngày hẹn:</span>
-                      <span className="font-medium text-gray-900">
-                        {new Date(booking.ngayHen).toLocaleDateString("vi-VN")}
-                      </span>
+                      <span className="font-medium text-gray-900">{new Date(booking.ngayHen).toLocaleDateString("vi-VN")}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Giờ hẹn:</span>
-                      <span className="font-medium text-gray-900">
-                        {booking.gioBatDau}
-                      </span>
+                      <span className="font-medium text-gray-900">{booking.gioBatDau}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Số thú cưng:</span>
-                      <span className="font-medium text-gray-900">
-                        {pets.length}
-                      </span>
+                      <span className="font-medium text-gray-900">{pets.length}</span>
                     </div>
                   </div>
 
                   <div>
-                    <h3 className="font-bold text-gray-900 mb-3">
-                      Chi tiết dịch vụ:
-                    </h3>
+                    <h3 className="font-bold text-gray-900 mb-3">Chi tiết dịch vụ:</h3>
                     <div className="space-y-3">
                       {pets.map((pet) => {
-                        const petType = petTypes.find(
-                          (t) => t.maLoai === parseInt(pet.maLoai)
-                        );
+                        const petType = petTypes.find((t) => t.maLoai === parseInt(pet.maLoai));
                         return (
-                          <div
-                            key={pet.id}
-                            className="bg-blue-50 rounded-lg p-4"
-                          >
+                          <div key={pet.id} className="bg-blue-50 rounded-lg p-4">
                             <p className="font-medium text-gray-900 mb-2">
                               {pet.ten} ({petType?.tenLoai})
                             </p>
@@ -1027,17 +860,9 @@ const BookingPage = () => {
                               {pet.dichVuIds.map((serviceId) => {
                                 const service = servicesCache[serviceId]; // ⭐ SỬ DỤNG CACHE
                                 return service ? (
-                                  <li
-                                    key={serviceId}
-                                    className="flex justify-between"
-                                  >
+                                  <li key={serviceId} className="flex justify-between">
                                     <span>• {service.tenDichVu}</span>
-                                    <span className="font-medium">
-                                      {parseInt(service.gia).toLocaleString(
-                                        "vi-VN"
-                                      )}
-                                      đ
-                                    </span>
+                                    <span className="font-medium">{parseInt(service.gia).toLocaleString("vi-VN")}đ</span>
                                   </li>
                                 ) : null;
                               })}
@@ -1066,10 +891,7 @@ const BookingPage = () => {
                       setError("Vui lòng thêm ít nhất 1 thú cưng");
                       return;
                     }
-                    if (
-                      currentStep === 2 &&
-                      (!booking.ngayHen || !booking.gioBatDau)
-                    ) {
+                    if (currentStep === 2 && (!booking.ngayHen || !booking.gioBatDau)) {
                       setError("Vui lòng chọn ngày và giờ");
                       return;
                     }
@@ -1082,11 +904,7 @@ const BookingPage = () => {
                   disabled={loading || (currentStep === 1 && !selectedShop)}
                   className="flex-1 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading
-                    ? "Đang xử lý..."
-                    : currentStep === 3
-                    ? "Xác nhận đặt lịch"
-                    : "Tiếp theo →"}
+                  {loading ? "Đang xử lý..." : currentStep === 3 ? "Xác nhận đặt lịch" : "Tiếp theo →"}
                 </button>
               </div>
             </div>
@@ -1095,47 +913,35 @@ const BookingPage = () => {
           {/* RIGHT: Summary (0.8 part) */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-24">
-              <h3 className="text-lg font-bold text-gray-900 mb-6">
-                📋 Tóm Tắt
-              </h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-6">📋 Tóm Tắt</h3>
 
               <div className="space-y-4 pb-4 border-b border-gray-200">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Cửa hàng:</span>
-                  <span className="font-medium text-gray-900 text-right max-w-[60%] line-clamp-2">
-                    {selectedShop?.tenCuaHang || "---"}
-                  </span>
+                  <span className="font-medium text-gray-900 text-right max-w-[60%] line-clamp-2">{selectedShop?.tenCuaHang || "---"}</span>
                 </div>
                 {booking.ngayHen && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Ngày hẹn:</span>
-                    <span className="font-medium text-gray-900">
-                      {new Date(booking.ngayHen).toLocaleDateString("vi-VN")}
-                    </span>
+                    <span className="font-medium text-gray-900">{new Date(booking.ngayHen).toLocaleDateString("vi-VN")}</span>
                   </div>
                 )}
                 {booking.gioBatDau && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Giờ hẹn:</span>
-                    <span className="font-medium text-gray-900">
-                      {booking.gioBatDau}
-                    </span>
+                    <span className="font-medium text-gray-900">{booking.gioBatDau}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Thú cưng:</span>
-                  <span className="font-medium text-gray-900">
-                    {pets.length} con
-                  </span>
+                  <span className="font-medium text-gray-900">{pets.length} con</span>
                 </div>
               </div>
 
               <div className="pt-4">
                 <div className="flex justify-between items-baseline mb-2">
                   <span className="text-gray-600">Tổng tiền:</span>
-                  <span className="text-2xl font-bold text-gray-900">
-                    {calculateTotal().toLocaleString("vi-VN")}đ
-                  </span>
+                  <span className="text-2xl font-bold text-gray-900">{calculateTotal().toLocaleString("vi-VN")}đ</span>
                 </div>
                 <p className="text-xs text-gray-500">Bao gồm tất cả dịch vụ</p>
               </div>
@@ -1181,9 +987,7 @@ const BookingPage = () => {
           <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
             <div className="p-6 border-b border-gray-200 bg-gray-50">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Chọn Cửa Hàng
-                </h2>
+                <h2 className="text-2xl font-bold text-gray-900">Chọn Cửa Hàng</h2>
                 <button
                   onClick={() => setShopModalOpen(false)}
                   className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors"
@@ -1206,9 +1010,7 @@ const BookingPage = () => {
               {filteredShops.length === 0 ? (
                 <div className="text-center py-12">
                   <FaSearch className="text-6xl mb-4 text-gray-400" />
-                  <p className="text-gray-600 font-medium">
-                    Không tìm thấy cửa hàng nào
-                  </p>
+                  <p className="text-gray-600 font-medium">Không tìm thấy cửa hàng nào</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1233,9 +1035,7 @@ const BookingPage = () => {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-gray-900 mb-1 line-clamp-1">
-                            {shop.tenCuaHang}
-                          </h3>
+                          <h3 className="font-bold text-gray-900 mb-1 line-clamp-1">{shop.tenCuaHang}</h3>
                           <p className="text-sm text-gray-600 mb-2 line-clamp-2 flex items-start gap-2">
                             <FaMapMarkerAlt className="text-red-400 mt-0.5" />
                             {shop.diaChi}
