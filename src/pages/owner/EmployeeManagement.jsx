@@ -1,15 +1,22 @@
-// src/pages/owner/EmployeeManagement.jsx - REFACTORED
+// src/pages/owner/EmployeeManagement.jsx
 import { useState, useEffect } from "react";
 import { staffService } from "@/api";
 import { showToast } from "@/utils/toast";
 import { FaUserPlus, FaToggleOn, FaToggleOff, FaEnvelope, FaPhone, FaSpinner } from "react-icons/fa";
 import AddEmployeeModal from "@/components/owner/AddEmployeeModal";
+import ConfirmModal from "@/components/common/ConfirmModal";
 
 const EmployeeManagement = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    employee: null,
+    action: null,
+  });
 
   useEffect(() => {
     loadEmployees();
@@ -44,18 +51,36 @@ const EmployeeManagement = () => {
     }
   };
 
-  const handleToggleStatus = async (employeeId, currentStatus) => {
-    const action = currentStatus === 1 ? "vô hiệu hóa" : "kích hoạt";
-    if (!window.confirm(`Bạn chắc chắn muốn ${action} nhân viên này?`)) return;
+  const openConfirmModal = (employee) => {
+    setConfirmModal({
+      isOpen: true,
+      employee,
+      action: employee.trangThai === 1 ? "deactivate" : "activate",
+    });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal({
+      isOpen: false,
+      employee: null,
+      action: null,
+    });
+  };
+
+  const handleConfirmToggleStatus = async () => {
+    const { employee } = confirmModal;
+    if (!employee) return;
 
     setActionLoading(true);
+    const action = employee.trangThai === 1 ? "vô hiệu hóa" : "kích hoạt";
     const loadingToast = showToast.loading(`Đang ${action}...`);
 
     try {
-      const response = await staffService.toggleEmployeeStatus(employeeId);
+      const response = await staffService.toggleEmployeeStatus(employee.maNguoiDung);
       showToast.dismiss(loadingToast);
       showToast.success(response.message);
       await loadEmployees();
+      closeConfirmModal();
     } catch (err) {
       showToast.dismiss(loadingToast);
       showToast.error(err.message || `Lỗi ${action} nhân viên`);
@@ -95,7 +120,7 @@ const EmployeeManagement = () => {
           </div>
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] font-medium transition-colors"
           >
             <FaUserPlus />
             Thêm Nhân Viên
@@ -117,7 +142,7 @@ const EmployeeManagement = () => {
             <tbody className="divide-y divide-gray-200">
               {employees.length > 0 ? (
                 employees.map((emp) => (
-                  <tr key={emp.maNguoiDung} className={`hover:bg-gray-50 ${emp.trangThai === 0 ? "opacity-60" : ""}`}>
+                  <tr key={emp.maNguoiDung} className={`hover:bg-gray-50 transition-colors ${emp.trangThai === 0 ? "opacity-60" : ""}`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-[#8e2800] text-white flex items-center justify-center font-bold">
@@ -159,9 +184,9 @@ const EmployeeManagement = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center">
                         <button
-                          onClick={() => handleToggleStatus(emp.maNguoiDung, emp.trangThai)}
+                          onClick={() => openConfirmModal(emp)}
                           disabled={actionLoading}
-                          className={`p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 ${
+                          className={`p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 transition-colors ${
                             emp.trangThai === 1 ? "text-green-600" : "text-red-600"
                           }`}
                           title={emp.trangThai === 1 ? "Vô hiệu hóa" : "Kích hoạt"}
@@ -193,6 +218,22 @@ const EmployeeManagement = () => {
           loading={actionLoading}
         />
       )}
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirmModal}
+        onConfirm={handleConfirmToggleStatus}
+        title={confirmModal.action === "deactivate" ? "Xác nhận vô hiệu hóa" : "Xác nhận kích hoạt"}
+        message={
+          confirmModal.action === "deactivate"
+            ? `Bạn có chắc chắn muốn vô hiệu hóa nhân viên "${confirmModal.employee?.hoTen}"? Nhân viên này sẽ không thể đăng nhập vào hệ thống.`
+            : `Bạn có chắc chắn muốn kích hoạt lại nhân viên "${confirmModal.employee?.hoTen}"? Nhân viên này sẽ có thể đăng nhập trở lại.`
+        }
+        confirmText={confirmModal.action === "deactivate" ? "Vô hiệu hóa" : "Kích hoạt"}
+        cancelText="Hủy"
+        type={confirmModal.action === "deactivate" ? "warning" : "success"}
+        loading={actionLoading}
+      />
     </div>
   );
 };
