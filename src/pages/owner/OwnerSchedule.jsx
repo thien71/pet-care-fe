@@ -1,7 +1,8 @@
 // src/pages/owner/OwnerSchedule.jsx
 import { useState, useEffect } from "react";
-import apiClient from "../../api/apiClient";
-import BulkScheduleModal from "../../components/owner/BulkScheduleModal"; // ⭐ THÊM IMPORT
+// import apiClient from "../../api/apiClient";
+import BulkScheduleModal from "../../components/owner/BulkScheduleModal";
+import { staffService } from "@/api";
 
 const OwnerSchedule = () => {
   const [shifts, setShifts] = useState([]);
@@ -9,9 +10,7 @@ const OwnerSchedule = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [selectedWeek, setSelectedWeek] = useState(getWeekDates(new Date()));
   const [viewMode, setViewMode] = useState("week"); // 'day' | 'week'
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -46,8 +45,11 @@ const OwnerSchedule = () => {
     try {
       setLoading(true);
       const [shiftsRes, employeesRes] = await Promise.all([
-        apiClient.get("/owner/shifts"),
-        apiClient.get("/owner/employees"),
+        staffService.getShifts(),
+        staffService.getEmployees(),
+
+        // apiClient.get("/owner/shifts"),
+        // apiClient.get("/owner/employees"),
       ]);
       setShifts(shiftsRes.data || []);
       setEmployees(employeesRes.data || []);
@@ -67,7 +69,7 @@ const OwnerSchedule = () => {
 
     try {
       setLoading(true);
-      await apiClient.post("/owner/assign-shift", assignForm);
+      staffService.assignShift(assignForm);
       setSuccess("Phân công ca làm thành công!");
       setShowAssignModal(false);
       setAssignForm({ maNhanVien: "", maCa: "", ngayLam: "" });
@@ -84,7 +86,7 @@ const OwnerSchedule = () => {
     if (window.confirm("Bạn chắc chắn muốn xóa ca làm này?")) {
       try {
         setLoading(true);
-        await apiClient.delete(`/owner/shifts/${shiftId}`);
+        staffService.removeShift(shiftId);
         setSuccess("Xóa ca làm thành công!");
         await loadData();
         setTimeout(() => setSuccess(""), 3000);
@@ -101,9 +103,7 @@ const OwnerSchedule = () => {
   };
 
   const getShiftsByEmployee = (date, employeeId) => {
-    return shifts.filter(
-      (s) => s.ngayLam === date && s.maNhanVien === employeeId
-    );
+    return shifts.filter((s) => s.ngayLam === date && s.maNhanVien === employeeId);
   };
 
   const timeSlots = [
@@ -146,16 +146,11 @@ const OwnerSchedule = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">📅 Lịch Làm Việc</h1>
-          <p className="text-gray-600 mt-2">
-            Quản lý lịch làm việc của nhân viên
-          </p>
+          <p className="text-gray-600 mt-2">Quản lý lịch làm việc của nhân viên</p>
         </div>
         <div className="flex gap-2">
           {/* ⭐ THÊM NÚT NÀY */}
-          <button
-            onClick={() => setShowBulkModal(true)}
-            className="btn btn-secondary gap-2"
-          >
+          <button onClick={() => setShowBulkModal(true)} className="btn btn-secondary gap-2">
             <span>📅</span>
             Phân Công Hàng Tuần
           </button>
@@ -179,18 +174,8 @@ const OwnerSchedule = () => {
       {/* Success Alert */}
       {success && (
         <div className="alert alert-success">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span>{success}</span>
         </div>
@@ -199,12 +184,7 @@ const OwnerSchedule = () => {
       {/* Error Alert */}
       {error && (
         <div className="alert alert-error">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -222,16 +202,10 @@ const OwnerSchedule = () => {
           <div className="flex flex-wrap gap-4 items-center justify-between">
             {/* View Mode Tabs */}
             <div className="tabs tabs-boxed">
-              <button
-                onClick={() => setViewMode("day")}
-                className={`tab ${viewMode === "day" ? "tab-active" : ""}`}
-              >
+              <button onClick={() => setViewMode("day")} className={`tab ${viewMode === "day" ? "tab-active" : ""}`}>
                 📅 Ngày
               </button>
-              <button
-                onClick={() => setViewMode("week")}
-                className={`tab ${viewMode === "week" ? "tab-active" : ""}`}
-              >
+              <button onClick={() => setViewMode("week")} className={`tab ${viewMode === "week" ? "tab-active" : ""}`}>
                 📆 Tuần
               </button>
             </div>
@@ -275,8 +249,7 @@ const OwnerSchedule = () => {
                   ◀️ Tuần trước
                 </button>
                 <span className="font-semibold">
-                  {new Date(selectedWeek[0]).toLocaleDateString("vi-VN")} -{" "}
-                  {new Date(selectedWeek[6]).toLocaleDateString("vi-VN")}
+                  {new Date(selectedWeek[0]).toLocaleDateString("vi-VN")} - {new Date(selectedWeek[6]).toLocaleDateString("vi-VN")}
                 </span>
                 <button onClick={goToNextWeek} className="btn btn-sm">
                   Tuần sau ▶️
@@ -307,9 +280,7 @@ const OwnerSchedule = () => {
 
             <div className="space-y-6">
               {timeSlots.map((slot) => {
-                const shiftsInSlot = getShiftsForDate(selectedDate).filter(
-                  (s) => s.maCa === slot.maCa
-                );
+                const shiftsInSlot = getShiftsForDate(selectedDate).filter((s) => s.maCa === slot.maCa);
 
                 return (
                   <div key={slot.maCa} className={`card ${slot.color}`}>
@@ -321,37 +292,23 @@ const OwnerSchedule = () => {
                       {shiftsInSlot.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
                           {shiftsInSlot.map((shift) => (
-                            <div
-                              key={shift.maGanCa}
-                              className="flex items-center justify-between bg-white p-2 rounded shadow"
-                            >
+                            <div key={shift.maGanCa} className="flex items-center justify-between bg-white p-2 rounded shadow">
                               <div className="flex items-center gap-2">
                                 <div className="avatar placeholder">
                                   <div className="bg-primary text-primary-content rounded-full w-8">
-                                    <span className="text-xs">
-                                      {shift.NhanVien?.hoTen
-                                        ?.charAt(0)
-                                        .toUpperCase()}
-                                    </span>
+                                    <span className="text-xs">{shift.NhanVien?.hoTen?.charAt(0).toUpperCase()}</span>
                                   </div>
                                 </div>
-                                <span className="text-sm font-semibold">
-                                  {shift.NhanVien?.hoTen}
-                                </span>
+                                <span className="text-sm font-semibold">{shift.NhanVien?.hoTen}</span>
                               </div>
-                              <button
-                                onClick={() => handleRemoveShift(shift.maGanCa)}
-                                className="btn btn-xs btn-error"
-                              >
+                              <button onClick={() => handleRemoveShift(shift.maGanCa)} className="btn btn-xs btn-error">
                                 ✕
                               </button>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-gray-500 text-sm mt-2">
-                          Chưa có nhân viên
-                        </p>
+                        <p className="text-gray-500 text-sm mt-2">Chưa có nhân viên</p>
                       )}
                     </div>
                   </div>
@@ -372,8 +329,7 @@ const OwnerSchedule = () => {
                     <th key={date} className="text-center">
                       <div>{weekDays[idx]}</div>
                       <div className="text-xs font-normal">
-                        {new Date(date).getDate()}/
-                        {new Date(date).getMonth() + 1}
+                        {new Date(date).getDate()}/{new Date(date).getMonth() + 1}
                       </div>
                     </th>
                   ))}
@@ -387,39 +343,28 @@ const OwnerSchedule = () => {
                         <div className="flex items-center gap-2">
                           <div className="avatar placeholder">
                             <div className="bg-primary text-primary-content rounded-full w-8">
-                              <span className="text-xs">
-                                {emp.hoTen?.charAt(0).toUpperCase()}
-                              </span>
+                              <span className="text-xs">{emp.hoTen?.charAt(0).toUpperCase()}</span>
                             </div>
                           </div>
                           <div>
                             <div>{emp.hoTen}</div>
-                            <div className="text-xs text-gray-500">
-                              {emp.VaiTro?.tenVaiTro}
-                            </div>
+                            <div className="text-xs text-gray-500">{emp.VaiTro?.tenVaiTro}</div>
                           </div>
                         </div>
                       </td>
                       {selectedWeek.map((date) => {
-                        const dayShifts = getShiftsByEmployee(
-                          date,
-                          emp.maNguoiDung
-                        );
+                        const dayShifts = getShiftsByEmployee(date, emp.maNguoiDung);
                         return (
                           <td key={date} className="text-center p-1">
                             {dayShifts.length > 0 ? (
                               <div className="space-y-1">
                                 {dayShifts.map((shift) => {
-                                  const slot = timeSlots.find(
-                                    (s) => s.maCa === shift.maCa
-                                  );
+                                  const slot = timeSlots.find((s) => s.maCa === shift.maCa);
                                   return (
                                     <div
                                       key={shift.maGanCa}
                                       className={`badge badge-sm ${slot?.color} text-xs cursor-pointer hover:opacity-80`}
-                                      onClick={() =>
-                                        handleRemoveShift(shift.maGanCa)
-                                      }
+                                      onClick={() => handleRemoveShift(shift.maGanCa)}
                                       title={`Click to remove: ${slot?.tenCa}`}
                                     >
                                       {slot?.tenCa}
@@ -455,13 +400,9 @@ const OwnerSchedule = () => {
           <div className="stat-value text-primary">{employees.length}</div>
         </div>
         <div className="stat bg-base-100 shadow rounded-lg">
-          <div className="stat-title">
-            Ca làm {viewMode === "day" ? "hôm nay" : "tuần này"}
-          </div>
+          <div className="stat-title">Ca làm {viewMode === "day" ? "hôm nay" : "tuần này"}</div>
           <div className="stat-value text-secondary">
-            {viewMode === "day"
-              ? getShiftsForDate(selectedDate).length
-              : shifts.filter((s) => selectedWeek.includes(s.ngayLam)).length}
+            {viewMode === "day" ? getShiftsForDate(selectedDate).length : shifts.filter((s) => selectedWeek.includes(s.ngayLam)).length}
           </div>
         </div>
         <div className="stat bg-base-100 shadow rounded-lg">
@@ -471,11 +412,7 @@ const OwnerSchedule = () => {
       </div>
 
       {/* ⭐ THÊM MODAL MỚI */}
-      <BulkScheduleModal
-        isOpen={showBulkModal}
-        onClose={() => setShowBulkModal(false)}
-        onSuccess={loadData}
-      />
+      <BulkScheduleModal isOpen={showBulkModal} onClose={() => setShowBulkModal(false)} onSuccess={loadData} />
       {/* Assign Shift Modal */}
       {showAssignModal && (
         <div className="modal modal-open">
@@ -548,25 +485,15 @@ const OwnerSchedule = () => {
             </div>
 
             <div className="modal-action">
-              <button
-                onClick={() => setShowAssignModal(false)}
-                className="btn btn-ghost"
-              >
+              <button onClick={() => setShowAssignModal(false)} className="btn btn-ghost">
                 Hủy
               </button>
-              <button
-                onClick={handleAssignShift}
-                className="btn btn-primary"
-                disabled={loading}
-              >
+              <button onClick={handleAssignShift} className="btn btn-primary" disabled={loading}>
                 {loading ? "Đang xử lý..." : "Phân Công"}
               </button>
             </div>
           </div>
-          <div
-            className="modal-backdrop"
-            onClick={() => setShowAssignModal(false)}
-          ></div>
+          <div className="modal-backdrop" onClick={() => setShowAssignModal(false)}></div>
         </div>
       )}
     </div>

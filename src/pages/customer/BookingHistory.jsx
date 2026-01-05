@@ -15,6 +15,7 @@ import {
   FaTimesCircle,
   FaSpinner,
   FaEye,
+  FaStore,
 } from "react-icons/fa";
 import { showToast } from "../../utils/toast";
 
@@ -77,10 +78,7 @@ const BookingHistory = () => {
     { value: "HUY", label: "Đã hủy" },
   ];
 
-  const filteredBookings =
-    filter === "ALL"
-      ? bookings
-      : bookings.filter((b) => b.trangThai === filter);
+  const filteredBookings = filter === "ALL" ? bookings : bookings.filter((b) => b.trangThai === filter);
 
   const openModal = (booking) => {
     setSelectedBooking(booking);
@@ -109,9 +107,7 @@ const BookingHistory = () => {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">
-              Lịch sử đặt lịch
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-800">Lịch sử đặt lịch</h1>
             <p className="text-gray-600 mt-1">Quản lý các lịch hẹn của bạn</p>
           </div>
 
@@ -119,10 +115,7 @@ const BookingHistory = () => {
           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
             <div className="flex flex-wrap gap-2">
               {filterTabs.map((tab) => {
-                const count =
-                  tab.value === "ALL"
-                    ? bookings.length
-                    : bookings.filter((b) => b.trangThai === tab.value).length;
+                const count = tab.value === "ALL" ? bookings.length : bookings.filter((b) => b.trangThai === tab.value).length;
 
                 return (
                   <button
@@ -130,19 +123,11 @@ const BookingHistory = () => {
                     onClick={() => setFilter(tab.value)}
                     className={`
                       px-4 py-2 rounded-lg font-medium transition-all
-                      ${
-                        filter === tab.value
-                          ? "bg-[#8e2800] text-white shadow-md"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }
+                      ${filter === tab.value ? "bg-[#8e2800] text-white shadow-md" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}
                     `}
                   >
                     {tab.label}
-                    <span
-                      className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                        filter === tab.value ? "bg-white/20" : "bg-gray-200"
-                      }`}
-                    >
+                    <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${filter === tab.value ? "bg-white/20" : "bg-gray-200"}`}>
                       {count}
                     </span>
                   </button>
@@ -166,16 +151,10 @@ const BookingHistory = () => {
                     <div className="p-4 border-b border-gray-200 bg-gray-50">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-600">
-                            Mã đơn:
-                          </span>
-                          <span className="font-bold text-gray-800">
-                            #{booking.maLichHen}
-                          </span>
+                          <span className="text-sm font-medium text-gray-600">Mã đơn:</span>
+                          <span className="font-bold text-gray-800">#{booking.maLichHen}</span>
                         </div>
-                        <span
-                          className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium border ${status.color}`}
-                        >
+                        <span className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium border ${status.color}`}>
                           {status.icon}
                           {status.label}
                         </span>
@@ -188,32 +167,21 @@ const BookingHistory = () => {
                       <div className="flex items-start gap-2">
                         <FaMapMarkerAlt className="text-[#8e2800] mt-1 shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-800 truncate">
-                            {booking.CuaHang?.tenCuaHang}
-                          </p>
-                          <p className="text-sm text-gray-600 truncate">
-                            {booking.CuaHang?.diaChi}
-                          </p>
+                          <p className="font-semibold text-gray-800 truncate">{booking.CuaHang?.tenCuaHang}</p>
+                          <p className="text-sm text-gray-600 truncate">{booking.CuaHang?.diaChi}</p>
                         </div>
                       </div>
 
                       {/* Date & Time */}
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <FaCalendarAlt className="text-[#8e2800]" />
-                        <span>
-                          {new Date(booking.ngayHen).toLocaleString("vi-VN", {
-                            dateStyle: "short",
-                            timeStyle: "short",
-                          })}
-                        </span>
+                        <span>{new Date(booking.ngayHen).toLocaleString("vi-VN")}</span>
                       </div>
 
                       {/* Pets Count */}
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <FaPaw className="text-[#8e2800]" />
-                        <span>
-                          {booking.LichHenThuCungs?.length || 0} thú cưng
-                        </span>
+                        <span>{booking.LichHenThuCungs?.length || 0} thú cưng</span>
                       </div>
 
                       {/* Staff */}
@@ -227,13 +195,10 @@ const BookingHistory = () => {
                       {/* Total */}
                       <div className="pt-3 border-t border-gray-200">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">
-                            Tổng tiền:
-                          </span>
+                          <span className="text-sm text-gray-600">Tổng tiền:</span>
                           <span className="text-lg font-bold text-[#8e2800] flex items-center gap-1">
                             <FaMoneyBillWave />
-                            {parseInt(booking.tongTien).toLocaleString("vi-VN")}
-                            đ
+                            {parseInt(booking.tongTien).toLocaleString("vi-VN")}đ
                           </span>
                         </div>
                       </div>
@@ -256,12 +221,8 @@ const BookingHistory = () => {
           ) : (
             <div className="bg-white rounded-lg shadow-sm p-12 text-center">
               <FaCalendarAlt className="text-6xl text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                Chưa có lịch hẹn
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Bắt đầu đặt lịch chăm sóc thú cưng ngay hôm nay!
-              </p>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">Chưa có lịch hẹn</h3>
+              <p className="text-gray-600 mb-6">Bắt đầu đặt lịch chăm sóc thú cưng ngay hôm nay!</p>
               <button
                 onClick={() => (window.location.href = "/customer/booking")}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors font-medium"
@@ -280,13 +241,8 @@ const BookingHistory = () => {
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-              <h3 className="text-xl font-bold text-gray-800">
-                Chi tiết đơn #{selectedBooking.maLichHen}
-              </h3>
-              <button
-                onClick={() => setShowModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
+              <h3 className="text-xl font-bold text-gray-800">Chi tiết đơn #{selectedBooking.maLichHen}</h3>
+              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <FaTimes className="text-gray-600" />
               </button>
             </div>
@@ -312,9 +268,7 @@ const BookingHistory = () => {
                   Thông tin cửa hàng
                 </h4>
                 <div className="space-y-2 text-sm">
-                  <p className="font-medium text-gray-800">
-                    {selectedBooking.CuaHang?.tenCuaHang}
-                  </p>
+                  <p className="font-medium text-gray-800">{selectedBooking.CuaHang?.tenCuaHang}</p>
                   <p className="text-gray-600 flex items-start gap-2">
                     <FaMapMarkerAlt className="mt-1 shrink-0" />
                     {selectedBooking.CuaHang?.diaChi}
@@ -347,13 +301,9 @@ const BookingHistory = () => {
                     <FaUser className="text-[#8e2800]" />
                     Nhân viên phụ trách
                   </h4>
-                  <p className="text-gray-800">
-                    {selectedBooking.NhanVien.hoTen}
-                  </p>
+                  <p className="text-gray-800">{selectedBooking.NhanVien.hoTen}</p>
                   {selectedBooking.NhanVien.soDienThoai && (
-                    <p className="text-gray-600 text-sm mt-1">
-                      {selectedBooking.NhanVien.soDienThoai}
-                    </p>
+                    <p className="text-gray-600 text-sm mt-1">{selectedBooking.NhanVien.soDienThoai}</p>
                   )}
                 </div>
               )}
@@ -372,25 +322,14 @@ const BookingHistory = () => {
                           <p className="font-medium text-gray-800">
                             {pet.ten} - {pet.LoaiThuCung?.tenLoai}
                           </p>
-                          {pet.tuoi && (
-                            <p className="text-sm text-gray-600">
-                              Tuổi: {pet.tuoi}
-                            </p>
-                          )}
+                          {pet.tuoi && <p className="text-sm text-gray-600">Tuổi: {pet.tuoi}</p>}
                         </div>
                       </div>
                       <div className="space-y-2">
                         {pet.LichHenChiTiets?.map((detail, i) => (
-                          <div
-                            key={i}
-                            className="flex items-center justify-between text-sm"
-                          >
-                            <span className="text-gray-700">
-                              {detail.DichVuCuaShop?.DichVuHeThong?.tenDichVu}
-                            </span>
-                            <span className="font-medium text-gray-800">
-                              {parseInt(detail.gia).toLocaleString("vi-VN")}đ
-                            </span>
+                          <div key={i} className="flex items-center justify-between text-sm">
+                            <span className="text-gray-700">{detail.DichVuCuaShop?.DichVuHeThong?.tenDichVu}</span>
+                            <span className="font-medium text-gray-800">{parseInt(detail.gia).toLocaleString("vi-VN")}đ</span>
                           </div>
                         ))}
                       </div>
@@ -403,22 +342,15 @@ const BookingHistory = () => {
               {selectedBooking.ghiChu && (
                 <div className="bg-gray-50 rounded-lg p-4">
                   <h4 className="font-semibold text-gray-800 mb-2">Ghi chú</h4>
-                  <p className="text-gray-600 text-sm">
-                    {selectedBooking.ghiChu}
-                  </p>
+                  <p className="text-gray-600 text-sm">{selectedBooking.ghiChu}</p>
                 </div>
               )}
 
               {/* Total */}
               <div className="border-t-2 border-gray-200 pt-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-lg font-semibold text-gray-800">
-                    Tổng tiền:
-                  </span>
-                  <span className="text-2xl font-bold text-[#8e2800]">
-                    {parseInt(selectedBooking.tongTien).toLocaleString("vi-VN")}
-                    đ
-                  </span>
+                  <span className="text-lg font-semibold text-gray-800">Tổng tiền:</span>
+                  <span className="text-2xl font-bold text-[#8e2800]">{parseInt(selectedBooking.tongTien).toLocaleString("vi-VN")}đ</span>
                 </div>
               </div>
             </div>

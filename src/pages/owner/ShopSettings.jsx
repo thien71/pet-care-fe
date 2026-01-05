@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import apiClient from "../../api/apiClient";
-import { useAuth } from "../../contexts/AuthContext";
+// import apiClient from "../../api/apiClient";
+import { useAuth } from "@/contexts/AuthContext";
+import { shopService } from "@/api";
+
 import {
   FaEdit,
   FaSave,
@@ -41,7 +43,8 @@ const ShopSettings = () => {
   const loadShopData = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get("/owner/shop-info");
+      const res = await shopService.getShopInfo();
+      // const res = await apiClient.get("/owner/shop-info");
       setShopData({
         tenCuaHang: res.data.tenCuaHang || "",
         diaChi: res.data.diaChi || "",
@@ -74,11 +77,7 @@ const ShopSettings = () => {
       errors.soDienThoai = "Số điện thoại phải có 10 chữ số";
     }
 
-    if (
-      shopData.anhCuaHang &&
-      shopData.anhCuaHang.trim() &&
-      !/^https?:\/\/.+/.test(shopData.anhCuaHang)
-    ) {
+    if (shopData.anhCuaHang && shopData.anhCuaHang.trim() && !/^https?:\/\/.+/.test(shopData.anhCuaHang)) {
       errors.anhCuaHang = "Link ảnh không hợp lệ";
     }
 
@@ -102,7 +101,8 @@ const ShopSettings = () => {
 
     try {
       setSaving(true);
-      await apiClient.put("/owner/shop-info", shopData);
+      await shopService.updateShopInfo(shopData);
+      // await apiClient.put("/owner/shop-info", shopData);
       setSuccess("Cập nhật thông tin cửa hàng thành công!");
       setEditMode(false);
       setError("");
@@ -135,9 +135,7 @@ const ShopSettings = () => {
       <div className="bg-white border border-gray-200 rounded-lg p-6 flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Cài Đặt Cửa Hàng</h1>
-          <p className="text-gray-600 mt-1">
-            Quản lý thông tin cửa hàng của bạn
-          </p>
+          <p className="text-gray-600 mt-1">Quản lý thông tin cửa hàng của bạn</p>
         </div>
         {!editMode && (
           <button
@@ -155,10 +153,7 @@ const ShopSettings = () => {
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
           <FaCheckCircle className="text-green-600 text-xl" />
           <span className="text-green-800">{success}</span>
-          <button
-            onClick={() => setSuccess("")}
-            className="ml-auto text-green-600 hover:text-green-800"
-          >
+          <button onClick={() => setSuccess("")} className="ml-auto text-green-600 hover:text-green-800">
             <FaTimesCircle />
           </button>
         </div>
@@ -169,10 +164,7 @@ const ShopSettings = () => {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
           <FaTimesCircle className="text-red-600 text-xl" />
           <span className="text-red-800">{error}</span>
-          <button
-            onClick={() => setError("")}
-            className="ml-auto text-red-600 hover:text-red-800"
-          >
+          <button onClick={() => setError("")} className="ml-auto text-red-600 hover:text-red-800">
             <FaTimesCircle />
           </button>
         </div>
@@ -201,11 +193,7 @@ const ShopSettings = () => {
               onChange={handleChange}
               disabled={!editMode}
             />
-            {formErrors.tenCuaHang && (
-              <p className="text-red-600 text-sm mt-1">
-                {formErrors.tenCuaHang}
-              </p>
-            )}
+            {formErrors.tenCuaHang && <p className="text-red-600 text-sm mt-1">{formErrors.tenCuaHang}</p>}
           </div>
 
           {/* Grid 2 columns */}
@@ -224,15 +212,11 @@ const ShopSettings = () => {
                 onChange={handleChange}
                 disabled={!editMode}
               />
-              {formErrors.diaChi && (
-                <p className="text-red-600 text-sm mt-1">{formErrors.diaChi}</p>
-              )}
+              {formErrors.diaChi && <p className="text-red-600 text-sm mt-1">{formErrors.diaChi}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Số Điện Thoại
-              </label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Số Điện Thoại</label>
               <input
                 type="tel"
                 name="soDienThoai"
@@ -243,19 +227,13 @@ const ShopSettings = () => {
                 onChange={handleChange}
                 disabled={!editMode}
               />
-              {formErrors.soDienThoai && (
-                <p className="text-red-600 text-sm mt-1">
-                  {formErrors.soDienThoai}
-                </p>
-              )}
+              {formErrors.soDienThoai && <p className="text-red-600 text-sm mt-1">{formErrors.soDienThoai}</p>}
             </div>
           </div>
 
           {/* Ảnh Cửa Hàng */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Link Ảnh Cửa Hàng
-            </label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Link Ảnh Cửa Hàng</label>
             <input
               type="text"
               name="anhCuaHang"
@@ -267,11 +245,7 @@ const ShopSettings = () => {
               onChange={handleChange}
               disabled={!editMode}
             />
-            {formErrors.anhCuaHang && (
-              <p className="text-red-600 text-sm mt-1">
-                {formErrors.anhCuaHang}
-              </p>
-            )}
+            {formErrors.anhCuaHang && <p className="text-red-600 text-sm mt-1">{formErrors.anhCuaHang}</p>}
 
             {/* Preview Image */}
             {shopData.anhCuaHang && (
@@ -290,9 +264,7 @@ const ShopSettings = () => {
 
           {/* Mô Tả */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Mô Tả
-            </label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Mô Tả</label>
             <textarea
               name="moTa"
               className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent h-32 ${
@@ -338,22 +310,14 @@ const ShopSettings = () => {
 
       {/* Status Card */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">
-          Trạng Thái Cửa Hàng
-        </h2>
+        <h2 className="text-xl font-bold text-gray-800 mb-6">Trạng Thái Cửa Hàng</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="border border-gray-200 rounded-lg p-6">
             <div className="flex items-center gap-3 mb-2">
               <FaCheckCircle className="text-[#8e2800] text-2xl" />
               <p className="text-sm text-gray-600">Trạng Thái</p>
             </div>
-            <p
-              className={`text-lg font-bold ${
-                shopData.trangThai === "HOAT_DONG"
-                  ? "text-green-600"
-                  : "text-yellow-600"
-              }`}
-            >
+            <p className={`text-lg font-bold ${shopData.trangThai === "HOAT_DONG" ? "text-green-600" : "text-yellow-600"}`}>
               {shopData.trangThai === "HOAT_DONG" ? "Hoạt động" : "Chờ duyệt"}
             </p>
           </div>
@@ -364,9 +328,7 @@ const ShopSettings = () => {
               <p className="text-sm text-gray-600">Ngày Tạo</p>
             </div>
             <p className="text-lg font-bold text-gray-800">
-              {shopData.ngayTao
-                ? new Date(shopData.ngayTao).toLocaleDateString("vi-VN")
-                : "N/A"}
+              {shopData.ngayTao ? new Date(shopData.ngayTao).toLocaleDateString("vi-VN") : "N/A"}
             </p>
           </div>
 
@@ -386,8 +348,7 @@ const ShopSettings = () => {
         <div>
           <p className="font-semibold text-blue-800 mb-1">Lưu ý</p>
           <p className="text-blue-700">
-            Cập nhật thông tin cửa hàng của bạn để khách hàng có thể tìm thấy dễ
-            dàng hơn. Hãy đảm bảo thông tin luôn chính xác và đầy đủ.
+            Cập nhật thông tin cửa hàng của bạn để khách hàng có thể tìm thấy dễ dàng hơn. Hãy đảm bảo thông tin luôn chính xác và đầy đủ.
           </p>
         </div>
       </div>

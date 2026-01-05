@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import apiClient from "../../api/apiClient";
+import { staffService } from "@/api";
 import {
   FaUserPlus,
   FaTrash,
@@ -43,10 +43,7 @@ const EmployeeManagement = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [empRes, shiftRes] = await Promise.all([
-        apiClient.get("/owner/employees"),
-        apiClient.get("/owner/shifts"),
-      ]);
+      const [empRes, shiftRes] = await Promise.all([staffService.getEmployees(), staffService.getShifts()]);
       setEmployees(empRes.data || []);
       setShifts(shiftRes.data || []);
       setError("");
@@ -72,10 +69,7 @@ const EmployeeManagement = () => {
       errors.hoTen = "Họ tên phải có ít nhất 2 ký tự";
     }
 
-    if (
-      employeeForm.soDienThoai &&
-      !/^[0-9]{10}$/.test(employeeForm.soDienThoai)
-    ) {
+    if (employeeForm.soDienThoai && !/^[0-9]{10}$/.test(employeeForm.soDienThoai)) {
       errors.soDienThoai = "Số điện thoại phải có 10 chữ số";
     }
 
@@ -107,7 +101,8 @@ const EmployeeManagement = () => {
 
     try {
       setLoading(true);
-      await apiClient.post("/owner/employees", employeeForm);
+      await staffService.addEmployee(employeeForm);
+      // await apiClient.post("/owner/employees", employeeForm);
       setSuccess("Thêm nhân viên thành công!");
       setShowAddEmployeeModal(false);
       setEmployeeForm({
@@ -130,7 +125,7 @@ const EmployeeManagement = () => {
     if (window.confirm("Bạn chắc chắn muốn xóa nhân viên này?")) {
       try {
         setLoading(true);
-        await apiClient.delete(`/owner/employees/${employeeId}`);
+        await staffService.deleteEmployee(employeeId);
         setSuccess("Xóa nhân viên thành công!");
         await loadData();
         setTimeout(() => setSuccess(""), 3000);
@@ -147,7 +142,8 @@ const EmployeeManagement = () => {
 
     try {
       setLoading(true);
-      await apiClient.post("/owner/assign-shift", scheduleForm);
+      await staffService.assignShift(scheduleForm);
+      // await apiClient.post("/owner/assign-shift", scheduleForm);
       setSuccess("Phân công ca làm thành công!");
       setShowScheduleModal(false);
       setScheduleForm({ maNhanVien: "", maCa: "", ngayLam: "" });
@@ -172,7 +168,7 @@ const EmployeeManagement = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
+      <div className="bg-white border border-gray-200 rounded-lg px-6 py-4">
         <h1 className="text-2xl font-bold text-gray-800">Quản Lý Nhân Viên</h1>
         <p className="text-gray-600 mt-1">Quản lý đội ngũ và lịch làm việc</p>
       </div>
@@ -182,10 +178,7 @@ const EmployeeManagement = () => {
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
           <FaCheckCircle className="text-green-600 text-xl" />
           <span className="text-green-800">{success}</span>
-          <button
-            onClick={() => setSuccess("")}
-            className="ml-auto text-green-600 hover:text-green-800"
-          >
+          <button onClick={() => setSuccess("")} className="ml-auto text-green-600 hover:text-green-800">
             <FaTimesCircle />
           </button>
         </div>
@@ -196,10 +189,7 @@ const EmployeeManagement = () => {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
           <FaTimesCircle className="text-red-600 text-xl" />
           <span className="text-red-800">{error}</span>
-          <button
-            onClick={() => setError("")}
-            className="ml-auto text-red-600 hover:text-red-800"
-          >
+          <button onClick={() => setError("")} className="ml-auto text-red-600 hover:text-red-800">
             <FaTimesCircle />
           </button>
         </div>
@@ -211,9 +201,7 @@ const EmployeeManagement = () => {
           <button
             onClick={() => setActiveTab("employees")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-              activeTab === "employees"
-                ? "bg-[#8e2800] text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              activeTab === "employees" ? "bg-[#8e2800] text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             <FaUser />
@@ -222,9 +210,7 @@ const EmployeeManagement = () => {
           <button
             onClick={() => setActiveTab("schedule")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-              activeTab === "schedule"
-                ? "bg-[#8e2800] text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              activeTab === "schedule" ? "bg-[#8e2800] text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             <FaCalendarAlt />
@@ -258,16 +244,11 @@ const EmployeeManagement = () => {
           {employees.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {employees.map((emp) => (
-                <div
-                  key={emp.maNguoiDung}
-                  className="bg-white border border-gray-200 rounded-lg hover:border-[#8e2800] transition-colors"
-                >
+                <div key={emp.maNguoiDung} className="bg-white border border-gray-200 rounded-lg hover:border-[#8e2800] transition-colors">
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
-                        <h3 className="text-lg font-bold text-gray-800 mb-2">
-                          {emp.hoTen}
-                        </h3>
+                        <h3 className="text-lg font-bold text-gray-800 mb-2">{emp.hoTen}</h3>
                         <span className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 border border-blue-300">
                           {emp.VaiTro?.tenVaiTro || "N/A"}
                         </span>
@@ -323,26 +304,18 @@ const EmployeeManagement = () => {
           {shifts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {shifts.map((shift) => (
-                <div
-                  key={shift.maGanCa}
-                  className="bg-white border border-gray-200 rounded-lg"
-                >
+                <div key={shift.maGanCa} className="bg-white border border-gray-200 rounded-lg">
                   <div className="p-6 space-y-3">
-                    <h3 className="font-bold text-gray-800">
-                      {shift.NhanVien?.hoTen}
-                    </h3>
+                    <h3 className="font-bold text-gray-800">{shift.NhanVien?.hoTen}</h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2 text-gray-700">
                         <FaCalendarAlt className="text-[#8e2800]" />
-                        <span>
-                          {new Date(shift.ngayLam).toLocaleDateString("vi-VN")}
-                        </span>
+                        <span>{new Date(shift.ngayLam).toLocaleDateString("vi-VN")}</span>
                       </div>
                       <div className="flex items-center gap-2 text-gray-700">
                         <FaClock className="text-[#8e2800]" />
                         <span>
-                          {shift.CaLamViec?.gioBatDau} -{" "}
-                          {shift.CaLamViec?.gioKetThuc}
+                          {shift.CaLamViec?.gioBatDau} - {shift.CaLamViec?.gioKetThuc}
                         </span>
                       </div>
                       <span className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 border border-green-300">
@@ -356,9 +329,7 @@ const EmployeeManagement = () => {
           ) : (
             <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
               <FaClock className="mx-auto text-6xl text-gray-300 mb-4" />
-              <p className="text-gray-500 text-lg">
-                Chưa có ca làm nào được phân công
-              </p>
+              <p className="text-gray-500 text-lg">Chưa có ca làm nào được phân công</p>
             </div>
           )}
         </div>
@@ -366,12 +337,10 @@ const EmployeeManagement = () => {
 
       {/* Add Employee Modal */}
       {showAddEmployeeModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full">
             <div className="p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold text-gray-800">
-                Thêm Nhân Viên
-              </h3>
+              <h3 className="text-xl font-bold text-gray-800">Thêm Nhân Viên</h3>
             </div>
 
             <div className="p-6 space-y-4">
@@ -386,15 +355,9 @@ const EmployeeManagement = () => {
                     formErrors.email ? "border-red-500" : "border-gray-300"
                   }`}
                   value={employeeForm.email}
-                  onChange={(e) =>
-                    setEmployeeForm({ ...employeeForm, email: e.target.value })
-                  }
+                  onChange={(e) => setEmployeeForm({ ...employeeForm, email: e.target.value })}
                 />
-                {formErrors.email && (
-                  <p className="text-red-600 text-sm mt-1">
-                    {formErrors.email}
-                  </p>
-                )}
+                {formErrors.email && <p className="text-red-600 text-sm mt-1">{formErrors.email}</p>}
               </div>
 
               <div>
@@ -408,28 +371,18 @@ const EmployeeManagement = () => {
                     formErrors.hoTen ? "border-red-500" : "border-gray-300"
                   }`}
                   value={employeeForm.hoTen}
-                  onChange={(e) =>
-                    setEmployeeForm({ ...employeeForm, hoTen: e.target.value })
-                  }
+                  onChange={(e) => setEmployeeForm({ ...employeeForm, hoTen: e.target.value })}
                 />
-                {formErrors.hoTen && (
-                  <p className="text-red-600 text-sm mt-1">
-                    {formErrors.hoTen}
-                  </p>
-                )}
+                {formErrors.hoTen && <p className="text-red-600 text-sm mt-1">{formErrors.hoTen}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Số Điện Thoại
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Số Điện Thoại</label>
                 <input
                   type="tel"
                   placeholder="0912345678"
                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent ${
-                    formErrors.soDienThoai
-                      ? "border-red-500"
-                      : "border-gray-300"
+                    formErrors.soDienThoai ? "border-red-500" : "border-gray-300"
                   }`}
                   value={employeeForm.soDienThoai}
                   onChange={(e) =>
@@ -439,17 +392,11 @@ const EmployeeManagement = () => {
                     })
                   }
                 />
-                {formErrors.soDienThoai && (
-                  <p className="text-red-600 text-sm mt-1">
-                    {formErrors.soDienThoai}
-                  </p>
-                )}
+                {formErrors.soDienThoai && <p className="text-red-600 text-sm mt-1">{formErrors.soDienThoai}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Vai Trò
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Vai Trò</label>
                 <select
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent"
                   value={employeeForm.maVaiTro}
@@ -493,9 +440,7 @@ const EmployeeManagement = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full">
             <div className="p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold text-gray-800">
-                Phân Công Ca Làm
-              </h3>
+              <h3 className="text-xl font-bold text-gray-800">Phân Công Ca Làm</h3>
             </div>
 
             <div className="p-6 space-y-4">
@@ -522,11 +467,7 @@ const EmployeeManagement = () => {
                     </option>
                   ))}
                 </select>
-                {formErrors.maNhanVien && (
-                  <p className="text-red-600 text-sm mt-1">
-                    {formErrors.maNhanVien}
-                  </p>
-                )}
+                {formErrors.maNhanVien && <p className="text-red-600 text-sm mt-1">{formErrors.maNhanVien}</p>}
               </div>
 
               <div>
@@ -550,9 +491,7 @@ const EmployeeManagement = () => {
                   <option value="2">Chiều (12:00 - 17:00)</option>
                   <option value="3">Tối (17:00 - 21:00)</option>
                 </select>
-                {formErrors.maCa && (
-                  <p className="text-red-600 text-sm mt-1">{formErrors.maCa}</p>
-                )}
+                {formErrors.maCa && <p className="text-red-600 text-sm mt-1">{formErrors.maCa}</p>}
               </div>
 
               <div>
@@ -572,11 +511,7 @@ const EmployeeManagement = () => {
                     })
                   }
                 />
-                {formErrors.ngayLam && (
-                  <p className="text-red-600 text-sm mt-1">
-                    {formErrors.ngayLam}
-                  </p>
-                )}
+                {formErrors.ngayLam && <p className="text-red-600 text-sm mt-1">{formErrors.ngayLam}</p>}
               </div>
             </div>
 

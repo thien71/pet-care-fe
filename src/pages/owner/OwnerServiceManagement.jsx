@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import apiClient from "../../api/apiClient";
+import { serviceService } from "@/api";
 import {
   FaPlus,
   FaEdit,
@@ -44,10 +45,7 @@ const OwnerServiceManagement = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [systemRes, shopRes] = await Promise.all([
-        apiClient.get("/owner/system-services"),
-        apiClient.get("/owner/shop-services"),
-      ]);
+      const [systemRes, shopRes] = await Promise.all([serviceService.getSystemServices(), serviceService.getShopServices()]);
       setSystemServices(systemRes.data || []);
       setShopServices(shopRes.data || []);
       setError("");
@@ -65,18 +63,11 @@ const OwnerServiceManagement = () => {
       errors.gia = "Giá phải lớn hơn 0";
     }
 
-    if (
-      formData.hinhAnh &&
-      formData.hinhAnh.trim() &&
-      !/^https?:\/\/.+/.test(formData.hinhAnh)
-    ) {
+    if (formData.hinhAnh && formData.hinhAnh.trim() && !/^https?:\/\/.+/.test(formData.hinhAnh)) {
       errors.hinhAnh = "Link hình ảnh không hợp lệ";
     }
 
-    if (
-      formData.thoiLuongShop &&
-      (isNaN(formData.thoiLuongShop) || parseInt(formData.thoiLuongShop) <= 0)
-    ) {
+    if (formData.thoiLuongShop && (isNaN(formData.thoiLuongShop) || parseInt(formData.thoiLuongShop) <= 0)) {
       errors.thoiLuongShop = "Thời lượng phải là số dương";
     }
 
@@ -104,14 +95,12 @@ const OwnerServiceManagement = () => {
 
     try {
       setLoading(true);
-      await apiClient.post("/owner/shop-services", {
+      await serviceService.addServiceToShop({
         maDichVuHeThong: serviceId,
         gia: parseFloat(formData.gia),
         hinhAnh: formData.hinhAnh || null,
         moTaShop: formData.moTaShop || null,
-        thoiLuongShop: formData.thoiLuongShop
-          ? parseInt(formData.thoiLuongShop)
-          : null,
+        thoiLuongShop: formData.thoiLuongShop ? parseInt(formData.thoiLuongShop) : null,
       });
       setSuccess("Thêm dịch vụ thành công!");
       closeModal();
@@ -129,13 +118,11 @@ const OwnerServiceManagement = () => {
 
     try {
       setLoading(true);
-      await apiClient.put(`/owner/shop-services/${serviceId}`, {
+      await serviceService.updateShopService(serviceId, {
         gia: parseFloat(formData.gia),
         hinhAnh: formData.hinhAnh || null,
         moTaShop: formData.moTaShop || null,
-        thoiLuongShop: formData.thoiLuongShop
-          ? parseInt(formData.thoiLuongShop)
-          : null,
+        thoiLuongShop: formData.thoiLuongShop ? parseInt(formData.thoiLuongShop) : null,
       });
       setSuccess("Cập nhật dịch vụ thành công!");
       closeModal();
@@ -152,7 +139,7 @@ const OwnerServiceManagement = () => {
     if (window.confirm("Bạn chắc chắn muốn xóa dịch vụ này?")) {
       try {
         setLoading(true);
-        await apiClient.delete(`/owner/shop-services/${serviceId}`);
+        await serviceService.deleteShopService(serviceId);
         setSuccess("Xóa dịch vụ thành công!");
         await loadData();
         setTimeout(() => setSuccess(""), 3000);
@@ -169,14 +156,12 @@ const OwnerServiceManagement = () => {
 
     try {
       setLoading(true);
-      await apiClient.post("/owner/propose-service", {
+      await serviceService.proposeNewService({
         tenDichVu: proposeData.tenDichVu,
         moTa: proposeData.moTa,
         gia: parseFloat(proposeData.gia),
       });
-      setSuccess(
-        "Đề xuất dịch vụ thành công! Admin sẽ kiểm tra trong 24-48 giờ"
-      );
+      setSuccess("Đề xuất dịch vụ thành công! Admin sẽ kiểm tra trong 24-48 giờ");
       setShowProposeModal(false);
       setProposeData({ tenDichVu: "", moTa: "", gia: "" });
       setFormErrors({});
@@ -209,9 +194,7 @@ const OwnerServiceManagement = () => {
       <div className="bg-white border border-gray-200 rounded-lg p-6 flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Quản Lý Dịch Vụ</h1>
-          <p className="text-gray-600 mt-1">
-            Thêm, sửa, xóa các dịch vụ của cửa hàng
-          </p>
+          <p className="text-gray-600 mt-1">Thêm, sửa, xóa các dịch vụ của cửa hàng</p>
         </div>
         <button
           onClick={() => {
@@ -231,10 +214,7 @@ const OwnerServiceManagement = () => {
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
           <FaCheckCircle className="text-green-600 text-xl" />
           <span className="text-green-800">{success}</span>
-          <button
-            onClick={() => setSuccess("")}
-            className="ml-auto text-green-600 hover:text-green-800"
-          >
+          <button onClick={() => setSuccess("")} className="ml-auto text-green-600 hover:text-green-800">
             <FaTimesCircle />
           </button>
         </div>
@@ -245,10 +225,7 @@ const OwnerServiceManagement = () => {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
           <FaTimesCircle className="text-red-600 text-xl" />
           <span className="text-red-800">{error}</span>
-          <button
-            onClick={() => setError("")}
-            className="ml-auto text-red-600 hover:text-red-800"
-          >
+          <button onClick={() => setError("")} className="ml-auto text-red-600 hover:text-red-800">
             <FaTimesCircle />
           </button>
         </div>
@@ -256,9 +233,7 @@ const OwnerServiceManagement = () => {
 
       {/* Active Services */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">
-          Dịch Vụ Đang Hoạt Động
-        </h2>
+        <h2 className="text-xl font-bold text-gray-800 mb-6">Dịch Vụ Đang Hoạt Động</h2>
 
         {shopServices.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -281,19 +256,13 @@ const OwnerServiceManagement = () => {
                 )}
                 <div className="p-4 space-y-3">
                   <div className="flex justify-between items-start">
-                    <h3 className="text-lg font-bold text-gray-800">
-                      {service.tenDichVu}
-                    </h3>
+                    <h3 className="text-lg font-bold text-gray-800">{service.tenDichVu}</h3>
                     <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700 border border-green-300">
                       Kích hoạt
                     </span>
                   </div>
 
-                  {service.moTaShop && (
-                    <p className="text-sm text-gray-600 line-clamp-2">
-                      {service.moTaShop}
-                    </p>
-                  )}
+                  {service.moTaShop && <p className="text-sm text-gray-600 line-clamp-2">{service.moTaShop}</p>}
 
                   <div className="space-y-1 text-sm">
                     {service.thoiLuongShop && (
@@ -304,9 +273,7 @@ const OwnerServiceManagement = () => {
                     )}
                     <div className="flex items-center gap-2">
                       <FaDollarSign className="text-[#8e2800]" />
-                      <span className="font-bold text-[#8e2800]">
-                        {parseInt(service.gia).toLocaleString("vi-VN")}đ
-                      </span>
+                      <span className="font-bold text-[#8e2800]">{parseInt(service.gia).toLocaleString("vi-VN")}đ</span>
                     </div>
                   </div>
 
@@ -349,29 +316,21 @@ const OwnerServiceManagement = () => {
 
       {/* System Services */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">
-          Thêm Dịch Vụ Từ Hệ Thống
-        </h2>
+        <h2 className="text-xl font-bold text-gray-800 mb-6">Thêm Dịch Vụ Từ Hệ Thống</h2>
 
         {systemServices.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {systemServices.map((service) => {
-              const isAdded = shopServices.some(
-                (s) => s.maDichVuHeThong === service.maDichVu
-              );
+              const isAdded = shopServices.some((s) => s.maDichVuHeThong === service.maDichVu);
 
               return (
                 <div
                   key={service.maDichVu}
                   className={`border rounded-lg p-4 ${
-                    isAdded
-                      ? "bg-gray-50 border-gray-300"
-                      : "border-gray-200 hover:border-[#8e2800]"
+                    isAdded ? "bg-gray-50 border-gray-300" : "border-gray-200 hover:border-[#8e2800]"
                   } transition-colors`}
                 >
-                  <h3 className="font-bold text-gray-800 mb-2">
-                    {service.tenDichVu}
-                  </h3>
+                  <h3 className="font-bold text-gray-800 mb-2">{service.tenDichVu}</h3>
                   <p className="text-sm text-gray-600 mb-3">{service.moTa}</p>
                   {service.thoiLuong && (
                     <p className="text-sm text-gray-700 mb-3 flex items-center gap-2">
@@ -417,21 +376,15 @@ const OwnerServiceManagement = () => {
 
       {/* Add/Edit Modal */}
       {showAddModal && editingService && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold text-gray-800">
-                {editingService?.maDichVuShop
-                  ? "Cập Nhật Dịch Vụ"
-                  : "Thêm Dịch Vụ"}
-              </h3>
+              <h3 className="text-xl font-bold text-gray-800">{editingService?.maDichVuShop ? "Cập Nhật Dịch Vụ" : "Thêm Dịch Vụ"}</h3>
             </div>
 
             <div className="p-6 space-y-4">
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <p className="font-semibold text-gray-800 mb-1">
-                  {editingService?.tenDichVu}
-                </p>
+                <p className="font-semibold text-gray-800 mb-1">{editingService?.tenDichVu}</p>
                 <p className="text-sm text-gray-600">{editingService?.moTa}</p>
               </div>
 
@@ -446,20 +399,14 @@ const OwnerServiceManagement = () => {
                     formErrors.gia ? "border-red-500" : "border-gray-300"
                   }`}
                   value={formData.gia}
-                  onChange={(e) =>
-                    setFormData({ ...formData, gia: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, gia: e.target.value })}
                   min="0"
                 />
-                {formErrors.gia && (
-                  <p className="text-red-600 text-sm mt-1">{formErrors.gia}</p>
-                )}
+                {formErrors.gia && <p className="text-red-600 text-sm mt-1">{formErrors.gia}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Link Hình Ảnh
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Link Hình Ảnh</label>
                 <input
                   type="text"
                   placeholder="https://example.com/image.jpg"
@@ -467,54 +414,34 @@ const OwnerServiceManagement = () => {
                     formErrors.hinhAnh ? "border-red-500" : "border-gray-300"
                   }`}
                   value={formData.hinhAnh}
-                  onChange={(e) =>
-                    setFormData({ ...formData, hinhAnh: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, hinhAnh: e.target.value })}
                 />
-                {formErrors.hinhAnh && (
-                  <p className="text-red-600 text-sm mt-1">
-                    {formErrors.hinhAnh}
-                  </p>
-                )}
+                {formErrors.hinhAnh && <p className="text-red-600 text-sm mt-1">{formErrors.hinhAnh}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Mô Tả Cửa Hàng
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Mô Tả Cửa Hàng</label>
                 <textarea
                   placeholder="Mô tả riêng của cửa hàng về dịch vụ này..."
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent h-24"
                   value={formData.moTaShop}
-                  onChange={(e) =>
-                    setFormData({ ...formData, moTaShop: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, moTaShop: e.target.value })}
                 ></textarea>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Thời Lượng (phút)
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Thời Lượng (phút)</label>
                 <input
                   type="number"
                   placeholder="Ví dụ: 60"
                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent ${
-                    formErrors.thoiLuongShop
-                      ? "border-red-500"
-                      : "border-gray-300"
+                    formErrors.thoiLuongShop ? "border-red-500" : "border-gray-300"
                   }`}
                   value={formData.thoiLuongShop}
-                  onChange={(e) =>
-                    setFormData({ ...formData, thoiLuongShop: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, thoiLuongShop: e.target.value })}
                   min="0"
                 />
-                {formErrors.thoiLuongShop && (
-                  <p className="text-red-600 text-sm mt-1">
-                    {formErrors.thoiLuongShop}
-                  </p>
-                )}
+                {formErrors.thoiLuongShop && <p className="text-red-600 text-sm mt-1">{formErrors.thoiLuongShop}</p>}
               </div>
             </div>
 
@@ -545,12 +472,10 @@ const OwnerServiceManagement = () => {
 
       {/* Propose Service Modal */}
       {showProposeModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full">
             <div className="p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold text-gray-800">
-                Đề Xuất Dịch Vụ Mới
-              </h3>
+              <h3 className="text-xl font-bold text-gray-800">Đề Xuất Dịch Vụ Mới</h3>
             </div>
 
             <div className="p-6 space-y-4">
@@ -572,24 +497,16 @@ const OwnerServiceManagement = () => {
                     })
                   }
                 />
-                {formErrors.tenDichVu && (
-                  <p className="text-red-600 text-sm mt-1">
-                    {formErrors.tenDichVu}
-                  </p>
-                )}
+                {formErrors.tenDichVu && <p className="text-red-600 text-sm mt-1">{formErrors.tenDichVu}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Mô Tả
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Mô Tả</label>
                 <textarea
                   placeholder="Mô tả chi tiết dịch vụ..."
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent h-24"
                   value={proposeData.moTa}
-                  onChange={(e) =>
-                    setProposeData({ ...proposeData, moTa: e.target.value })
-                  }
+                  onChange={(e) => setProposeData({ ...proposeData, moTa: e.target.value })}
                 ></textarea>
               </div>
 
@@ -604,21 +521,15 @@ const OwnerServiceManagement = () => {
                     formErrors.gia ? "border-red-500" : "border-gray-300"
                   }`}
                   value={proposeData.gia}
-                  onChange={(e) =>
-                    setProposeData({ ...proposeData, gia: e.target.value })
-                  }
+                  onChange={(e) => setProposeData({ ...proposeData, gia: e.target.value })}
                   min="0"
                 />
-                {formErrors.gia && (
-                  <p className="text-red-600 text-sm mt-1">{formErrors.gia}</p>
-                )}
+                {formErrors.gia && <p className="text-red-600 text-sm mt-1">{formErrors.gia}</p>}
               </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
                 <FaLightbulb className="text-blue-600 mt-1 shrink-0" />
-                <p className="text-sm text-blue-800">
-                  Admin sẽ duyệt đề xuất của bạn trong 24-48 giờ
-                </p>
+                <p className="text-sm text-blue-800">Admin sẽ duyệt đề xuất của bạn trong 24-48 giờ</p>
               </div>
             </div>
 
