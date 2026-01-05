@@ -20,6 +20,10 @@ export const staffService = {
     return await apiClient.delete(`/staff/employees/${id}`);
   },
 
+  toggleEmployeeStatus: async (id) => {
+    return await apiClient.put(`/staff/employees/${id}/toggle-status`);
+  },
+
   // ==================== SHIFT MANAGEMENT ====================
   getShifts: async (params) => {
     return await apiClient.get("/staff/shifts", { params });
