@@ -1,10 +1,11 @@
 // src/routes/technicianRoutes.jsx
-import TechnicianLayout from "../layouts/TechnicianLayout";
-import ProtectedRoute from "../components/common/ProtectedRoute";
+import TechnicianLayout from "@/layouts/TechnicianLayout";
+import ProtectedRoute from "@/components/common/ProtectedRoute";
 
 // Technician Pages
-import TechnicianDashboard from "../pages/technician/TechnicianDashboard";
-import TechnicianSchedule from "../pages/technician/TechnicianSchedule";
+import TechnicianDashboard from "@/pages/technician/TechnicianDashboard";
+import TechnicianSchedule from "@/pages/technician/TechnicianSchedule";
+import ProfileContent from "@/components/profile/ProfileContent";
 
 export const technicianRoutes = {
   path: "/tech",
@@ -16,5 +17,6 @@ export const technicianRoutes = {
   children: [
     { path: "dashboard", element: <TechnicianDashboard /> },
     { path: "schedule", element: <TechnicianSchedule /> },
+    { path: "profile", element: <ProfileContent /> },
   ],
 };

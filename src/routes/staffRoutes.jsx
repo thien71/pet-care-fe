@@ -1,10 +1,11 @@
 // src/routes/staffRoutes.jsx
-import StaffLayout from "../layouts/StaffLayout";
-import ProtectedRoute from "../components/common/ProtectedRoute";
+import StaffLayout from "@/layouts/StaffLayout";
+import ProtectedRoute from "@/components/common/ProtectedRoute";
 
 // Staff Pages
-import StaffBookingManagement from "../pages/staff/StaffBookingManagement";
-import StaffSchedule from "../pages/staff/StaffSchedule";
+import StaffBookingManagement from "@/pages/staff/StaffBookingManagement";
+import StaffSchedule from "@/pages/staff/StaffSchedule";
+import ProfileContent from "@/components/profile/ProfileContent";
 
 export const staffRoutes = {
   path: "/staff",
@@ -16,5 +17,6 @@ export const staffRoutes = {
   children: [
     { path: "dashboard", element: <StaffBookingManagement /> },
     { path: "schedule", element: <StaffSchedule /> },
+    { path: "profile", element: <ProfileContent /> },
   ],
 };

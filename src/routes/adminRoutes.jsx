@@ -1,17 +1,18 @@
 // src/routes/adminRoutes.jsx
-import AdminLayout from "../layouts/AdminLayout";
-import ProtectedRoute from "../components/common/ProtectedRoute";
+import AdminLayout from "@/layouts/AdminLayout";
+import ProtectedRoute from "@/components/common/ProtectedRoute";
 
 // Admin Pages
-import AdminDashboard from "../pages/admin/AdminDashboard";
-import UserManagement from "../pages/admin/UserManagement";
-import PetTypeManagement from "../pages/admin/PetTypeManagement";
-import ServiceManagement from "../pages/admin/ServiceManagement";
-import ShopApproval from "../pages/admin/ShopApproval";
-import ShopManagement from "../pages/admin/ShopManagement";
-import ServiceProposals from "../pages/admin/ServiceProposals";
-import PaymentPackages from "../pages/admin/PaymentPackages";
-import PaymentConfirm from "../pages/admin/PaymentConfirm";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import UserManagement from "@/pages/admin/UserManagement";
+import PetTypeManagement from "@/pages/admin/PetTypeManagement";
+import ServiceManagement from "@/pages/admin/ServiceManagement";
+import ShopApproval from "@/pages/admin/ShopApproval";
+import ShopManagement from "@/pages/admin/ShopManagement";
+import ServiceProposals from "@/pages/admin/ServiceProposals";
+import PaymentPackages from "@/pages/admin/PaymentPackages";
+import PaymentConfirm from "@/pages/admin/PaymentConfirm";
+import ProfileContent from "@/components/profile/ProfileContent";
 
 export const adminRoutes = {
   path: "/admin",
@@ -30,5 +31,6 @@ export const adminRoutes = {
     { path: "service-proposals", element: <ServiceProposals /> },
     { path: "payment-packages", element: <PaymentPackages /> },
     { path: "payment-confirm", element: <PaymentConfirm /> },
+    { path: "profile", element: <ProfileContent /> },
   ],
 };
