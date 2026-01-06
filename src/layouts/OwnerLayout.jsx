@@ -30,11 +30,11 @@ const OwnerLayout = () => {
       label: "Lịch làm việc",
       icon: <FaCalendar />,
     },
-    {
-      path: "/owner/statistics",
-      label: "Thống kê",
-      icon: <FaChartLine />,
-    },
+    // {
+    //   path: "/owner/statistics",
+    //   label: "Thống kê",
+    //   icon: <FaChartLine />,
+    // },
     {
       path: "/owner/payments",
       label: "Thanh toán",
