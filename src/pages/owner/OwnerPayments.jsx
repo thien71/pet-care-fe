@@ -1,7 +1,7 @@
 // src/pages/owner/OwnerPayments.jsx
 import { useState, useEffect } from "react";
 import { paymentService } from "@/api";
-import { FaSpinner, FaCreditCard, FaCheckCircle, FaClock, FaExclamationTriangle } from "react-icons/fa";
+import { FaSpinner, FaCreditCard, FaCheckCircle, FaClock, FaExclamationTriangle, FaTimes, FaUpload } from "react-icons/fa";
 import { showToast } from "@/utils/toast";
 import PurchasePackageModal from "@/components/owner/PurchasePackageModal";
 import UploadPaymentProofModal from "@/components/owner/UploadPaymentProofModal";

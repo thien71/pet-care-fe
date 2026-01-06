@@ -56,6 +56,10 @@ export const shopService = {
   },
 
   // ==================== OWNER ====================
+  getShopStatus: async () => {
+    return await apiClient.get("/shops/my/status");
+  },
+
   getShopInfo: async () => {
     return await apiClient.get("/shops/my/info");
   },
