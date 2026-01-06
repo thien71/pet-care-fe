@@ -1,6 +1,7 @@
 // src/pages/technician/TechnicianSchedule.jsx - LỊCH LÀM VIỆC CỦA KỸ THUẬT VIÊN
 import { useState, useEffect } from "react";
-import apiClient from "../../api/apiClient";
+// import apiClient from "../../api/apiClient";
+import { staffService } from "@/api";
 
 const TechnicianSchedule = () => {
   const [schedule, setSchedule] = useState([]);
@@ -30,7 +31,8 @@ const TechnicianSchedule = () => {
   const loadSchedule = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get("/staff/schedule");
+      const res = await staffService.getMySchedule();
+      // const res = await apiClient.get("/staff/schedule");
       setSchedule(res.data || []);
       setError("");
     } catch (err) {
@@ -56,15 +58,7 @@ const TechnicianSchedule = () => {
     setSelectedWeek(getWeekDates(new Date()));
   };
 
-  const weekDays = [
-    "Thứ 2",
-    "Thứ 3",
-    "Thứ 4",
-    "Thứ 5",
-    "Thứ 6",
-    "Thứ 7",
-    "Chủ nhật",
-  ];
+  const weekDays = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
   const timeSlots = [
     {
       maCa: 1,
@@ -102,9 +96,7 @@ const TechnicianSchedule = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">🔧 Lịch Làm Việc Của Tôi</h1>
-        <p className="text-gray-600 mt-2">
-          Xem lịch làm việc và công việc được giao
-        </p>
+        <p className="text-gray-600 mt-2">Xem lịch làm việc và công việc được giao</p>
       </div>
 
       {/* Error Alert */}
@@ -122,15 +114,11 @@ const TechnicianSchedule = () => {
         <div className="card-body">
           <div className="flex flex-wrap gap-4 items-center justify-between">
             <div className="flex gap-2 items-center">
-              <button
-                onClick={goToPreviousWeek}
-                className="btn btn-sm btn-outline"
-              >
+              <button onClick={goToPreviousWeek} className="btn btn-sm btn-outline">
                 ◀️ Tuần trước
               </button>
               <span className="font-semibold min-w-max">
-                {new Date(selectedWeek[0]).toLocaleDateString("vi-VN")} -{" "}
-                {new Date(selectedWeek[6]).toLocaleDateString("vi-VN")}
+                {new Date(selectedWeek[0]).toLocaleDateString("vi-VN")} - {new Date(selectedWeek[6]).toLocaleDateString("vi-VN")}
               </span>
               <button onClick={goToNextWeek} className="btn btn-sm btn-outline">
                 Tuần sau ▶️
@@ -147,27 +135,19 @@ const TechnicianSchedule = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="stat bg-base-100 shadow rounded-lg p-4">
           <div className="stat-title">Tổng ca</div>
-          <div className="stat-value text-2xl text-primary">
-            {schedule.length}
-          </div>
+          <div className="stat-value text-2xl text-primary">{schedule.length}</div>
         </div>
         <div className="stat bg-base-100 shadow rounded-lg p-4">
           <div className="stat-title">Ca sáng</div>
-          <div className="stat-value text-2xl text-info">
-            {schedule.filter((s) => s.maCa === 1).length}
-          </div>
+          <div className="stat-value text-2xl text-info">{schedule.filter((s) => s.maCa === 1).length}</div>
         </div>
         <div className="stat bg-base-100 shadow rounded-lg p-4">
           <div className="stat-title">Ca chiều</div>
-          <div className="stat-value text-2xl text-warning">
-            {schedule.filter((s) => s.maCa === 2).length}
-          </div>
+          <div className="stat-value text-2xl text-warning">{schedule.filter((s) => s.maCa === 2).length}</div>
         </div>
         <div className="stat bg-base-100 shadow rounded-lg p-4">
           <div className="stat-title">Ca tối</div>
-          <div className="stat-value text-2xl text-accent">
-            {schedule.filter((s) => s.maCa === 3).length}
-          </div>
+          <div className="stat-value text-2xl text-accent">{schedule.filter((s) => s.maCa === 3).length}</div>
         </div>
       </div>
 
@@ -177,10 +157,7 @@ const TechnicianSchedule = () => {
           <div className="card-body p-0">
             <div className="grid gap-4 p-6">
               {timeSlots.map((slot) => (
-                <div
-                  key={slot.maCa}
-                  className={`rounded-lg border-2 ${slot.borderColor} ${slot.color}`}
-                >
+                <div key={slot.maCa} className={`rounded-lg border-2 ${slot.borderColor} ${slot.color}`}>
                   <div className="p-4">
                     <h3 className="font-bold text-lg mb-4">
                       {slot.tenCa} ({slot.time})
@@ -188,26 +165,19 @@ const TechnicianSchedule = () => {
 
                     <div className="grid grid-cols-7 gap-2">
                       {selectedWeek.map((date, idx) => {
-                        const shiftsInSlot = schedule.filter(
-                          (s) => s.ngayLam === date && s.maCa === slot.maCa
-                        );
+                        const shiftsInSlot = schedule.filter((s) => s.ngayLam === date && s.maCa === slot.maCa);
 
                         return (
                           <div key={date} className="text-center">
                             <p className="text-xs font-semibold mb-2">
                               {weekDays[idx]}
                               <br />
-                              {new Date(date).getDate()}/
-                              {new Date(date).getMonth() + 1}
+                              {new Date(date).getDate()}/{new Date(date).getMonth() + 1}
                             </p>
                             {shiftsInSlot.length > 0 ? (
                               <div className="bg-white rounded p-2 border-2 border-green-400">
-                                <span className="text-sm font-bold text-success">
-                                  ✅
-                                </span>
-                                <p className="text-xs text-gray-700 mt-1">
-                                  {shiftsInSlot[0].CaLamViec?.tenCa}
-                                </p>
+                                <span className="text-sm font-bold text-success">✅</span>
+                                <p className="text-xs text-gray-700 mt-1">{shiftsInSlot[0].CaLamViec?.tenCa}</p>
                               </div>
                             ) : (
                               <div className="bg-white rounded p-2 opacity-50">
@@ -227,23 +197,14 @@ const TechnicianSchedule = () => {
       ) : (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">📭</div>
-          <p className="text-2xl font-bold text-gray-600">
-            Chưa có lịch làm việc
-          </p>
-          <p className="text-gray-500 mt-2">
-            Chủ cửa hàng sẽ phân công lịch cho bạn
-          </p>
+          <p className="text-2xl font-bold text-gray-600">Chưa có lịch làm việc</p>
+          <p className="text-gray-500 mt-2">Chủ cửa hàng sẽ phân công lịch cho bạn</p>
         </div>
       )}
 
       {/* Alerts */}
       <div className="alert alert-info">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          className="stroke-current shrink-0 w-6 h-6"
-        >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -251,10 +212,7 @@ const TechnicianSchedule = () => {
             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
           ></path>
         </svg>
-        <span>
-          Bạn sẽ nhận công việc tương ứng với các ca làm được phân công. Hãy
-          kiểm tra thường xuyên!
-        </span>
+        <span>Bạn sẽ nhận công việc tương ứng với các ca làm được phân công. Hãy kiểm tra thường xuyên!</span>
       </div>
     </div>
   );

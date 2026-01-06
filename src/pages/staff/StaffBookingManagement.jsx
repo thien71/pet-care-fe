@@ -1,6 +1,7 @@
 // src/pages/staff/StaffBookingManagement.jsx
 import { useState, useEffect } from "react";
-import apiClient from "../../api/apiClient";
+// import apiClient from "../../api/apiClient";
+import { bookingService } from "@/api";
 
 const StaffBookingManagement = () => {
   const [bookings, setBookings] = useState([]);
@@ -22,7 +23,8 @@ const StaffBookingManagement = () => {
     try {
       setLoading(true);
       const [bookingsRes] = await Promise.all([
-        apiClient.get("/staff/bookings", { params: { trangThai: filter } }),
+        bookingService.getShopBookings({ trangThai: filter }),
+        // apiClient.get("/staff/bookings", { params: { trangThai: filter } }),
         // Lấy danh sách KTV từ API (tạo mới API hoặc dùng từ data sẵn)
       ]);
       setBookings(bookingsRes.data || []);
@@ -37,7 +39,8 @@ const StaffBookingManagement = () => {
   const handleConfirm = async (bookingId) => {
     try {
       setLoading(true);
-      await apiClient.put(`/staff/bookings/${bookingId}/confirm`);
+      await bookingService.confirmBooking(bookingId);
+      // await apiClient.put(`/staff/bookings/${bookingId}/confirm`);
       setSuccess("Xác nhận đơn hàng thành công!");
       await loadData();
       setTimeout(() => setSuccess(""), 3000);
@@ -56,10 +59,8 @@ const StaffBookingManagement = () => {
 
     try {
       setLoading(true);
-      await apiClient.put(
-        `/staff/bookings/${selectedBooking.maLichHen}/assign-technician`,
-        { maNhanVien: parseInt(assignTechId) }
-      );
+      await bookingService.assignTechnician(selectedBooking.maLichHen, { maNhanVien: parseInt(assignTechId) });
+      // await apiClient.put(`/staff/bookings/${selectedBooking.maLichHen}/assign-technician`, { maNhanVien: parseInt(assignTechId) });
       setSuccess("Gán kỹ thuật viên thành công!");
       setShowAssignModal(false);
       setAssignTechId("");
@@ -108,26 +109,14 @@ const StaffBookingManagement = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">📋 Quản Lý Đơn Đặt Hẻn</h1>
-        <p className="text-gray-600 mt-2">
-          Xử lý các đơn đặt lịch từ khách hàng
-        </p>
+        <p className="text-gray-600 mt-2">Xử lý các đơn đặt lịch từ khách hàng</p>
       </div>
 
       {/* Success Alert */}
       {success && (
         <div className="alert alert-success">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span>{success}</span>
         </div>
@@ -154,11 +143,7 @@ const StaffBookingManagement = () => {
               { value: "HOAN_THANH", label: "Hoàn Thành" },
               { value: "HUY", label: "Đã Hủy" },
             ].map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => setFilter(tab.value)}
-                className={`tab ${filter === tab.value ? "tab-active" : ""}`}
-              >
+              <button key={tab.value} onClick={() => setFilter(tab.value)} className={`tab ${filter === tab.value ? "tab-active" : ""}`}>
                 {tab.label}
               </button>
             ))}
@@ -170,21 +155,15 @@ const StaffBookingManagement = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="stat bg-base-100 shadow rounded-lg">
           <div className="stat-title">Chờ xác nhận</div>
-          <div className="stat-value text-warning">
-            {bookings.filter((b) => b.trangThai === "CHO_XAC_NHAN").length}
-          </div>
+          <div className="stat-value text-warning">{bookings.filter((b) => b.trangThai === "CHO_XAC_NHAN").length}</div>
         </div>
         <div className="stat bg-base-100 shadow rounded-lg">
           <div className="stat-title">Đang thực hiện</div>
-          <div className="stat-value text-primary">
-            {bookings.filter((b) => b.trangThai === "DANG_THUC_HIEN").length}
-          </div>
+          <div className="stat-value text-primary">{bookings.filter((b) => b.trangThai === "DANG_THUC_HIEN").length}</div>
         </div>
         <div className="stat bg-base-100 shadow rounded-lg">
           <div className="stat-title">Hoàn thành</div>
-          <div className="stat-value text-success">
-            {bookings.filter((b) => b.trangThai === "HOAN_THANH").length}
-          </div>
+          <div className="stat-value text-success">{bookings.filter((b) => b.trangThai === "HOAN_THANH").length}</div>
         </div>
         <div className="stat bg-base-100 shadow rounded-lg">
           <div className="stat-title">Tổng đơn</div>
@@ -207,20 +186,14 @@ const StaffBookingManagement = () => {
                   <div className="flex items-start gap-2">
                     <span>👤</span>
                     <div>
-                      <p className="font-semibold">
-                        {booking.KhachHang?.hoTen}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {booking.KhachHang?.soDienThoai}
-                      </p>
+                      <p className="font-semibold">{booking.KhachHang?.hoTen}</p>
+                      <p className="text-xs text-gray-500">{booking.KhachHang?.soDienThoai}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <span>📅</span>
-                    <span>
-                      {new Date(booking.ngayHen).toLocaleString("vi-VN")}
-                    </span>
+                    <span>{new Date(booking.ngayHen).toLocaleString("vi-VN")}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -237,41 +210,28 @@ const StaffBookingManagement = () => {
 
                   <div className="flex items-center gap-2">
                     <span>💰</span>
-                    <span className="font-bold text-primary">
-                      {parseInt(booking.tongTien).toLocaleString("vi-VN")}đ
-                    </span>
+                    <span className="font-bold text-primary">{parseInt(booking.tongTien).toLocaleString("vi-VN")}đ</span>
                   </div>
                 </div>
 
                 <div className="card-actions justify-end mt-4 gap-2">
-                  <button
-                    onClick={() => openDetailModal(booking)}
-                    className="btn btn-sm btn-ghost"
-                  >
+                  <button onClick={() => openDetailModal(booking)} className="btn btn-sm btn-ghost">
                     👁️ Chi tiết
                   </button>
 
                   {booking.trangThai === "CHO_XAC_NHAN" && (
                     <>
-                      <button
-                        onClick={() => handleConfirm(booking.maLichHen)}
-                        className="btn btn-sm btn-success"
-                      >
+                      <button onClick={() => handleConfirm(booking.maLichHen)} className="btn btn-sm btn-success">
                         ✅ Xác nhận
                       </button>
                     </>
                   )}
 
-                  {(booking.trangThai === "DA_XAC_NHAN" ||
-                    booking.trangThai === "DANG_THUC_HIEN") &&
-                    !booking.NhanVien && (
-                      <button
-                        onClick={() => openAssignModal(booking)}
-                        className="btn btn-sm btn-info"
-                      >
-                        👨‍🔧 Gán KTV
-                      </button>
-                    )}
+                  {(booking.trangThai === "DA_XAC_NHAN" || booking.trangThai === "DANG_THUC_HIEN") && !booking.NhanVien && (
+                    <button onClick={() => openAssignModal(booking)} className="btn btn-sm btn-info">
+                      👨‍🔧 Gán KTV
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -287,9 +247,7 @@ const StaffBookingManagement = () => {
       {showDetailModal && selectedBooking && (
         <div className="modal modal-open">
           <div className="modal-box w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="font-bold text-lg mb-4">
-              📋 Chi Tiết Đơn #{selectedBooking.maLichHen}
-            </h3>
+            <h3 className="font-bold text-lg mb-4">📋 Chi Tiết Đơn #{selectedBooking.maLichHen}</h3>
 
             <div className="space-y-4">
               {/* Status */}
@@ -303,9 +261,7 @@ const StaffBookingManagement = () => {
                 <div className="card-body p-4">
                   <h4 className="font-bold">👤 Khách Hàng</h4>
                   <p>{selectedBooking.KhachHang?.hoTen}</p>
-                  <p className="text-sm">
-                    {selectedBooking.KhachHang?.soDienThoai}
-                  </p>
+                  <p className="text-sm">{selectedBooking.KhachHang?.soDienThoai}</p>
                 </div>
               </div>
 
@@ -321,12 +277,8 @@ const StaffBookingManagement = () => {
                       <div className="ml-4 mt-1 space-y-1">
                         {pet.LichHenChiTiets?.map((detail, i) => (
                           <div key={i} className="text-sm flex justify-between">
-                            <span>
-                              • {detail.DichVuCuaShop?.DichVuHeThong?.tenDichVu}
-                            </span>
-                            <span className="font-semibold">
-                              {parseInt(detail.gia).toLocaleString("vi-VN")}đ
-                            </span>
+                            <span>• {detail.DichVuCuaShop?.DichVuHeThong?.tenDichVu}</span>
+                            <span className="font-semibold">{parseInt(detail.gia).toLocaleString("vi-VN")}đ</span>
                           </div>
                         ))}
                       </div>
@@ -342,10 +294,7 @@ const StaffBookingManagement = () => {
               </button>
             </div>
           </div>
-          <div
-            className="modal-backdrop"
-            onClick={() => setShowDetailModal(false)}
-          ></div>
+          <div className="modal-backdrop" onClick={() => setShowDetailModal(false)}></div>
         </div>
       )}
 
@@ -359,15 +308,9 @@ const StaffBookingManagement = () => {
 
             <div className="form-control">
               <label className="label">
-                <span className="label-text font-semibold">
-                  Chọn Kỹ Thuật Viên
-                </span>
+                <span className="label-text font-semibold">Chọn Kỹ Thuật Viên</span>
               </label>
-              <select
-                className="select select-bordered"
-                value={assignTechId}
-                onChange={(e) => setAssignTechId(e.target.value)}
-              >
+              <select className="select select-bordered" value={assignTechId} onChange={(e) => setAssignTechId(e.target.value)}>
                 <option value="">-- Chọn kỹ thuật viên --</option>
                 {employees.map((emp) => (
                   <option key={emp.maNguoiDung} value={emp.maNguoiDung}>
@@ -378,25 +321,15 @@ const StaffBookingManagement = () => {
             </div>
 
             <div className="modal-action">
-              <button
-                onClick={() => setShowAssignModal(false)}
-                className="btn btn-ghost"
-              >
+              <button onClick={() => setShowAssignModal(false)} className="btn btn-ghost">
                 Hủy
               </button>
-              <button
-                onClick={handleAssignTechnician}
-                className="btn btn-primary"
-                disabled={loading}
-              >
+              <button onClick={handleAssignTechnician} className="btn btn-primary" disabled={loading}>
                 {loading ? "Đang xử lý..." : "Gán"}
               </button>
             </div>
           </div>
-          <div
-            className="modal-backdrop"
-            onClick={() => setShowAssignModal(false)}
-          ></div>
+          <div className="modal-backdrop" onClick={() => setShowAssignModal(false)}></div>
         </div>
       )}
     </div>
