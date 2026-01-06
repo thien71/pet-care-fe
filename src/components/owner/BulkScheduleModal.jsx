@@ -1,19 +1,18 @@
-// src/components/owner/BulkScheduleModal.jsx - PHÂN CÔNG LỊCH HÀNG TUẦN
+// src/components/owner/BulkScheduleModal.jsx
 import { useState, useEffect } from "react";
-// import apiClient from "../../api/apiClient";
 import { staffService } from "@/api";
+import { FaTimes, FaSpinner, FaInfoCircle } from "react-icons/fa";
+import { showToast } from "@/utils/toast";
 
 const BulkScheduleModal = ({ isOpen, onClose, onSuccess }) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  // Form states
   const [selectedEmployee, setSelectedEmployee] = useState("");
-  const [selectedShifts, setSelectedShifts] = useState([]); // [1, 2] = Ca sáng + chiều
+  const [selectedShifts, setSelectedShifts] = useState([]);
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
-  const [repeatWeeks, setRepeatWeeks] = useState(1); // Số tuần lặp lại
+  const [repeatWeeks, setRepeatWeeks] = useState(1);
 
   const shifts = [
     { id: 1, name: "Ca sáng", time: "08:00-12:00" },
@@ -21,8 +20,7 @@ const BulkScheduleModal = ({ isOpen, onClose, onSuccess }) => {
     { id: 3, name: "Ca tối", time: "18:00-22:00" },
   ];
 
-  const days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
-  const dayNumbers = [1, 2, 3, 4, 5, 6, 0]; // 0 = Sunday
+  const dayNumbers = [1, 2, 3, 4, 5, 6, 0];
 
   useEffect(() => {
     if (isOpen) {
@@ -34,11 +32,9 @@ const BulkScheduleModal = ({ isOpen, onClose, onSuccess }) => {
     try {
       setLoading(true);
       const res = await staffService.getEmployees();
-      // const res = await apiClient.get("/owner/employees");
       setEmployees(res.data || []);
-      setError("");
     } catch (err) {
-      setError(err.message);
+      showToast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -54,15 +50,14 @@ const BulkScheduleModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleSubmit = async () => {
     if (!selectedEmployee || selectedShifts.length === 0) {
-      setError("Vui lòng chọn nhân viên và ít nhất 1 ca làm");
+      showToast.error("Vui lòng chọn nhân viên và ít nhất 1 ca làm");
       return;
     }
 
     try {
-      setLoading(true);
+      setSubmitting(true);
       const startDateObj = new Date(startDate);
 
-      // Tạo danh sách các ngày và ca để phân công
       const assignmentsToCreate = [];
 
       for (let week = 0; week < repeatWeeks; week++) {
@@ -81,55 +76,51 @@ const BulkScheduleModal = ({ isOpen, onClose, onSuccess }) => {
         }
       }
 
-      // Gửi API bulk assign
       await staffService.bulkAssignShifts({ assignments: assignmentsToCreate });
 
-      // await apiClient.post("/owner/bulk-assign-shifts", {
-      //   assignments: assignmentsToCreate,
-      // });
-
-      setSuccess(`✅ Phân công thành công! ${assignmentsToCreate.length} ca đã được thêm.`);
-      setTimeout(() => {
-        onSuccess();
-        onClose();
-      }, 2000);
+      showToast.success(`Phân công thành công ${assignmentsToCreate.length} ca!`);
+      onSuccess();
+      handleClose();
     } catch (err) {
-      setError(err.message || "Lỗi phân công");
+      showToast.error(err.message || "Lỗi phân công");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
+  };
+
+  const handleClose = () => {
+    setSelectedEmployee("");
+    setSelectedShifts([]);
+    setStartDate(new Date().toISOString().split("T")[0]);
+    setRepeatWeeks(1);
+    onClose();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="modal modal-open">
-      <div className="modal-box w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto">
-        <h3 className="font-bold text-lg mb-4">📅 Phân Công Lịch Hàng Tuần</h3>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-lg max-w-2xl w-full border border-gray-200 my-8">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h3 className="text-lg font-bold text-gray-800">Phân Công Lịch Hàng Tuần</h3>
+          <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors" disabled={submitting}>
+            <FaTimes className="text-xl" />
+          </button>
+        </div>
 
-        {error && (
-          <div className="alert alert-error mb-4">
-            <span>{error}</span>
-          </div>
-        )}
-
-        {success && (
-          <div className="alert alert-success mb-4">
-            <span>{success}</span>
-          </div>
-        )}
-
-        <div className="space-y-6">
-          {/* 1. Chọn nhân viên */}
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text font-semibold">Nhân Viên *</span>
+        {/* Body */}
+        <div className="p-6 space-y-6">
+          {/* Nhân viên */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nhân Viên <span className="text-red-500">*</span>
             </label>
             <select
-              className="select select-bordered"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent"
               value={selectedEmployee}
               onChange={(e) => setSelectedEmployee(e.target.value)}
-              disabled={loading}
+              disabled={loading || submitting}
             >
               <option value="">-- Chọn nhân viên --</option>
               {employees.map((emp) => (
@@ -140,31 +131,30 @@ const BulkScheduleModal = ({ isOpen, onClose, onSuccess }) => {
             </select>
           </div>
 
-          {/* 2. Chọn ca làm (checkbox) */}
+          {/* Ca làm */}
           <div>
-            <label className="label">
-              <span className="label-text font-semibold">Chọn Ca Làm (Mỗi tuần) *</span>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Chọn Ca Làm (Mỗi tuần) <span className="text-red-500">*</span>
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {shifts.map((shift) => (
                 <label
                   key={shift.id}
-                  className={`card cursor-pointer transition-all ${
-                    selectedShifts.includes(shift.id) ? "bg-primary text-primary-content ring-2 ring-primary" : "bg-base-200"
+                  className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                    selectedShifts.includes(shift.id) ? "border-[#8e2800] bg-[#fff7ed]" : "border-gray-300 hover:border-gray-400"
                   }`}
                 >
-                  <div className="card-body p-4">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        className="checkbox"
-                        checked={selectedShifts.includes(shift.id)}
-                        onChange={() => handleShiftToggle(shift.id)}
-                      />
-                      <div>
-                        <h4 className="font-bold">{shift.name}</h4>
-                        <p className="text-sm opacity-80">{shift.time}</p>
-                      </div>
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedShifts.includes(shift.id)}
+                      onChange={() => handleShiftToggle(shift.id)}
+                      className="mt-1"
+                      disabled={submitting}
+                    />
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-800">{shift.name}</h4>
+                      <p className="text-sm text-gray-600 mt-1">{shift.time}</p>
                     </div>
                   </div>
                 </label>
@@ -172,30 +162,35 @@ const BulkScheduleModal = ({ isOpen, onClose, onSuccess }) => {
             </div>
           </div>
 
-          {/* 3. Chọn ngày bắt đầu */}
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text font-semibold">Ngày Bắt Đầu *</span>
+          {/* Ngày bắt đầu */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Ngày Bắt Đầu <span className="text-red-500">*</span>
             </label>
-            <input type="date" className="input input-bordered" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            <label className="label">
-              <span className="label-text-alt">Nên chọn thứ Hai để bắt đầu tuần</span>
-            </label>
+            <input
+              type="date"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              disabled={submitting}
+            />
+            <p className="text-xs text-gray-500 mt-1">Nên chọn thứ Hai để bắt đầu tuần</p>
           </div>
 
-          {/* 4. Chọn số tuần lặp lại */}
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text font-semibold">Số Tuần Lặp Lại *</span>
+          {/* Số tuần */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Số Tuần Lặp Lại <span className="text-red-500">*</span>
             </label>
-            <div className="flex gap-2 items-center">
+            <div className="flex items-center gap-3">
               <input
                 type="number"
-                className="input input-bordered w-24"
+                className="w-24 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent"
                 value={repeatWeeks}
                 onChange={(e) => setRepeatWeeks(Math.max(1, parseInt(e.target.value) || 1))}
                 min="1"
                 max="52"
+                disabled={submitting}
               />
               <span className="text-sm text-gray-600">(1-52 tuần. Ví dụ: 4 = phân công 4 tuần liên tiếp)</span>
             </div>
@@ -203,33 +198,44 @@ const BulkScheduleModal = ({ isOpen, onClose, onSuccess }) => {
 
           {/* Preview */}
           {selectedEmployee && selectedShifts.length > 0 && (
-            <div className="alert alert-info">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                ></path>
-              </svg>
-              <span>
-                📌 Sẽ phân công {selectedShifts.length} ca/ngày × 7 ngày × {repeatWeeks} tuần ={" "}
-                <strong>{selectedShifts.length * 7 * repeatWeeks} ca</strong> cho nhân viên
-              </span>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+              <FaInfoCircle className="text-blue-600 text-lg mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-blue-800">
+                  Sẽ phân công <span className="font-bold">{selectedShifts.length}</span> ca/ngày × <span className="font-bold">7</span>{" "}
+                  ngày × <span className="font-bold">{repeatWeeks}</span> tuần ={" "}
+                  <span className="font-bold text-[#8e2800]">{selectedShifts.length * 7 * repeatWeeks}</span> ca cho nhân viên
+                </p>
+              </div>
             </div>
           )}
         </div>
 
-        <div className="modal-action mt-6">
-          <button onClick={onClose} className="btn btn-ghost" disabled={loading}>
+        {/* Footer */}
+        <div className="px-6 pb-6 flex gap-3 justify-end border-t border-gray-200 pt-4">
+          <button
+            onClick={handleClose}
+            disabled={submitting}
+            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+          >
             Hủy
           </button>
-          <button onClick={handleSubmit} className="btn btn-primary" disabled={loading || !selectedEmployee || selectedShifts.length === 0}>
-            {loading ? "Đang xử lý..." : "✅ Phân Công"}
+          <button
+            onClick={handleSubmit}
+            disabled={submitting || !selectedEmployee || selectedShifts.length === 0}
+            className="flex items-center gap-2 px-6 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors disabled:opacity-50 font-medium"
+          >
+            {submitting ? (
+              <>
+                <FaSpinner className="animate-spin" />
+                <span>Đang xử lý...</span>
+              </>
+            ) : (
+              <span>Phân Công</span>
+            )}
           </button>
         </div>
       </div>
-      <div className="modal-backdrop" onClick={onClose}></div>
     </div>
   );
 };

@@ -1,31 +1,36 @@
 // src/pages/owner/OwnerSchedule.jsx
 import { useState, useEffect } from "react";
-// import apiClient from "../../api/apiClient";
-import BulkScheduleModal from "../../components/owner/BulkScheduleModal";
 import { staffService } from "@/api";
+import {
+  FaCalendarAlt,
+  FaCalendarWeek,
+  FaChevronLeft,
+  FaChevronRight,
+  FaPlus,
+  FaCalendarDay,
+  FaUsers,
+  FaClock,
+  FaSpinner,
+  FaTimes,
+} from "react-icons/fa";
+import { showToast } from "@/utils/toast";
+import BulkScheduleModal from "@/components/owner/BulkScheduleModal";
+import AssignShiftModal from "@/components/owner/AssignShiftModal";
 
 const OwnerSchedule = () => {
   const [shifts, setShifts] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [selectedWeek, setSelectedWeek] = useState(getWeekDates(new Date()));
-  const [viewMode, setViewMode] = useState("week"); // 'day' | 'week'
+  const [viewMode, setViewMode] = useState("week");
   const [showAssignModal, setShowAssignModal] = useState(false);
-  const [assignForm, setAssignForm] = useState({
-    maNhanVien: "",
-    maCa: "",
-    ngayLam: "",
-  });
-  const [showBulkModal, setShowBulkModal] = useState(false); // ⭐ THÊM STATE
+  const [showBulkModal, setShowBulkModal] = useState(false);
 
-  // Get week dates
   function getWeekDates(date) {
     const d = new Date(date);
     const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
     const monday = new Date(d.setDate(diff));
 
     const week = [];
@@ -44,56 +49,35 @@ const OwnerSchedule = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [shiftsRes, employeesRes] = await Promise.all([
-        staffService.getShifts(),
-        staffService.getEmployees(),
-
-        // apiClient.get("/owner/shifts"),
-        // apiClient.get("/owner/employees"),
-      ]);
+      const [shiftsRes, employeesRes] = await Promise.all([staffService.getShifts(), staffService.getEmployees()]);
       setShifts(shiftsRes.data || []);
       setEmployees(employeesRes.data || []);
-      setError("");
     } catch (err) {
-      setError(err.message || "Lỗi khi tải dữ liệu");
+      showToast.error(err.message || "Lỗi khi tải dữ liệu");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAssignShift = async () => {
-    if (!assignForm.maNhanVien || !assignForm.maCa || !assignForm.ngayLam) {
-      setError("Vui lòng chọn đầy đủ thông tin");
-      return;
-    }
-
+  const handleAssignShift = async (formData) => {
     try {
-      setLoading(true);
-      staffService.assignShift(assignForm);
-      setSuccess("Phân công ca làm thành công!");
+      await staffService.assignShift(formData);
+      showToast.success("Phân công ca làm thành công!");
       setShowAssignModal(false);
-      setAssignForm({ maNhanVien: "", maCa: "", ngayLam: "" });
       await loadData();
-      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      setError(err.message || "Lỗi phân công ca làm");
-    } finally {
-      setLoading(false);
+      showToast.error(err.message || "Lỗi phân công ca làm");
     }
   };
 
   const handleRemoveShift = async (shiftId) => {
     if (window.confirm("Bạn chắc chắn muốn xóa ca làm này?")) {
       try {
-        setLoading(true);
-        staffService.removeShift(shiftId);
-        setSuccess("Xóa ca làm thành công!");
+        await staffService.removeShift(shiftId);
+        showToast.success("Xóa ca làm thành công!");
         await loadData();
-        setTimeout(() => setSuccess(""), 3000);
       } catch (err) {
-        setError(err.message || "Lỗi xóa ca làm");
-      } finally {
-        setLoading(false);
+        showToast.error(err.message || "Lỗi xóa ca làm");
       }
     }
   };
@@ -107,9 +91,9 @@ const OwnerSchedule = () => {
   };
 
   const timeSlots = [
-    { maCa: 1, tenCa: "Ca Sáng", time: "08:00-12:00", color: "bg-sky-100" },
-    { maCa: 2, tenCa: "Ca Chiều", time: "13:00-17:00", color: "bg-amber-100" },
-    { maCa: 3, tenCa: "Ca Tối", time: "18:00-22:00", color: "bg-purple-100" },
+    { maCa: 1, tenCa: "Ca Sáng", time: "08:00-12:00", color: "bg-sky-100 border-sky-200" },
+    { maCa: 2, tenCa: "Ca Chiều", time: "13:00-17:00", color: "bg-amber-100 border-amber-200" },
+    { maCa: 3, tenCa: "Ca Tối", time: "18:00-22:00", color: "bg-purple-100 border-purple-200" },
   ];
 
   const weekDays = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
@@ -135,7 +119,7 @@ const OwnerSchedule = () => {
   if (loading && shifts.length === 0 && employees.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
+        <FaSpinner className="animate-spin text-4xl text-[#8e2800]" />
       </div>
     );
   }
@@ -143,133 +127,118 @@ const OwnerSchedule = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="bg-white border border-gray-200 rounded-lg p-6 flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold">📅 Lịch Làm Việc</h1>
-          <p className="text-gray-600 mt-2">Quản lý lịch làm việc của nhân viên</p>
+          <h1 className="text-2xl font-bold text-gray-800">Lịch Làm Việc</h1>
+          <p className="text-gray-600 mt-1">Quản lý lịch làm việc của nhân viên</p>
         </div>
         <div className="flex gap-2">
-          {/* ⭐ THÊM NÚT NÀY */}
-          <button onClick={() => setShowBulkModal(true)} className="btn btn-secondary gap-2">
-            <span>📅</span>
+          <button
+            onClick={() => setShowBulkModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium border border-blue-200"
+          >
+            <FaCalendarWeek />
             Phân Công Hàng Tuần
           </button>
           <button
-            onClick={() => {
-              setShowAssignModal(true);
-              setAssignForm({
-                maNhanVien: "",
-                maCa: "",
-                ngayLam: selectedDate,
-              });
-            }}
-            className="btn btn-primary gap-2"
+            onClick={() => setShowAssignModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors font-medium"
           >
-            <span>➕</span>
+            <FaPlus />
             Phân Công Ca
           </button>
         </div>
       </div>
 
-      {/* Success Alert */}
-      {success && (
-        <div className="alert alert-success">
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>{success}</span>
-        </div>
-      )}
-
-      {/* Error Alert */}
-      {error && (
-        <div className="alert alert-error">
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>{error}</span>
-        </div>
-      )}
-
       {/* View Controls */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <div className="flex flex-wrap gap-4 items-center justify-between">
-            {/* View Mode Tabs */}
-            <div className="tabs tabs-boxed">
-              <button onClick={() => setViewMode("day")} className={`tab ${viewMode === "day" ? "tab-active" : ""}`}>
-                📅 Ngày
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex flex-wrap gap-4 items-center justify-between">
+          {/* View Mode Tabs */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setViewMode("day")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                viewMode === "day" ? "bg-[#8e2800] text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              <FaCalendarDay />
+              Ngày
+            </button>
+            <button
+              onClick={() => setViewMode("week")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                viewMode === "week" ? "bg-[#8e2800] text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              <FaCalendarWeek />
+              Tuần
+            </button>
+          </div>
+
+          {/* Navigation */}
+          {viewMode === "day" ? (
+            <div className="flex gap-2 items-center">
+              <button
+                onClick={() => {
+                  const d = new Date(selectedDate);
+                  d.setDate(d.getDate() - 1);
+                  setSelectedDate(d.toISOString().split("T")[0]);
+                }}
+                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <FaChevronLeft />
               </button>
-              <button onClick={() => setViewMode("week")} className={`tab ${viewMode === "week" ? "tab-active" : ""}`}>
-                📆 Tuần
+              <input
+                type="date"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+              />
+              <button
+                onClick={() => {
+                  const d = new Date(selectedDate);
+                  d.setDate(d.getDate() + 1);
+                  setSelectedDate(d.toISOString().split("T")[0]);
+                }}
+                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <FaChevronRight />
+              </button>
+              <button
+                onClick={goToToday}
+                className="px-4 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors font-medium"
+              >
+                Hôm nay
               </button>
             </div>
-
-            {/* Navigation */}
-            {viewMode === "day" ? (
-              <div className="flex gap-2 items-center">
-                <button
-                  onClick={() => {
-                    const d = new Date(selectedDate);
-                    d.setDate(d.getDate() - 1);
-                    setSelectedDate(d.toISOString().split("T")[0]);
-                  }}
-                  className="btn btn-sm"
-                >
-                  ◀️
-                </button>
-                <input
-                  type="date"
-                  className="input input-bordered input-sm"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                />
-                <button
-                  onClick={() => {
-                    const d = new Date(selectedDate);
-                    d.setDate(d.getDate() + 1);
-                    setSelectedDate(d.toISOString().split("T")[0]);
-                  }}
-                  className="btn btn-sm"
-                >
-                  ▶️
-                </button>
-                <button onClick={goToToday} className="btn btn-sm btn-primary">
-                  Hôm nay
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2 items-center">
-                <button onClick={goToPreviousWeek} className="btn btn-sm">
-                  ◀️ Tuần trước
-                </button>
-                <span className="font-semibold">
-                  {new Date(selectedWeek[0]).toLocaleDateString("vi-VN")} - {new Date(selectedWeek[6]).toLocaleDateString("vi-VN")}
-                </span>
-                <button onClick={goToNextWeek} className="btn btn-sm">
-                  Tuần sau ▶️
-                </button>
-                <button onClick={goToToday} className="btn btn-sm btn-primary">
-                  Tuần này
-                </button>
-              </div>
-            )}
-          </div>
+          ) : (
+            <div className="flex gap-2 items-center">
+              <button onClick={goToPreviousWeek} className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                <FaChevronLeft />
+              </button>
+              <span className="px-4 py-2 font-medium text-gray-800">
+                {new Date(selectedWeek[0]).toLocaleDateString("vi-VN")} - {new Date(selectedWeek[6]).toLocaleDateString("vi-VN")}
+              </span>
+              <button onClick={goToNextWeek} className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                <FaChevronRight />
+              </button>
+              <button
+                onClick={goToToday}
+                className="px-4 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors font-medium"
+              >
+                Tuần này
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Schedule View */}
       {viewMode === "day" ? (
-        // DAY VIEW
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body">
-            <h2 className="card-title mb-4">
-              📅{" "}
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <FaCalendarAlt className="text-[#8e2800]" />
               {new Date(selectedDate).toLocaleDateString("vi-VN", {
                 weekday: "long",
                 year: "numeric",
@@ -277,77 +246,81 @@ const OwnerSchedule = () => {
                 day: "numeric",
               })}
             </h2>
+          </div>
 
-            <div className="space-y-6">
-              {timeSlots.map((slot) => {
-                const shiftsInSlot = getShiftsForDate(selectedDate).filter((s) => s.maCa === slot.maCa);
+          <div className="p-6 space-y-4">
+            {timeSlots.map((slot) => {
+              const shiftsInSlot = getShiftsForDate(selectedDate).filter((s) => s.maCa === slot.maCa);
 
-                return (
-                  <div key={slot.maCa} className={`card ${slot.color}`}>
-                    <div className="card-body p-4">
-                      <h3 className="font-bold text-lg">
-                        {slot.tenCa} ({slot.time})
-                      </h3>
-
-                      {shiftsInSlot.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
-                          {shiftsInSlot.map((shift) => (
-                            <div key={shift.maGanCa} className="flex items-center justify-between bg-white p-2 rounded shadow">
-                              <div className="flex items-center gap-2">
-                                <div className="avatar placeholder">
-                                  <div className="bg-primary text-primary-content rounded-full w-8">
-                                    <span className="text-xs">{shift.NhanVien?.hoTen?.charAt(0).toUpperCase()}</span>
-                                  </div>
-                                </div>
-                                <span className="text-sm font-semibold">{shift.NhanVien?.hoTen}</span>
-                              </div>
-                              <button onClick={() => handleRemoveShift(shift.maGanCa)} className="btn btn-xs btn-error">
-                                ✕
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-gray-500 text-sm mt-2">Chưa có nhân viên</p>
-                      )}
-                    </div>
+              return (
+                <div key={slot.maCa} className={`border rounded-lg ${slot.color} overflow-hidden`}>
+                  <div className="p-4 border-b border-gray-300/50">
+                    <h3 className="font-bold text-lg text-gray-800">
+                      {slot.tenCa} <span className="text-sm font-normal">({slot.time})</span>
+                    </h3>
                   </div>
-                );
-              })}
-            </div>
+
+                  {shiftsInSlot.length > 0 ? (
+                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {shiftsInSlot.map((shift) => (
+                        <div
+                          key={shift.maGanCa}
+                          className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-[#8e2800] flex items-center justify-center text-white font-bold text-sm">
+                              {shift.NhanVien?.hoTen?.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="text-sm font-medium text-gray-800">{shift.NhanVien?.hoTen}</span>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveShift(shift.maGanCa)}
+                            className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title="Xóa"
+                          >
+                            <FaTimes />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center text-gray-500">Chưa có nhân viên</div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       ) : (
-        // WEEK VIEW
-        <div className="card bg-base-100 shadow-xl overflow-x-auto">
-          <div className="card-body p-0">
-            <table className="table table-zebra">
-              <thead>
-                <tr className="bg-base-200">
-                  <th className="w-32">Nhân Viên</th>
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider sticky left-0 bg-gray-50">
+                    Nhân Viên
+                  </th>
                   {selectedWeek.map((date, idx) => (
-                    <th key={date} className="text-center">
+                    <th key={date} className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
                       <div>{weekDays[idx]}</div>
-                      <div className="text-xs font-normal">
+                      <div className="text-xs font-normal mt-1 text-gray-600">
                         {new Date(date).getDate()}/{new Date(date).getMonth() + 1}
                       </div>
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="bg-white divide-y divide-gray-200">
                 {employees.length > 0 ? (
                   employees.map((emp) => (
-                    <tr key={emp.maNguoiDung}>
-                      <td className="font-semibold">
-                        <div className="flex items-center gap-2">
-                          <div className="avatar placeholder">
-                            <div className="bg-primary text-primary-content rounded-full w-8">
-                              <span className="text-xs">{emp.hoTen?.charAt(0).toUpperCase()}</span>
-                            </div>
+                    <tr key={emp.maNguoiDung} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-[#8e2800] flex items-center justify-center text-white font-bold">
+                            {emp.hoTen?.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div>{emp.hoTen}</div>
+                            <div className="font-medium text-gray-800">{emp.hoTen}</div>
                             <div className="text-xs text-gray-500">{emp.VaiTro?.tenVaiTro}</div>
                           </div>
                         </div>
@@ -355,20 +328,20 @@ const OwnerSchedule = () => {
                       {selectedWeek.map((date) => {
                         const dayShifts = getShiftsByEmployee(date, emp.maNguoiDung);
                         return (
-                          <td key={date} className="text-center p-1">
+                          <td key={date} className="px-6 py-4 text-center">
                             {dayShifts.length > 0 ? (
-                              <div className="space-y-1">
+                              <div className="flex flex-col gap-1">
                                 {dayShifts.map((shift) => {
                                   const slot = timeSlots.find((s) => s.maCa === shift.maCa);
                                   return (
-                                    <div
+                                    <button
                                       key={shift.maGanCa}
-                                      className={`badge badge-sm ${slot?.color} text-xs cursor-pointer hover:opacity-80`}
                                       onClick={() => handleRemoveShift(shift.maGanCa)}
-                                      title={`Click to remove: ${slot?.tenCa}`}
+                                      className={`text-xs px-2 py-1 rounded border ${slot?.color} hover:opacity-80 transition-opacity`}
+                                      title={`Click để xóa: ${slot?.tenCa}`}
                                     >
                                       {slot?.tenCa}
-                                    </div>
+                                    </button>
                                   );
                                 })}
                               </div>
@@ -382,7 +355,7 @@ const OwnerSchedule = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="8" className="text-center py-8">
+                    <td colSpan="8" className="text-center py-8 text-gray-500">
                       Chưa có nhân viên nào
                     </td>
                   </tr>
@@ -395,107 +368,40 @@ const OwnerSchedule = () => {
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="stat bg-base-100 shadow rounded-lg">
-          <div className="stat-title">Tổng nhân viên</div>
-          <div className="stat-value text-primary">{employees.length}</div>
-        </div>
-        <div className="stat bg-base-100 shadow rounded-lg">
-          <div className="stat-title">Ca làm {viewMode === "day" ? "hôm nay" : "tuần này"}</div>
-          <div className="stat-value text-secondary">
-            {viewMode === "day" ? getShiftsForDate(selectedDate).length : shifts.filter((s) => selectedWeek.includes(s.ngayLam)).length}
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <FaUsers className="text-2xl text-[#8e2800]" />
+            <p className="text-sm text-gray-600">Tổng nhân viên</p>
           </div>
+          <p className="text-3xl font-bold text-gray-800">{employees.length}</p>
         </div>
-        <div className="stat bg-base-100 shadow rounded-lg">
-          <div className="stat-title">Tổng ca làm</div>
-          <div className="stat-value text-accent">{shifts.length}</div>
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <FaClock className="text-2xl text-[#8e2800]" />
+            <p className="text-sm text-gray-600">Ca làm {viewMode === "day" ? "hôm nay" : "tuần này"}</p>
+          </div>
+          <p className="text-3xl font-bold text-gray-800">
+            {viewMode === "day" ? getShiftsForDate(selectedDate).length : shifts.filter((s) => selectedWeek.includes(s.ngayLam)).length}
+          </p>
+        </div>
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <FaCalendarAlt className="text-2xl text-[#8e2800]" />
+            <p className="text-sm text-gray-600">Tổng ca làm</p>
+          </div>
+          <p className="text-3xl font-bold text-gray-800">{shifts.length}</p>
         </div>
       </div>
 
-      {/* ⭐ THÊM MODAL MỚI */}
+      {/* Modals */}
       <BulkScheduleModal isOpen={showBulkModal} onClose={() => setShowBulkModal(false)} onSuccess={loadData} />
-      {/* Assign Shift Modal */}
-      {showAssignModal && (
-        <div className="modal modal-open">
-          <div className="modal-box w-11/12 max-w-md">
-            <h3 className="font-bold text-lg mb-4">📅 Phân Công Ca Làm</h3>
-
-            <div className="space-y-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Nhân Viên *</span>
-                </label>
-                <select
-                  className="select select-bordered"
-                  value={assignForm.maNhanVien}
-                  onChange={(e) =>
-                    setAssignForm({
-                      ...assignForm,
-                      maNhanVien: parseInt(e.target.value),
-                    })
-                  }
-                >
-                  <option value="">Chọn nhân viên</option>
-                  {employees.map((emp) => (
-                    <option key={emp.maNguoiDung} value={emp.maNguoiDung}>
-                      {emp.hoTen} - {emp.VaiTro?.tenVaiTro}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Ca Làm *</span>
-                </label>
-                <select
-                  className="select select-bordered"
-                  value={assignForm.maCa}
-                  onChange={(e) =>
-                    setAssignForm({
-                      ...assignForm,
-                      maCa: parseInt(e.target.value),
-                    })
-                  }
-                >
-                  <option value="">Chọn ca làm</option>
-                  {timeSlots.map((slot) => (
-                    <option key={slot.maCa} value={slot.maCa}>
-                      {slot.tenCa} ({slot.time})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Ngày Làm *</span>
-                </label>
-                <input
-                  type="date"
-                  className="input input-bordered"
-                  value={assignForm.ngayLam}
-                  onChange={(e) =>
-                    setAssignForm({
-                      ...assignForm,
-                      ngayLam: e.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="modal-action">
-              <button onClick={() => setShowAssignModal(false)} className="btn btn-ghost">
-                Hủy
-              </button>
-              <button onClick={handleAssignShift} className="btn btn-primary" disabled={loading}>
-                {loading ? "Đang xử lý..." : "Phân Công"}
-              </button>
-            </div>
-          </div>
-          <div className="modal-backdrop" onClick={() => setShowAssignModal(false)}></div>
-        </div>
-      )}
+      <AssignShiftModal
+        isOpen={showAssignModal}
+        onClose={() => setShowAssignModal(false)}
+        onSubmit={handleAssignShift}
+        employees={employees}
+        selectedDate={selectedDate}
+      />
     </div>
   );
 };

@@ -1,14 +1,15 @@
 // src/pages/owner/OwnerPayments.jsx
 import { useState, useEffect } from "react";
-// import apiClient from "../../api/apiClient";
 import { paymentService } from "@/api";
+import { FaSpinner, FaCreditCard, FaCheckCircle, FaClock, FaExclamationTriangle } from "react-icons/fa";
+import { showToast } from "@/utils/toast";
+import PurchasePackageModal from "@/components/owner/PurchasePackageModal";
 
 const OwnerPayments = () => {
   const [packages, setPackages] = useState([]);
   const [myPayments, setMyPayments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
 
@@ -19,17 +20,11 @@ const OwnerPayments = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [packagesRes, paymentsRes] = await Promise.all([
-        paymentService.getPaymentPackages(),
-        paymentService.getMyPayments(),
-        // paymentService.getPaymentPackages(),
-        // apiClient.get("/owner/my-payments"),
-      ]);
+      const [packagesRes, paymentsRes] = await Promise.all([paymentService.getPaymentPackages(), paymentService.getMyPayments()]);
       setPackages(packagesRes.data || []);
       setMyPayments(paymentsRes.data || []);
-      setError("");
     } catch (err) {
-      setError(err.message || "Lỗi khi tải dữ liệu");
+      showToast.error(err.message || "Lỗi khi tải dữ liệu");
     } finally {
       setLoading(false);
     }
@@ -42,42 +37,45 @@ const OwnerPayments = () => {
 
   const handlePurchase = async () => {
     try {
-      setLoading(true);
+      setActionLoading(true);
       await paymentService.purchasePackage({ maGoi: selectedPackage.maGoi });
-
-      // await apiClient.post("/owner/purchase-package", {
-      //   maGoi: selectedPackage.maGoi,
-      // });
-      setSuccess("Đăng ký gói thành công! Admin sẽ xác nhận thanh toán trong vòng 24-48 giờ.");
+      showToast.success("Đăng ký gói thành công! Admin sẽ xác nhận thanh toán trong vòng 24-48 giờ.");
       setShowPurchaseModal(false);
       await loadData();
-      setTimeout(() => setSuccess(""), 5000);
     } catch (err) {
-      setError(err.message || "Lỗi khi đăng ký gói");
+      showToast.error(err.message || "Lỗi khi đăng ký gói");
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
-  const getStatusBadge = (status) => {
-    const badges = {
-      DA_THANH_TOAN: "badge-success",
-      CHUA_THANH_TOAN: "badge-warning",
-      QUA_HAN: "badge-error",
+  const getStatusIcon = (status) => {
+    const config = {
+      DA_THANH_TOAN: { icon: FaCheckCircle, color: "text-green-600" },
+      CHUA_THANH_TOAN: { icon: FaClock, color: "text-yellow-600" },
+      QUA_HAN: { icon: FaExclamationTriangle, color: "text-red-600" },
     };
+    const cfg = config[status] || config.CHUA_THANH_TOAN;
+    const Icon = cfg.icon;
+    return <Icon className={cfg.color} />;
+  };
+
+  const getStatusText = (status) => {
     const labels = {
       DA_THANH_TOAN: "Đã thanh toán",
       CHUA_THANH_TOAN: "Chờ xác nhận",
       QUA_HAN: "Quá hạn",
     };
-    return <span className={`badge ${badges[status]}`}>{labels[status]}</span>;
+    return labels[status] || "Không rõ";
   };
 
-  const getPackageIcon = (name) => {
-    if (name.toLowerCase().includes("cơ bản")) return "🥉";
-    if (name.toLowerCase().includes("nâng cao")) return "🥈";
-    if (name.toLowerCase().includes("vip")) return "🥇";
-    return "💳";
+  const getStatusBadge = (status) => {
+    const config = {
+      DA_THANH_TOAN: "bg-green-100 text-green-700 border-green-200",
+      CHUA_THANH_TOAN: "bg-yellow-100 text-yellow-700 border-yellow-200",
+      QUA_HAN: "bg-red-100 text-red-700 border-red-200",
+    };
+    return config[status] || config.CHUA_THANH_TOAN;
   };
 
   const getCurrentSubscription = () => {
@@ -93,10 +91,10 @@ const OwnerPayments = () => {
 
   const currentSub = getCurrentSubscription();
 
-  if (loading && packages.length === 0 && myPayments.length === 0) {
+  if (loading && packages.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
+        <FaSpinner className="animate-spin text-4xl text-[#8e2800]" />
       </div>
     );
   }
@@ -104,224 +102,161 @@ const OwnerPayments = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">💳 Thanh Toán & Gói Dịch Vụ</h1>
-        <p className="text-gray-600 mt-2">Quản lý gói thanh toán và lịch sử thanh toán của cửa hàng</p>
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex items-center gap-3 mb-2">
+          <FaCreditCard className="text-2xl text-[#8e2800]" />
+          <h1 className="text-2xl font-bold text-gray-800">Thanh Toán & Gói Dịch Vụ</h1>
+        </div>
+        <p className="text-gray-600">Quản lý gói thanh toán và lịch sử thanh toán của cửa hàng</p>
       </div>
-
-      {/* Success Alert */}
-      {success && (
-        <div className="alert alert-success">
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>{success}</span>
-        </div>
-      )}
-
-      {/* Error Alert */}
-      {error && (
-        <div className="alert alert-error">
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>{error}</span>
-        </div>
-      )}
 
       {/* Current Subscription */}
       {currentSub ? (
-        <div className="card bg-linear-to-r from-primary via-secondary to-accent text-white shadow-2xl">
-          <div className="card-body">
-            <h2 className="card-title text-2xl">🎉 Gói Đang Sử Dụng</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              <div>
-                <p className="opacity-80">Gói:</p>
-                <p className="text-2xl font-bold">{currentSub.GoiThanhToan?.tenGoi || "N/A"}</p>
-              </div>
-              <div>
-                <p className="opacity-80">Hết hạn:</p>
-                <p className="text-2xl font-bold">{new Date(currentSub.thoiGianKetThuc).toLocaleDateString("vi-VN")}</p>
-                <p className="text-sm opacity-80">Còn {currentSub.daysLeft} ngày</p>
-              </div>
-              <div>
-                <p className="opacity-80">Trạng thái:</p>
-                <span className="badge badge-success badge-lg mt-2">✅ Đang hoạt động</span>
-              </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <FaCheckCircle className="text-2xl text-green-600" />
+            <h2 className="text-xl font-bold text-gray-800">Gói Đang Sử Dụng</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-600 mb-1">Gói</p>
+              <p className="text-lg font-bold text-gray-800">{currentSub.GoiThanhToan?.tenGoi || "N/A"}</p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-600 mb-1">Hết hạn</p>
+              <p className="text-lg font-bold text-gray-800">{new Date(currentSub.thoiGianKetThuc).toLocaleDateString("vi-VN")}</p>
+              <p className="text-sm text-gray-500 mt-1">Còn {currentSub.daysLeft} ngày</p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-600 mb-1">Trạng thái</p>
+              <span className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded text-sm font-medium border border-green-200 mt-2">
+                <FaCheckCircle />
+                Đang hoạt động
+              </span>
             </div>
           </div>
         </div>
       ) : (
-        <div className="alert alert-warning">
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-            />
-          </svg>
-          <span>Bạn chưa có gói nào đang hoạt động. Vui lòng đăng ký gói dưới đây!</span>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 flex items-start gap-3">
+          <FaExclamationTriangle className="text-yellow-600 text-2xl mt-0.5 shrink-0" />
+          <div>
+            <p className="font-medium text-yellow-800">Chưa có gói đang hoạt động</p>
+            <p className="text-sm text-yellow-700 mt-1">Vui lòng đăng ký gói dưới đây để tiếp tục sử dụng dịch vụ!</p>
+          </div>
         </div>
       )}
 
       {/* Available Packages */}
-      <div>
-        <h2 className="text-2xl font-bold mb-4">📦 Các Gói Có Sẵn</h2>
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-6">Các Gói Có Sẵn</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {packages.length > 0 ? (
             packages.map((pkg) => (
-              <div key={pkg.maGoi} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-                <div className="card-body items-center text-center">
-                  <div className="text-6xl mb-4">{getPackageIcon(pkg.tenGoi)}</div>
-                  <h2 className="card-title text-2xl">{pkg.tenGoi}</h2>
+              <div key={pkg.maGoi} className="border border-gray-200 rounded-lg p-6 hover:border-[#8e2800] transition-all">
+                <h3 className="text-xl font-bold text-gray-800 text-center mb-4">{pkg.tenGoi}</h3>
 
-                  <div className="divider my-2"></div>
-
-                  <div className="space-y-2 w-full">
-                    <div className="stat bg-base-200 rounded-lg">
-                      <div className="stat-title">Giá</div>
-                      <div className="stat-value text-2xl text-primary">{parseInt(pkg.soTien).toLocaleString("vi-VN")}đ</div>
-                    </div>
-
-                    <div className="stat bg-base-200 rounded-lg">
-                      <div className="stat-title">Thời Gian</div>
-                      <div className="stat-value text-xl text-secondary">{pkg.thoiGian} tháng</div>
-                    </div>
-
-                    <div className="stat bg-base-200 rounded-lg">
-                      <div className="stat-title">Giá / Tháng</div>
-                      <div className="stat-value text-lg text-accent">
-                        {(parseInt(pkg.soTien) / pkg.thoiGian).toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
-                      </div>
-                    </div>
+                <div className="space-y-3 mb-6">
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <p className="text-sm text-gray-600">Giá</p>
+                    <p className="text-2xl font-bold text-[#8e2800]">{parseInt(pkg.soTien).toLocaleString("vi-VN")}đ</p>
                   </div>
 
-                  <button onClick={() => openPurchaseModal(pkg)} className="btn btn-primary mt-6 w-full">
-                    Đăng Ký Ngay
-                  </button>
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <p className="text-sm text-gray-600">Thời Gian</p>
+                    <p className="text-xl font-bold text-gray-800">{pkg.thoiGian} tháng</p>
+                  </div>
+
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <p className="text-sm text-gray-600">Giá / Tháng</p>
+                    <p className="text-lg font-bold text-gray-800">
+                      {(parseInt(pkg.soTien) / pkg.thoiGian).toLocaleString("vi-VN", {
+                        maximumFractionDigits: 0,
+                      })}
+                      đ
+                    </p>
+                  </div>
                 </div>
+
+                <button
+                  onClick={() => openPurchaseModal(pkg)}
+                  className="w-full px-4 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors font-medium"
+                >
+                  Đăng Ký Ngay
+                </button>
               </div>
             ))
           ) : (
-            <div className="col-span-3 text-center py-8">
-              <p className="text-gray-500">Chưa có gói nào có sẵn</p>
-            </div>
+            <div className="col-span-3 text-center py-8 text-gray-500">Chưa có gói nào có sẵn</div>
           )}
         </div>
       </div>
 
       {/* Payment History */}
-      <div>
-        <h2 className="text-2xl font-bold mb-4">📜 Lịch Sử Thanh Toán</h2>
-        <div className="card bg-base-100 shadow-xl overflow-x-auto">
-          <div className="card-body p-0">
-            <table className="table">
-              <thead>
-                <tr className="bg-base-200">
-                  <th>Gói</th>
-                  <th>Số Tiền</th>
-                  <th>Thời Gian</th>
-                  <th>Trạng Thái</th>
-                  <th>Ngày Đăng Ký</th>
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-800">Lịch Sử Thanh Toán</h2>
+        </div>
+
+        {myPayments.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Gói</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Số Tiền</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Thời Gian</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Trạng Thái</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Ngày Đăng Ký</th>
                 </tr>
               </thead>
-              <tbody>
-                {myPayments.length > 0 ? (
-                  myPayments.map((payment) => (
-                    <tr key={payment.maThanhToan} className="hover">
-                      <td>
-                        <div className="font-semibold">{payment.GoiThanhToan?.tenGoi || "N/A"}</div>
-                        <div className="text-xs text-gray-500">{payment.GoiThanhToan?.thoiGian} tháng</div>
-                      </td>
-                      <td>
-                        <span className="font-bold text-primary">{parseInt(payment.soTien).toLocaleString("vi-VN")}đ</span>
-                      </td>
-                      <td>
-                        <div className="text-sm">
-                          <div>{new Date(payment.thoiGianBatDau).toLocaleDateString("vi-VN")}</div>
-                          <div className="text-gray-500">đến</div>
-                          <div>{new Date(payment.thoiGianKetThuc).toLocaleDateString("vi-VN")}</div>
-                        </div>
-                      </td>
-                      <td>{getStatusBadge(payment.trangThai)}</td>
-                      <td>{new Date(payment.ngayTao).toLocaleDateString("vi-VN")}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="5" className="text-center py-8">
-                      Chưa có lịch sử thanh toán
+              <tbody className="bg-white divide-y divide-gray-200">
+                {myPayments.map((payment) => (
+                  <tr key={payment.maThanhToan} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-gray-800">{payment.GoiThanhToan?.tenGoi || "N/A"}</div>
+                      <div className="text-xs text-gray-500">{payment.GoiThanhToan?.thoiGian} tháng</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="font-bold text-[#8e2800]">{parseInt(payment.soTien).toLocaleString("vi-VN")}đ</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-600">
+                        <div>{new Date(payment.thoiGianBatDau).toLocaleDateString("vi-VN")}</div>
+                        <div className="text-xs text-gray-500">đến</div>
+                        <div>{new Date(payment.thoiGianKetThuc).toLocaleDateString("vi-VN")}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center gap-2 px-3 py-1 rounded text-xs font-medium border ${getStatusBadge(
+                          payment.trangThai
+                        )}`}
+                      >
+                        {getStatusIcon(payment.trangThai)}
+                        {getStatusText(payment.trangThai)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-600">{new Date(payment.ngayTao).toLocaleDateString("vi-VN")}</div>
                     </td>
                   </tr>
-                )}
+                ))}
               </tbody>
             </table>
           </div>
-        </div>
+        ) : (
+          <div className="p-8 text-center text-gray-500">Chưa có lịch sử thanh toán</div>
+        )}
       </div>
 
       {/* Purchase Modal */}
-      {showPurchaseModal && selectedPackage && (
-        <div className="modal modal-open">
-          <div className="modal-box w-11/12 max-w-md">
-            <h3 className="font-bold text-lg mb-4">💳 Xác Nhận Đăng Ký</h3>
-
-            <div className="space-y-4">
-              <div className="alert alert-info">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  ></path>
-                </svg>
-                <span>Sau khi đăng ký, vui lòng chuyển khoản và admin sẽ xác nhận trong 24-48 giờ</span>
-              </div>
-
-              <div className="stat bg-base-200 rounded-lg">
-                <div className="stat-title">Gói</div>
-                <div className="stat-value text-lg">{selectedPackage.tenGoi}</div>
-              </div>
-
-              <div className="stat bg-base-200 rounded-lg">
-                <div className="stat-title">Thời Gian</div>
-                <div className="stat-value text-lg">{selectedPackage.thoiGian} tháng</div>
-              </div>
-
-              <div className="stat bg-base-200 rounded-lg">
-                <div className="stat-title">Tổng Thanh Toán</div>
-                <div className="stat-value text-xl text-primary">{parseInt(selectedPackage.soTien).toLocaleString("vi-VN")}đ</div>
-              </div>
-
-              <div className="divider">Thông Tin Chuyển Khoản</div>
-
-              <div className="bg-base-200 p-4 rounded-lg">
-                <p className="font-semibold">Ngân hàng: Vietcombank</p>
-                <p className="font-semibold">Số TK: 1234567890</p>
-                <p className="font-semibold">Chủ TK: PETCARE DA NANG</p>
-                <p className="text-sm text-gray-600 mt-2">Nội dung: THANHTOAN [TÊN CỬA HÀNG]</p>
-              </div>
-            </div>
-
-            <div className="modal-action">
-              <button onClick={() => setShowPurchaseModal(false)} className="btn btn-ghost">
-                Hủy
-              </button>
-              <button onClick={handlePurchase} className="btn btn-primary" disabled={loading}>
-                {loading ? "Đang xử lý..." : "Xác Nhận Đăng Ký"}
-              </button>
-            </div>
-          </div>
-          <div className="modal-backdrop" onClick={() => setShowPurchaseModal(false)}></div>
-        </div>
-      )}
+      <PurchasePackageModal
+        isOpen={showPurchaseModal}
+        onClose={() => setShowPurchaseModal(false)}
+        onConfirm={handlePurchase}
+        packageData={selectedPackage}
+        loading={actionLoading}
+      />
     </div>
   );
 };
