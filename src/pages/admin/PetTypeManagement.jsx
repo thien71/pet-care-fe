@@ -1,6 +1,7 @@
 // src/pages/admin/PetTypeManagement.jsx
 import { useState, useEffect } from "react";
-import apiClient from "../../api/apiClient";
+// import apiClient from "../../api/apiClient";
+import { serviceService } from "@/api";
 
 const PetTypeManagement = () => {
   const [petTypes, setPetTypes] = useState([]);
@@ -17,7 +18,8 @@ const PetTypeManagement = () => {
   const loadPetTypes = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get("/admin/pet-types");
+      const res = await serviceService.getPetTypes();
+      // const res = await apiClient.get("/admin/pet-types");
       setPetTypes(res.data || []);
       setError("");
     } catch (err) {
@@ -48,9 +50,11 @@ const PetTypeManagement = () => {
     try {
       setLoading(true);
       if (editingId) {
-        await apiClient.put(`/admin/pet-types/${editingId}`, formData);
+        await serviceService.updatePetType(editingId, formData);
+        // await apiClient.put(`/admin/pet-types/${editingId}`, formData);
       } else {
-        await apiClient.post("/admin/pet-types", formData);
+        await serviceService.createPetType(formData);
+        // await apiClient.post("/admin/pet-types", formData);
       }
       setShowModal(false);
       setFormData({ tenLoai: "" });
@@ -66,7 +70,8 @@ const PetTypeManagement = () => {
     if (window.confirm("Bạn có chắc chắn muốn xóa loại thú cưng này?")) {
       try {
         setLoading(true);
-        await apiClient.delete(`/admin/pet-types/${id}`);
+        await serviceService.deletePetType(id);
+        // await apiClient.delete(`/admin/pet-types/${id}`);
         await loadPetTypes();
       } catch (err) {
         setError(err.message || "Lỗi xóa loại thú cưng");
@@ -105,12 +110,7 @@ const PetTypeManagement = () => {
       {/* Error Alert */}
       {error && (
         <div className="alert alert-error">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -128,21 +128,13 @@ const PetTypeManagement = () => {
           petTypes.map((petType) => (
             <div key={petType.maLoai} className="card bg-base-100 shadow-xl">
               <div className="card-body items-center text-center">
-                <div className="text-6xl">
-                  {petEmojis[petType.tenLoai] || "🐾"}
-                </div>
+                <div className="text-6xl">{petEmojis[petType.tenLoai] || "🐾"}</div>
                 <h2 className="card-title text-2xl">{petType.tenLoai}</h2>
                 <div className="card-actions">
-                  <button
-                    onClick={() => openEditModal(petType)}
-                    className="btn btn-sm btn-info"
-                  >
+                  <button onClick={() => openEditModal(petType)} className="btn btn-sm btn-info">
                     ✏️ Sửa
                   </button>
-                  <button
-                    onClick={() => handleDelete(petType.maLoai)}
-                    className="btn btn-sm btn-error"
-                  >
+                  <button onClick={() => handleDelete(petType.maLoai)} className="btn btn-sm btn-error">
                     🗑️ Xóa
                   </button>
                 </div>
@@ -164,9 +156,7 @@ const PetTypeManagement = () => {
       {showModal && (
         <div className="modal modal-open">
           <div className="modal-box w-11/12 max-w-md">
-            <h3 className="font-bold text-lg mb-4">
-              {editingId ? "✏️ Sửa loại thú cưng" : "➕ Thêm loại thú cưng"}
-            </h3>
+            <h3 className="font-bold text-lg mb-4">{editingId ? "✏️ Sửa loại thú cưng" : "➕ Thêm loại thú cưng"}</h3>
 
             <div className="form-control">
               <label className="label">
@@ -177,32 +167,20 @@ const PetTypeManagement = () => {
                 placeholder="Ví dụ: CHO, MEO, CHIM, CA"
                 className="input input-bordered"
                 value={formData.tenLoai}
-                onChange={(e) =>
-                  setFormData({ ...formData, tenLoai: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, tenLoai: e.target.value })}
               />
             </div>
 
             <div className="modal-action">
-              <button
-                onClick={() => setShowModal(false)}
-                className="btn btn-ghost"
-              >
+              <button onClick={() => setShowModal(false)} className="btn btn-ghost">
                 Hủy
               </button>
-              <button
-                onClick={handleSave}
-                className="btn btn-primary"
-                disabled={loading}
-              >
+              <button onClick={handleSave} className="btn btn-primary" disabled={loading}>
                 {loading ? "Đang lưu..." : "Lưu"}
               </button>
             </div>
           </div>
-          <div
-            className="modal-backdrop"
-            onClick={() => setShowModal(false)}
-          ></div>
+          <div className="modal-backdrop" onClick={() => setShowModal(false)}></div>
         </div>
       )}
     </div>

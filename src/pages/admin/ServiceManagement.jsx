@@ -1,6 +1,7 @@
 // src/pages/admin/ServiceManagement.jsx
 import { useState, useEffect } from "react";
-import apiClient from "../../api/apiClient";
+// import apiClient from "../../api/apiClient";
+import { serviceService } from "@/api";
 
 const ServiceManagement = () => {
   const [services, setServices] = useState([]);
@@ -22,7 +23,8 @@ const ServiceManagement = () => {
   const loadServices = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get("/admin/services");
+      const res = await serviceService.getSystemServices();
+      // const res = await apiClient.get("/admin/services");
       setServices(res.data || []);
       setError("");
     } catch (err) {
@@ -32,9 +34,7 @@ const ServiceManagement = () => {
     }
   };
 
-  const filteredServices = services.filter((s) =>
-    s.tenDichVu?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredServices = services.filter((s) => s.tenDichVu?.toLowerCase().includes(searchTerm.toLowerCase()));
 
   const openAddModal = () => {
     setEditingId(null);
@@ -61,9 +61,11 @@ const ServiceManagement = () => {
     try {
       setLoading(true);
       if (editingId) {
-        await apiClient.put(`/admin/services/${editingId}`, formData);
+        await serviceService.updateSystemService(editingId, formData);
+        // await apiClient.put(`/admin/services/${editingId}`, formData);
       } else {
-        await apiClient.post("/admin/services", formData);
+        await serviceService.createSystemService(formData);
+        // await apiClient.post("/admin/services", formData);
       }
       setShowModal(false);
       setFormData({ tenDichVu: "", moTa: "", thoiLuong: "" });
@@ -79,7 +81,8 @@ const ServiceManagement = () => {
     if (window.confirm("Bạn có chắc chắn muốn xóa dịch vụ này?")) {
       try {
         setLoading(true);
-        await apiClient.delete(`/admin/services/${id}`);
+        await serviceService.deleteSystemService(id);
+        // await apiClient.delete(`/admin/services/${id}`);
         await loadServices();
       } catch (err) {
         setError(err.message || "Lỗi xóa dịch vụ");
@@ -126,12 +129,7 @@ const ServiceManagement = () => {
       {/* Error Alert */}
       {error && (
         <div className="alert alert-error">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -163,29 +161,17 @@ const ServiceManagement = () => {
             <div key={service.maDichVu} className="card bg-base-100 shadow-xl">
               <div className="card-body">
                 <div className="flex items-start justify-between">
-                  <div className="text-5xl">
-                    {getServiceIcon(service.tenDichVu)}
-                  </div>
+                  <div className="text-5xl">{getServiceIcon(service.tenDichVu)}</div>
                   <span className="badge badge-success">Hoạt động</span>
                 </div>
                 <h2 className="card-title mt-4">{service.tenDichVu}</h2>
-                <p className="text-gray-600 text-sm">
-                  {service.moTa || "Không có mô tả"}
-                </p>
-                {service.thoiLuong && (
-                  <p className="text-sm">⏱️ {service.thoiLuong} phút</p>
-                )}
+                <p className="text-gray-600 text-sm">{service.moTa || "Không có mô tả"}</p>
+                {service.thoiLuong && <p className="text-sm">⏱️ {service.thoiLuong} phút</p>}
                 <div className="card-actions justify-end mt-4">
-                  <button
-                    onClick={() => openEditModal(service)}
-                    className="btn btn-sm btn-info"
-                  >
+                  <button onClick={() => openEditModal(service)} className="btn btn-sm btn-info">
                     ✏️
                   </button>
-                  <button
-                    onClick={() => handleDelete(service.maDichVu)}
-                    className="btn btn-sm btn-error"
-                  >
+                  <button onClick={() => handleDelete(service.maDichVu)} className="btn btn-sm btn-error">
                     🗑️
                   </button>
                 </div>
@@ -207,9 +193,7 @@ const ServiceManagement = () => {
       {showModal && (
         <div className="modal modal-open">
           <div className="modal-box w-11/12 max-w-md">
-            <h3 className="font-bold text-lg mb-4">
-              {editingId ? "✏️ Cập nhật dịch vụ" : "➕ Thêm dịch vụ mới"}
-            </h3>
+            <h3 className="font-bold text-lg mb-4">{editingId ? "✏️ Cập nhật dịch vụ" : "➕ Thêm dịch vụ mới"}</h3>
 
             <div className="space-y-4">
               <div className="form-control">
@@ -221,9 +205,7 @@ const ServiceManagement = () => {
                   placeholder="Ví dụ: Tắm & Cắt lông"
                   className="input input-bordered"
                   value={formData.tenDichVu}
-                  onChange={(e) =>
-                    setFormData({ ...formData, tenDichVu: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, tenDichVu: e.target.value })}
                 />
               </div>
 
@@ -235,9 +217,7 @@ const ServiceManagement = () => {
                   placeholder="Mô tả chi tiết về dịch vụ..."
                   className="textarea textarea-bordered h-24"
                   value={formData.moTa}
-                  onChange={(e) =>
-                    setFormData({ ...formData, moTa: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, moTa: e.target.value })}
                 ></textarea>
               </div>
 
@@ -250,33 +230,21 @@ const ServiceManagement = () => {
                   placeholder="Ví dụ: 30"
                   className="input input-bordered"
                   value={formData.thoiLuong}
-                  onChange={(e) =>
-                    setFormData({ ...formData, thoiLuong: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, thoiLuong: e.target.value })}
                 />
               </div>
             </div>
 
             <div className="modal-action">
-              <button
-                onClick={() => setShowModal(false)}
-                className="btn btn-ghost"
-              >
+              <button onClick={() => setShowModal(false)} className="btn btn-ghost">
                 Hủy
               </button>
-              <button
-                onClick={handleSave}
-                className="btn btn-primary"
-                disabled={loading}
-              >
+              <button onClick={handleSave} className="btn btn-primary" disabled={loading}>
                 {loading ? "Đang lưu..." : "Lưu"}
               </button>
             </div>
           </div>
-          <div
-            className="modal-backdrop"
-            onClick={() => setShowModal(false)}
-          ></div>
+          <div className="modal-backdrop" onClick={() => setShowModal(false)}></div>
         </div>
       )}
     </div>

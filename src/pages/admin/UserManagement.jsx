@@ -1,6 +1,8 @@
 // src/pages/admin/UserManagement.jsx
 import { useState, useEffect } from "react";
-import apiClient from "../../api/apiClient";
+// import apiClient from "../../api/apiClient";
+
+import { userService, serviceService } from "@/api";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -26,10 +28,8 @@ const UserManagement = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [usersRes, rolesRes] = await Promise.all([
-        apiClient.get("/admin/users"),
-        apiClient.get("/admin/roles"),
-      ]);
+      const [usersRes, rolesRes] = await Promise.all([userService.getUsers(), serviceService.getRoles()]);
+      // const [usersRes, rolesRes] = await Promise.all([apiClient.get("/admin/users"), apiClient.get("/admin/roles")]);
       setUsers(usersRes.data || []);
       setRoles(rolesRes.data || []);
       setError("");
@@ -41,9 +41,7 @@ const UserManagement = () => {
   };
 
   const filteredUsers = users.filter(
-    (u) =>
-      u.hoTen?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    (u) => u.hoTen?.toLowerCase().includes(searchTerm.toLowerCase()) || u.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const openEditModal = (user) => {
@@ -61,7 +59,8 @@ const UserManagement = () => {
   const handleUpdateUser = async () => {
     try {
       setLoading(true);
-      await apiClient.put(`/admin/users/${selectedUser.maNguoiDung}`, editData);
+      await userService.updateUser(selectedUser.maNguoiDung, editData);
+      // await apiClient.put(`/admin/users/${selectedUser.maNguoiDung}`, editData);
       setShowModal(false);
       setSelectedUser(null);
       await loadData();
@@ -76,7 +75,8 @@ const UserManagement = () => {
     if (window.confirm("Bạn có chắc chắn muốn xóa người dùng này?")) {
       try {
         setLoading(true);
-        await apiClient.delete(`/admin/users/${userId}`);
+        await userService.deleteUser(userId);
+        // await apiClient.delete(`/admin/users/${userId}`);
         await loadData();
       } catch (err) {
         setError(err.message || "Lỗi xóa người dùng");
@@ -108,12 +108,7 @@ const UserManagement = () => {
       {/* Error Alert */}
       {error && (
         <div className="alert alert-error">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -159,31 +154,19 @@ const UserManagement = () => {
                     <td className="font-semibold">{user.hoTen}</td>
                     <td>{user.email}</td>
                     <td>
-                      <span className="badge badge-primary">
-                        {user.VaiTro?.tenVaiTro || "N/A"}
-                      </span>
+                      <span className="badge badge-primary">{user.VaiTro?.tenVaiTro || "N/A"}</span>
                     </td>
                     <td>{user.soDienThoai || "N/A"}</td>
                     <td>
-                      <span
-                        className={`badge ${
-                          user.trangThai ? "badge-success" : "badge-error"
-                        }`}
-                      >
+                      <span className={`badge ${user.trangThai ? "badge-success" : "badge-error"}`}>
                         {user.trangThai ? "Kích hoạt" : "Vô hiệu hóa"}
                       </span>
                     </td>
                     <td className="space-x-2">
-                      <button
-                        onClick={() => openEditModal(user)}
-                        className="btn btn-sm btn-info"
-                      >
+                      <button onClick={() => openEditModal(user)} className="btn btn-sm btn-info">
                         ✏️
                       </button>
-                      <button
-                        onClick={() => handleDeleteUser(user.maNguoiDung)}
-                        className="btn btn-sm btn-error"
-                      >
+                      <button onClick={() => handleDeleteUser(user.maNguoiDung)} className="btn btn-sm btn-error">
                         🗑️
                       </button>
                     </td>
@@ -216,9 +199,7 @@ const UserManagement = () => {
                   type="text"
                   className="input input-bordered"
                   value={editData.hoTen}
-                  onChange={(e) =>
-                    setEditData({ ...editData, hoTen: e.target.value })
-                  }
+                  onChange={(e) => setEditData({ ...editData, hoTen: e.target.value })}
                 />
               </div>
 
@@ -226,12 +207,7 @@ const UserManagement = () => {
                 <label className="label">
                   <span className="label-text">Email</span>
                 </label>
-                <input
-                  type="email"
-                  className="input input-bordered"
-                  value={editData.email}
-                  disabled
-                />
+                <input type="email" className="input input-bordered" value={editData.email} disabled />
               </div>
 
               <div className="form-control">
@@ -242,9 +218,7 @@ const UserManagement = () => {
                   type="tel"
                   className="input input-bordered"
                   value={editData.soDienThoai}
-                  onChange={(e) =>
-                    setEditData({ ...editData, soDienThoai: e.target.value })
-                  }
+                  onChange={(e) => setEditData({ ...editData, soDienThoai: e.target.value })}
                 />
               </div>
 
@@ -256,9 +230,7 @@ const UserManagement = () => {
                   type="text"
                   className="input input-bordered"
                   value={editData.diaChi}
-                  onChange={(e) =>
-                    setEditData({ ...editData, diaChi: e.target.value })
-                  }
+                  onChange={(e) => setEditData({ ...editData, diaChi: e.target.value })}
                 />
               </div>
 
@@ -286,25 +258,15 @@ const UserManagement = () => {
             </div>
 
             <div className="modal-action">
-              <button
-                onClick={() => setShowModal(false)}
-                className="btn btn-ghost"
-              >
+              <button onClick={() => setShowModal(false)} className="btn btn-ghost">
                 Hủy
               </button>
-              <button
-                onClick={handleUpdateUser}
-                className="btn btn-primary"
-                disabled={loading}
-              >
+              <button onClick={handleUpdateUser} className="btn btn-primary" disabled={loading}>
                 {loading ? "Đang lưu..." : "Lưu"}
               </button>
             </div>
           </div>
-          <div
-            className="modal-backdrop"
-            onClick={() => setShowModal(false)}
-          ></div>
+          <div className="modal-backdrop" onClick={() => setShowModal(false)}></div>
         </div>
       )}
     </div>

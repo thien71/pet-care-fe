@@ -1,6 +1,7 @@
 // src/pages/admin/PaymentPackages.jsx
 import { useState, useEffect } from "react";
-import apiClient from "../../api/apiClient";
+// import apiClient from "../../api/apiClient";
+import { paymentService } from "@/api";
 
 const PaymentPackages = () => {
   const [packages, setPackages] = useState([]);
@@ -22,7 +23,8 @@ const PaymentPackages = () => {
   const loadPackages = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get("/admin/payment-packages");
+      const res = await paymentService.getPaymentPackages();
+      // const res = await apiClient.get("/admin/payment-packages");
       setPackages(res.data || []);
       setError("");
     } catch (err) {
@@ -57,10 +59,12 @@ const PaymentPackages = () => {
     try {
       setLoading(true);
       if (editingId) {
-        await apiClient.put(`/admin/payment-packages/${editingId}`, formData);
+        await paymentService.updatePaymentPackage(editingId, formData);
+        // await apiClient.put(`/admin/payment-packages/${editingId}`, formData);
         setSuccess("Cập nhật gói thành công!");
       } else {
-        await apiClient.post("/admin/payment-packages", formData);
+        await paymentService.createPaymentPackage(formData);
+        // await apiClient.post("/admin/payment-packages", formData);
         setSuccess("Tạo gói mới thành công!");
       }
       setShowModal(false);
@@ -78,7 +82,8 @@ const PaymentPackages = () => {
     if (window.confirm("Bạn có chắc chắn muốn xóa gói thanh toán này?")) {
       try {
         setLoading(true);
-        await apiClient.delete(`/admin/payment-packages/${id}`);
+        await paymentService.deletePaymentPackage(id);
+        // await apiClient.delete(`/admin/payment-packages/${id}`);
         setSuccess("Xóa gói thành công!");
         await loadPackages();
         setTimeout(() => setSuccess(""), 3000);
@@ -111,9 +116,7 @@ const PaymentPackages = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">💳 Quản Lý Gói Thanh Toán</h1>
-          <p className="text-gray-600 mt-2">
-            Quản lý các gói thanh toán cho cửa hàng
-          </p>
+          <p className="text-gray-600 mt-2">Quản lý các gói thanh toán cho cửa hàng</p>
         </div>
         <button onClick={openAddModal} className="btn btn-primary gap-2">
           <span>➕</span>
@@ -124,18 +127,8 @@ const PaymentPackages = () => {
       {/* Success Alert */}
       {success && (
         <div className="alert alert-success">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span>{success}</span>
         </div>
@@ -144,12 +137,7 @@ const PaymentPackages = () => {
       {/* Error Alert */}
       {error && (
         <div className="alert alert-error">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -165,14 +153,9 @@ const PaymentPackages = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {packages.length > 0 ? (
           packages.map((pkg) => (
-            <div
-              key={pkg.maGoi}
-              className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow"
-            >
+            <div key={pkg.maGoi} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
               <div className="card-body items-center text-center">
-                <div className="text-6xl mb-4">
-                  {getPackageIcon(pkg.tenGoi)}
-                </div>
+                <div className="text-6xl mb-4">{getPackageIcon(pkg.tenGoi)}</div>
                 <h2 className="card-title text-2xl">{pkg.tenGoi}</h2>
 
                 <div className="divider my-2"></div>
@@ -180,41 +163,27 @@ const PaymentPackages = () => {
                 <div className="space-y-2 w-full">
                   <div className="stat bg-base-200 rounded-lg">
                     <div className="stat-title">Giá</div>
-                    <div className="stat-value text-2xl text-primary">
-                      {parseInt(pkg.soTien).toLocaleString("vi-VN")}đ
-                    </div>
+                    <div className="stat-value text-2xl text-primary">{parseInt(pkg.soTien).toLocaleString("vi-VN")}đ</div>
                   </div>
 
                   <div className="stat bg-base-200 rounded-lg">
                     <div className="stat-title">Thời Gian</div>
-                    <div className="stat-value text-xl text-secondary">
-                      {pkg.thoiGian} tháng
-                    </div>
+                    <div className="stat-value text-xl text-secondary">{pkg.thoiGian} tháng</div>
                   </div>
 
                   <div className="stat bg-base-200 rounded-lg">
                     <div className="stat-title">Giá / Tháng</div>
                     <div className="stat-value text-lg text-accent">
-                      {(parseInt(pkg.soTien) / pkg.thoiGian).toLocaleString(
-                        "vi-VN",
-                        { maximumFractionDigits: 0 }
-                      )}
-                      đ
+                      {(parseInt(pkg.soTien) / pkg.thoiGian).toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
                     </div>
                   </div>
                 </div>
 
                 <div className="card-actions mt-6">
-                  <button
-                    onClick={() => openEditModal(pkg)}
-                    className="btn btn-info btn-sm"
-                  >
+                  <button onClick={() => openEditModal(pkg)} className="btn btn-info btn-sm">
                     ✏️ Sửa
                   </button>
-                  <button
-                    onClick={() => handleDelete(pkg.maGoi)}
-                    className="btn btn-error btn-sm"
-                  >
+                  <button onClick={() => handleDelete(pkg.maGoi)} className="btn btn-error btn-sm">
                     🗑️ Xóa
                   </button>
                 </div>
@@ -223,9 +192,7 @@ const PaymentPackages = () => {
           ))
         ) : (
           <div className="col-span-3 text-center py-12">
-            <p className="text-gray-500 text-lg mb-4">
-              Chưa có gói thanh toán nào
-            </p>
+            <p className="text-gray-500 text-lg mb-4">Chưa có gói thanh toán nào</p>
             <button onClick={openAddModal} className="btn btn-primary gap-2">
               <span>➕</span>
               Tạo gói đầu tiên
@@ -238,9 +205,7 @@ const PaymentPackages = () => {
       {showModal && (
         <div className="modal modal-open">
           <div className="modal-box w-11/12 max-w-md">
-            <h3 className="font-bold text-lg mb-4">
-              {editingId ? "✏️ Cập nhật gói" : "➕ Tạo gói mới"}
-            </h3>
+            <h3 className="font-bold text-lg mb-4">{editingId ? "✏️ Cập nhật gói" : "➕ Tạo gói mới"}</h3>
 
             <div className="space-y-4">
               <div className="form-control">
@@ -252,9 +217,7 @@ const PaymentPackages = () => {
                   placeholder="Ví dụ: Gói Cơ Bản, Gói VIP"
                   className="input input-bordered"
                   value={formData.tenGoi}
-                  onChange={(e) =>
-                    setFormData({ ...formData, tenGoi: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, tenGoi: e.target.value })}
                 />
               </div>
 
@@ -267,46 +230,31 @@ const PaymentPackages = () => {
                   placeholder="100000"
                   className="input input-bordered"
                   value={formData.soTien}
-                  onChange={(e) =>
-                    setFormData({ ...formData, soTien: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, soTien: e.target.value })}
                   min="0"
                 />
                 <label className="label">
-                  <span className="label-text-alt">
-                    {formData.soTien
-                      ? `${parseInt(formData.soTien).toLocaleString("vi-VN")}đ`
-                      : ""}
-                  </span>
+                  <span className="label-text-alt">{formData.soTien ? `${parseInt(formData.soTien).toLocaleString("vi-VN")}đ` : ""}</span>
                 </label>
               </div>
 
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text font-semibold">
-                    Thời Gian (tháng) *
-                  </span>
+                  <span className="label-text font-semibold">Thời Gian (tháng) *</span>
                 </label>
                 <input
                   type="number"
                   placeholder="1"
                   className="input input-bordered"
                   value={formData.thoiGian}
-                  onChange={(e) =>
-                    setFormData({ ...formData, thoiGian: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, thoiGian: e.target.value })}
                   min="1"
                 />
               </div>
 
               {formData.soTien && formData.thoiGian && (
                 <div className="alert alert-info">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    className="stroke-current shrink-0 w-6 h-6"
-                  >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -316,10 +264,7 @@ const PaymentPackages = () => {
                   </svg>
                   <span>
                     Giá / tháng:{" "}
-                    {(
-                      parseInt(formData.soTien) / parseInt(formData.thoiGian)
-                    ).toLocaleString("vi-VN", { maximumFractionDigits: 0 })}
-                    đ
+                    {(parseInt(formData.soTien) / parseInt(formData.thoiGian)).toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
                   </span>
                 </div>
               )}
@@ -335,11 +280,7 @@ const PaymentPackages = () => {
               >
                 Hủy
               </button>
-              <button
-                onClick={handleSave}
-                className="btn btn-primary"
-                disabled={loading}
-              >
+              <button onClick={handleSave} className="btn btn-primary" disabled={loading}>
                 {loading ? "Đang lưu..." : "Lưu"}
               </button>
             </div>

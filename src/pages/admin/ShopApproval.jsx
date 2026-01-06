@@ -1,11 +1,10 @@
 // src/pages/admin/ShopApproval.jsx
 import { useState, useEffect } from "react";
-import apiClient from "../../api/apiClient";
+// import apiClient from "../../api/apiClient";
+import { shopService } from "@/api";
 
 // Ở đầu component, TRƯỚC useState
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL?.replace("/api", "") ||
-  "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "http://localhost:5000";
 
 const getImageUrl = (path) => {
   if (!path) return "https://placehold.co/400x300?text=No+Image";
@@ -36,9 +35,10 @@ const ShopApproval = () => {
   const loadShops = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get("/admin/shop-approvals", {
-        params: { trangThai: filter },
-      });
+      const res = await shopService.getShopApprovals({ trangThai: filter });
+      // const res = await apiClient.get("/admin/shop-approvals", {
+      //   params: { trangThai: filter },
+      // });
       setShops(res.data || []);
       setError("");
     } catch (err) {
@@ -56,7 +56,8 @@ const ShopApproval = () => {
   const handleApprove = async () => {
     try {
       setActionLoading(true);
-      await apiClient.put(`/admin/shops/${selectedShop.maCuaHang}/approve`);
+      await shopService.approveShop(selectedShop.maCuaHang);
+      // await apiClient.put(`/admin/shops/${selectedShop.maCuaHang}/approve`);
       setShowDetailModal(false);
       await loadShops();
     } catch (err) {
@@ -74,9 +75,10 @@ const ShopApproval = () => {
 
     try {
       setActionLoading(true);
-      await apiClient.put(`/admin/shops/${selectedShop.maCuaHang}/reject`, {
-        lyDo: rejectReason,
-      });
+      await shopService.rejectShop(selectedShop.maCuaHang, { lyDo: rejectReason });
+      // await apiClient.put(`/admin/shops/${selectedShop.maCuaHang}/reject`, {
+      //   lyDo: rejectReason,
+      // });
       setShowDetailModal(false);
       setRejectReason("");
       await loadShops();
@@ -114,20 +116,13 @@ const ShopApproval = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">🏪 Duyệt Đơn Đăng Ký Cửa Hàng</h1>
-        <p className="text-gray-600 mt-2">
-          Kiểm tra và duyệt các đơn đăng ký cửa hàng mới
-        </p>
+        <p className="text-gray-600 mt-2">Kiểm tra và duyệt các đơn đăng ký cửa hàng mới</p>
       </div>
 
       {/* Error Alert */}
       {error && (
         <div className="alert alert-error">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -146,11 +141,7 @@ const ShopApproval = () => {
           { value: "HOAT_DONG", label: "Hoạt Động" },
           { value: "BI_KHOA", label: "Bị Khóa" },
         ].map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setFilter(tab.value)}
-            className={`tab ${filter === tab.value ? "tab-active" : ""}`}
-          >
+          <button key={tab.value} onClick={() => setFilter(tab.value)} className={`tab ${filter === tab.value ? "tab-active" : ""}`}>
             {tab.label}
           </button>
         ))}
@@ -169,8 +160,7 @@ const ShopApproval = () => {
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       console.error("Failed to load image:", e.target.src);
-                      e.target.src =
-                        "https://placehold.co/400x300?text=Image+Load+Failed";
+                      e.target.src = "https://placehold.co/400x300?text=Image+Load+Failed";
                     }}
                   />
                 </figure>
@@ -195,17 +185,10 @@ const ShopApproval = () => {
                   {shop.soDienThoai}
                 </p>
 
-                {shop.moTa && (
-                  <p className="text-sm text-gray-600 line-clamp-2">
-                    {shop.moTa}
-                  </p>
-                )}
+                {shop.moTa && <p className="text-sm text-gray-600 line-clamp-2">{shop.moTa}</p>}
 
                 <div className="card-actions justify-end mt-4">
-                  <button
-                    onClick={() => openDetailModal(shop)}
-                    className="btn btn-primary btn-sm"
-                  >
+                  <button onClick={() => openDetailModal(shop)} className="btn btn-primary btn-sm">
                     Chi Tiết
                   </button>
                 </div>
@@ -223,9 +206,7 @@ const ShopApproval = () => {
       {showDetailModal && selectedShop && (
         <div className="modal modal-open">
           <div className="modal-box w-11/12 max-w-2xl">
-            <h3 className="font-bold text-lg mb-4">
-              🏪 {selectedShop.tenCuaHang}
-            </h3>
+            <h3 className="font-bold text-lg mb-4">🏪 {selectedShop.tenCuaHang}</h3>
 
             {/* Shop Info */}
             <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
@@ -240,9 +221,7 @@ const ShopApproval = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Kinh Độ</p>
-                  <p className="font-semibold">
-                    {selectedShop.kinhDo || "N/A"}
-                  </p>
+                  <p className="font-semibold">{selectedShop.kinhDo || "N/A"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Vĩ Độ</p>
@@ -348,18 +327,10 @@ const ShopApproval = () => {
 
               {selectedShop.trangThai === "CHO_DUYET" && (
                 <>
-                  <button
-                    onClick={handleReject}
-                    className="btn btn-error"
-                    disabled={actionLoading}
-                  >
+                  <button onClick={handleReject} className="btn btn-error" disabled={actionLoading}>
                     {actionLoading ? "Đang xử lý..." : "Từ Chối"}
                   </button>
-                  <button
-                    onClick={handleApprove}
-                    className="btn btn-success"
-                    disabled={actionLoading}
-                  >
+                  <button onClick={handleApprove} className="btn btn-success" disabled={actionLoading}>
                     {actionLoading ? "Đang xử lý..." : "Duyệt"}
                   </button>
                 </>

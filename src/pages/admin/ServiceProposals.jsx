@@ -1,6 +1,7 @@
 // src/pages/admin/ServiceProposals.jsx
 import { useState, useEffect } from "react";
-import apiClient from "../../api/apiClient";
+// import apiClient from "../../api/apiClient";
+import { serviceService } from "@/api";
 
 const ServiceProposals = () => {
   const [proposals, setProposals] = useState([]);
@@ -20,7 +21,8 @@ const ServiceProposals = () => {
     try {
       setLoading(true);
       const params = { trangThai: filter };
-      const res = await apiClient.get("/admin/service-proposals", { params });
+      // const res = await apiClient.get("/admin/service-proposals", { params });
+      const res = await serviceService.getServiceProposals(params);
       setProposals(res.data || []);
       setError("");
     } catch (err) {
@@ -39,9 +41,8 @@ const ServiceProposals = () => {
   const handleApprove = async () => {
     try {
       setLoading(true);
-      await apiClient.put(
-        `/admin/service-proposals/${selectedProposal.maDeXuat}/approve`
-      );
+      await serviceService.approveServiceProposal(selectedProposal.maDeXuat);
+      // await apiClient.put(`/admin/service-proposals/${selectedProposal.maDeXuat}/approve`);
       setSuccess("Duyệt đề xuất thành công và đã tạo dịch vụ hệ thống!");
       setShowModal(false);
       await loadProposals();
@@ -61,10 +62,8 @@ const ServiceProposals = () => {
 
     try {
       setLoading(true);
-      await apiClient.put(
-        `/admin/service-proposals/${selectedProposal.maDeXuat}/reject`,
-        { lyDoTuChoi: rejectReason }
-      );
+      await serviceService.rejectServiceProposal(selectedProposal.maDeXuat, { lyDoTuChoi: rejectReason });
+      // await apiClient.put(`/admin/service-proposals/${selectedProposal.maDeXuat}/reject`, { lyDoTuChoi: rejectReason });
       setSuccess("Từ chối đề xuất thành công!");
       setShowModal(false);
       setRejectReason("");
@@ -104,26 +103,14 @@ const ServiceProposals = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">💡 Duyệt Đề Xuất Dịch Vụ</h1>
-        <p className="text-gray-600 mt-2">
-          Xem xét và phê duyệt các đề xuất dịch vụ mới từ cửa hàng
-        </p>
+        <p className="text-gray-600 mt-2">Xem xét và phê duyệt các đề xuất dịch vụ mới từ cửa hàng</p>
       </div>
 
       {/* Success Alert */}
       {success && (
         <div className="alert alert-success">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span>{success}</span>
         </div>
@@ -132,12 +119,7 @@ const ServiceProposals = () => {
       {/* Error Alert */}
       {error && (
         <div className="alert alert-error">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -158,11 +140,7 @@ const ServiceProposals = () => {
               { value: "DA_DUYET", label: "Đã Duyệt" },
               { value: "TU_CHOI", label: "Từ Chối" },
             ].map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => setFilter(tab.value)}
-                className={`tab ${filter === tab.value ? "tab-active" : ""}`}
-              >
+              <button key={tab.value} onClick={() => setFilter(tab.value)} className={`tab ${filter === tab.value ? "tab-active" : ""}`}>
                 {tab.label}
               </button>
             ))}
@@ -174,21 +152,15 @@ const ServiceProposals = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="stat bg-base-100 shadow rounded-lg">
           <div className="stat-title">Chờ duyệt</div>
-          <div className="stat-value text-warning">
-            {proposals.filter((p) => p.trangThai === "CHO_DUYET").length}
-          </div>
+          <div className="stat-value text-warning">{proposals.filter((p) => p.trangThai === "CHO_DUYET").length}</div>
         </div>
         <div className="stat bg-base-100 shadow rounded-lg">
           <div className="stat-title">Đã duyệt</div>
-          <div className="stat-value text-success">
-            {proposals.filter((p) => p.trangThai === "DA_DUYET").length}
-          </div>
+          <div className="stat-value text-success">{proposals.filter((p) => p.trangThai === "DA_DUYET").length}</div>
         </div>
         <div className="stat bg-base-100 shadow rounded-lg">
           <div className="stat-title">Từ chối</div>
-          <div className="stat-value text-error">
-            {proposals.filter((p) => p.trangThai === "TU_CHOI").length}
-          </div>
+          <div className="stat-value text-error">{proposals.filter((p) => p.trangThai === "TU_CHOI").length}</div>
         </div>
       </div>
 
@@ -196,44 +168,33 @@ const ServiceProposals = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {proposals.length > 0 ? (
           proposals.map((proposal) => (
-            <div
-              key={proposal.maDeXuat}
-              className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow"
-            >
+            <div key={proposal.maDeXuat} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
               <div className="card-body">
                 <div className="flex justify-between items-start">
                   <h2 className="card-title">{proposal.tenDichVu}</h2>
                   {getStatusBadge(proposal.trangThai)}
                 </div>
 
-                <p className="text-gray-600 text-sm line-clamp-3">
-                  {proposal.moTa || "Không có mô tả"}
-                </p>
+                <p className="text-gray-600 text-sm line-clamp-3">{proposal.moTa || "Không có mô tả"}</p>
 
                 <div className="divider my-2"></div>
 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Cửa hàng:</span>
-                    <span className="font-semibold">
-                      {proposal.CuaHang?.tenCuaHang || "N/A"}
-                    </span>
+                    <span className="font-semibold">{proposal.CuaHang?.tenCuaHang || "N/A"}</span>
                   </div>
 
                   {proposal.gia && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Giá đề xuất:</span>
-                      <span className="font-semibold text-primary">
-                        {parseInt(proposal.gia).toLocaleString("vi-VN")}đ
-                      </span>
+                      <span className="font-semibold text-primary">{parseInt(proposal.gia).toLocaleString("vi-VN")}đ</span>
                     </div>
                   )}
 
                   <div className="flex justify-between">
                     <span className="text-gray-600">Ngày gửi:</span>
-                    <span>
-                      {new Date(proposal.ngayGui).toLocaleDateString("vi-VN")}
-                    </span>
+                    <span>{new Date(proposal.ngayGui).toLocaleDateString("vi-VN")}</span>
                   </div>
 
                   {proposal.trangThai !== "CHO_DUYET" && (
@@ -244,13 +205,7 @@ const ServiceProposals = () => {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Ngày duyệt:</span>
-                        <span>
-                          {proposal.ngayDuyet
-                            ? new Date(proposal.ngayDuyet).toLocaleDateString(
-                                "vi-VN"
-                              )
-                            : "N/A"}
-                        </span>
+                        <span>{proposal.ngayDuyet ? new Date(proposal.ngayDuyet).toLocaleDateString("vi-VN") : "N/A"}</span>
                       </div>
                     </>
                   )}
@@ -267,10 +222,7 @@ const ServiceProposals = () => {
 
                 {proposal.trangThai === "CHO_DUYET" && (
                   <div className="card-actions justify-end mt-4">
-                    <button
-                      onClick={() => openModal(proposal)}
-                      className="btn btn-primary btn-sm"
-                    >
+                    <button onClick={() => openModal(proposal)} className="btn btn-primary btn-sm">
                       Xem xét
                     </button>
                   </div>
@@ -289,58 +241,42 @@ const ServiceProposals = () => {
       {showModal && selectedProposal && (
         <div className="modal modal-open">
           <div className="modal-box w-11/12 max-w-2xl">
-            <h3 className="font-bold text-lg mb-4">
-              💡 Xem Xét Đề Xuất Dịch Vụ
-            </h3>
+            <h3 className="font-bold text-lg mb-4">💡 Xem Xét Đề Xuất Dịch Vụ</h3>
 
             <div className="space-y-4">
               <div>
                 <p className="text-sm text-gray-600">Tên Dịch Vụ</p>
-                <p className="text-xl font-bold">
-                  {selectedProposal.tenDichVu}
-                </p>
+                <p className="text-xl font-bold">{selectedProposal.tenDichVu}</p>
               </div>
 
               <div>
                 <p className="text-sm text-gray-600">Mô Tả</p>
-                <p className="text-base">
-                  {selectedProposal.moTa || "Không có mô tả"}
-                </p>
+                <p className="text-base">{selectedProposal.moTa || "Không có mô tả"}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-600">Cửa Hàng</p>
-                  <p className="font-semibold">
-                    {selectedProposal.CuaHang?.tenCuaHang || "N/A"}
-                  </p>
+                  <p className="font-semibold">{selectedProposal.CuaHang?.tenCuaHang || "N/A"}</p>
                 </div>
                 {selectedProposal.gia && (
                   <div>
                     <p className="text-sm text-gray-600">Giá Đề Xuất</p>
-                    <p className="font-semibold text-primary">
-                      {parseInt(selectedProposal.gia).toLocaleString("vi-VN")}đ
-                    </p>
+                    <p className="font-semibold text-primary">{parseInt(selectedProposal.gia).toLocaleString("vi-VN")}đ</p>
                   </div>
                 )}
               </div>
 
               <div>
                 <p className="text-sm text-gray-600">Ngày Gửi</p>
-                <p className="font-semibold">
-                  {new Date(selectedProposal.ngayGui).toLocaleDateString(
-                    "vi-VN"
-                  )}
-                </p>
+                <p className="font-semibold">{new Date(selectedProposal.ngayGui).toLocaleDateString("vi-VN")}</p>
               </div>
 
               <div className="divider">Quyết Định</div>
 
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text font-semibold">
-                    Lý Do Từ Chối (nếu từ chối)
-                  </span>
+                  <span className="label-text font-semibold">Lý Do Từ Chối (nếu từ chối)</span>
                 </label>
                 <textarea
                   placeholder="Nhập lý do từ chối nếu muốn từ chối đề xuất này..."
@@ -351,12 +287,7 @@ const ServiceProposals = () => {
               </div>
 
               <div className="alert alert-info">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  className="stroke-current shrink-0 w-6 h-6"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -364,10 +295,7 @@ const ServiceProposals = () => {
                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   ></path>
                 </svg>
-                <span>
-                  Nếu duyệt, dịch vụ sẽ được tạo trong Hệ Thống và có thể sử
-                  dụng cho tất cả cửa hàng
-                </span>
+                <span>Nếu duyệt, dịch vụ sẽ được tạo trong Hệ Thống và có thể sử dụng cho tất cả cửa hàng</span>
               </div>
             </div>
 
@@ -381,18 +309,10 @@ const ServiceProposals = () => {
               >
                 Đóng
               </button>
-              <button
-                onClick={handleReject}
-                className="btn btn-error"
-                disabled={loading}
-              >
+              <button onClick={handleReject} className="btn btn-error" disabled={loading}>
                 {loading ? "Đang xử lý..." : "Từ Chối"}
               </button>
-              <button
-                onClick={handleApprove}
-                className="btn btn-success"
-                disabled={loading}
-              >
+              <button onClick={handleApprove} className="btn btn-success" disabled={loading}>
                 {loading ? "Đang xử lý..." : "Duyệt"}
               </button>
             </div>
