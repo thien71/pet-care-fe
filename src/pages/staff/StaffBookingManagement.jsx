@@ -1,19 +1,20 @@
 // src/pages/staff/StaffBookingManagement.jsx
 import { useState, useEffect } from "react";
-// import apiClient from "../../api/apiClient";
-import { bookingService } from "@/api";
+import { bookingService, staffService } from "@/api";
+import { showToast } from "@/utils/toast";
+import { FaClipboardList, FaClock, FaCheckCircle, FaTimesCircle, FaHourglassHalf } from "react-icons/fa";
+import StaffBookingCard from "@/components/staff/StaffBookingCard";
+import StaffBookingDetailModal from "@/components/staff/StaffBookingDetailModal";
+import StaffAssignTechnicianModal from "@/components/staff/StaffAssignTechnicianModal";
 
 const StaffBookingManagement = () => {
   const [bookings, setBookings] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [filter, setFilter] = useState("CHO_XAC_NHAN");
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
-  const [assignTechId, setAssignTechId] = useState("");
 
   useEffect(() => {
     loadData();
@@ -22,15 +23,12 @@ const StaffBookingManagement = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [bookingsRes] = await Promise.all([
-        bookingService.getShopBookings({ trangThai: filter }),
-        // apiClient.get("/staff/bookings", { params: { trangThai: filter } }),
-        // Lấy danh sách KTV từ API (tạo mới API hoặc dùng từ data sẵn)
-      ]);
+      const bookingsRes = await bookingService.getShopBookings({ trangThai: filter });
+      const employeesRes = await staffService.getEmployees();
       setBookings(bookingsRes.data || []);
-      setError("");
+      setEmployees(employeesRes.data || []);
     } catch (err) {
-      setError(err.message || "Lỗi khi tải dữ liệu");
+      showToast.error(err.message || "Lỗi khi tải dữ liệu");
     } finally {
       setLoading(false);
     }
@@ -38,38 +36,28 @@ const StaffBookingManagement = () => {
 
   const handleConfirm = async (bookingId) => {
     try {
-      setLoading(true);
+      const loadingToast = showToast.loading("Đang xác nhận đơn hàng...");
       await bookingService.confirmBooking(bookingId);
-      // await apiClient.put(`/staff/bookings/${bookingId}/confirm`);
-      setSuccess("Xác nhận đơn hàng thành công!");
+      showToast.dismiss(loadingToast);
+      showToast.success("Xác nhận đơn hàng thành công!");
       await loadData();
-      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      setError(err.message || "Lỗi xác nhận");
-    } finally {
-      setLoading(false);
+      showToast.error(err.message || "Lỗi xác nhận");
     }
   };
 
-  const handleAssignTechnician = async () => {
-    if (!assignTechId) {
-      setError("Vui lòng chọn kỹ thuật viên");
-      return;
-    }
+  const handleAssignTechnician = async (technicianId) => {
+    if (!selectedBooking) return;
 
     try {
-      setLoading(true);
-      await bookingService.assignTechnician(selectedBooking.maLichHen, { maNhanVien: parseInt(assignTechId) });
-      // await apiClient.put(`/staff/bookings/${selectedBooking.maLichHen}/assign-technician`, { maNhanVien: parseInt(assignTechId) });
-      setSuccess("Gán kỹ thuật viên thành công!");
+      const loadingToast = showToast.loading("Đang gán kỹ thuật viên...");
+      await bookingService.assignTechnician(selectedBooking.maLichHen, { maNhanVien: parseInt(technicianId) });
+      showToast.dismiss(loadingToast);
+      showToast.success("Gán kỹ thuật viên thành công!");
       setShowAssignModal(false);
-      setAssignTechId("");
       await loadData();
-      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      setError(err.message || "Lỗi gán kỹ thuật viên");
-    } finally {
-      setLoading(false);
+      showToast.error(err.message || "Lỗi gán kỹ thuật viên");
     }
   };
 
@@ -80,26 +68,25 @@ const StaffBookingManagement = () => {
 
   const openAssignModal = (booking) => {
     setSelectedBooking(booking);
-    setAssignTechId(booking.maNhanVien || "");
     setShowAssignModal(true);
   };
 
-  const getStatusBadge = (status) => {
-    const badges = {
-      CHO_XAC_NHAN: { class: "badge-warning", label: "Chờ xác nhận" },
-      DA_XAC_NHAN: { class: "badge-info", label: "Đã xác nhận" },
-      DANG_THUC_HIEN: { class: "badge-primary", label: "Đang thực hiện" },
-      HOAN_THANH: { class: "badge-success", label: "Hoàn thành" },
-      HUY: { class: "badge-error", label: "Đã hủy" },
-    };
-    const badge = badges[status] || { class: "", label: status };
-    return <span className={`badge ${badge.class}`}>{badge.label}</span>;
+  const filterButtons = [
+    { value: "CHO_XAC_NHAN", label: "Chờ xác nhận", icon: FaHourglassHalf },
+    { value: "DA_XAC_NHAN", label: "Đã xác nhận", icon: FaCheckCircle },
+    { value: "DANG_THUC_HIEN", label: "Đang thực hiện", icon: FaClock },
+    { value: "HOAN_THANH", label: "Hoàn thành", icon: FaCheckCircle },
+    { value: "HUY", label: "Đã hủy", icon: FaTimesCircle },
+  ];
+
+  const getCountByStatus = (status) => {
+    return bookings.filter((b) => b.trangThai === status).length;
   };
 
   if (loading && bookings.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
+        <div className="w-12 h-12 border-4 border-[#8e2800] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -107,230 +94,114 @@ const StaffBookingManagement = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">📋 Quản Lý Đơn Đặt Hẻn</h1>
-        <p className="text-gray-600 mt-2">Xử lý các đơn đặt lịch từ khách hàng</p>
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex items-center gap-3 mb-2">
+          <FaClipboardList className="text-2xl text-[#8e2800]" />
+          <h1 className="text-2xl font-bold text-gray-800">Quản Lý Đơn Đặt Hẹn</h1>
+        </div>
+        <p className="text-gray-600">Xử lý các đơn đặt lịch từ khách hàng</p>
       </div>
 
-      {/* Success Alert */}
-      {success && (
-        <div className="alert alert-success">
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>{success}</span>
-        </div>
-      )}
-
-      {/* Error Alert */}
-      {error && (
-        <div className="alert alert-error">
-          <span>{error}</span>
-          <button onClick={() => setError("")} className="btn btn-sm btn-ghost">
-            ✕
-          </button>
-        </div>
-      )}
-
       {/* Filter Tabs */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <div className="tabs tabs-boxed">
-            {[
-              { value: "CHO_XAC_NHAN", label: "Chờ Xác Nhận" },
-              { value: "DA_XAC_NHAN", label: "Đã Xác Nhận" },
-              { value: "DANG_THUC_HIEN", label: "Đang Thực Hiện" },
-              { value: "HOAN_THANH", label: "Hoàn Thành" },
-              { value: "HUY", label: "Đã Hủy" },
-            ].map((tab) => (
-              <button key={tab.value} onClick={() => setFilter(tab.value)} className={`tab ${filter === tab.value ? "tab-active" : ""}`}>
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="flex flex-wrap gap-2">
+          {filterButtons.map((tab) => {
+            const Icon = tab.icon;
+            const count = getCountByStatus(tab.value);
+            const isActive = filter === tab.value;
+
+            return (
+              <button
+                key={tab.value}
+                onClick={() => setFilter(tab.value)}
+                className={`px-4 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                  isActive ? "bg-[#8e2800] text-white" : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
+                }`}
+              >
+                <Icon />
                 {tab.label}
+                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${isActive ? "bg-white/20" : "bg-gray-200"}`}>
+                  {count}
+                </span>
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="stat bg-base-100 shadow rounded-lg">
-          <div className="stat-title">Chờ xác nhận</div>
-          <div className="stat-value text-warning">{bookings.filter((b) => b.trangThai === "CHO_XAC_NHAN").length}</div>
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <FaHourglassHalf className="text-2xl text-yellow-600" />
+            <p className="text-sm text-gray-600">Chờ xác nhận</p>
+          </div>
+          <p className="text-3xl font-bold text-gray-800">{bookings.filter((b) => b.trangThai === "CHO_XAC_NHAN").length}</p>
         </div>
-        <div className="stat bg-base-100 shadow rounded-lg">
-          <div className="stat-title">Đang thực hiện</div>
-          <div className="stat-value text-primary">{bookings.filter((b) => b.trangThai === "DANG_THUC_HIEN").length}</div>
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <FaClock className="text-2xl text-blue-600" />
+            <p className="text-sm text-gray-600">Đang thực hiện</p>
+          </div>
+          <p className="text-3xl font-bold text-gray-800">{bookings.filter((b) => b.trangThai === "DANG_THUC_HIEN").length}</p>
         </div>
-        <div className="stat bg-base-100 shadow rounded-lg">
-          <div className="stat-title">Hoàn thành</div>
-          <div className="stat-value text-success">{bookings.filter((b) => b.trangThai === "HOAN_THANH").length}</div>
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <FaCheckCircle className="text-2xl text-green-600" />
+            <p className="text-sm text-gray-600">Hoàn thành</p>
+          </div>
+          <p className="text-3xl font-bold text-gray-800">{bookings.filter((b) => b.trangThai === "HOAN_THANH").length}</p>
         </div>
-        <div className="stat bg-base-100 shadow rounded-lg">
-          <div className="stat-title">Tổng đơn</div>
-          <div className="stat-value">{bookings.length}</div>
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <FaClipboardList className="text-2xl text-gray-600" />
+            <p className="text-sm text-gray-600">Tổng đơn</p>
+          </div>
+          <p className="text-3xl font-bold text-gray-800">{bookings.length}</p>
         </div>
       </div>
 
       {/* Bookings Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {bookings.length > 0 ? (
-          bookings.map((booking) => (
-            <div key={booking.maLichHen} className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="card-title text-lg">#{booking.maLichHen}</h3>
-                  {getStatusBadge(booking.trangThai)}
-                </div>
-
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-start gap-2">
-                    <span>👤</span>
-                    <div>
-                      <p className="font-semibold">{booking.KhachHang?.hoTen}</p>
-                      <p className="text-xs text-gray-500">{booking.KhachHang?.soDienThoai}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span>📅</span>
-                    <span>{new Date(booking.ngayHen).toLocaleString("vi-VN")}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span>🐾</span>
-                    <span>{booking.LichHenThuCungs?.length || 0} thú cưng</span>
-                  </div>
-
-                  {booking.NhanVien && (
-                    <div className="flex items-center gap-2">
-                      <span>👨‍🔧</span>
-                      <span>{booking.NhanVien.hoTen}</span>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-2">
-                    <span>💰</span>
-                    <span className="font-bold text-primary">{parseInt(booking.tongTien).toLocaleString("vi-VN")}đ</span>
-                  </div>
-                </div>
-
-                <div className="card-actions justify-end mt-4 gap-2">
-                  <button onClick={() => openDetailModal(booking)} className="btn btn-sm btn-ghost">
-                    👁️ Chi tiết
-                  </button>
-
-                  {booking.trangThai === "CHO_XAC_NHAN" && (
-                    <>
-                      <button onClick={() => handleConfirm(booking.maLichHen)} className="btn btn-sm btn-success">
-                        ✅ Xác nhận
-                      </button>
-                    </>
-                  )}
-
-                  {(booking.trangThai === "DA_XAC_NHAN" || booking.trangThai === "DANG_THUC_HIEN") && !booking.NhanVien && (
-                    <button onClick={() => openAssignModal(booking)} className="btn btn-sm btn-info">
-                      👨‍🔧 Gán KTV
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="col-span-3 text-center py-12">
-            <p className="text-gray-500 text-lg">Không có đơn hàng nào</p>
-          </div>
-        )}
-      </div>
-
-      {/* Detail Modal */}
-      {showDetailModal && selectedBooking && (
-        <div className="modal modal-open">
-          <div className="modal-box w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="font-bold text-lg mb-4">📋 Chi Tiết Đơn #{selectedBooking.maLichHen}</h3>
-
-            <div className="space-y-4">
-              {/* Status */}
-              <div className="flex justify-between items-center">
-                <span>Trạng thái:</span>
-                {getStatusBadge(selectedBooking.trangThai)}
-              </div>
-
-              {/* Customer Info */}
-              <div className="card bg-base-200">
-                <div className="card-body p-4">
-                  <h4 className="font-bold">👤 Khách Hàng</h4>
-                  <p>{selectedBooking.KhachHang?.hoTen}</p>
-                  <p className="text-sm">{selectedBooking.KhachHang?.soDienThoai}</p>
-                </div>
-              </div>
-
-              {/* Pets & Services */}
-              <div className="card bg-base-200">
-                <div className="card-body p-4">
-                  <h4 className="font-bold">🐾 Thú Cưng & Dịch Vụ</h4>
-                  {selectedBooking.LichHenThuCungs?.map((pet, idx) => (
-                    <div key={idx} className="mt-2 p-2 bg-base-100 rounded">
-                      <p className="font-semibold">
-                        {pet.ten} - {pet.LoaiThuCung?.tenLoai}
-                      </p>
-                      <div className="ml-4 mt-1 space-y-1">
-                        {pet.LichHenChiTiets?.map((detail, i) => (
-                          <div key={i} className="text-sm flex justify-between">
-                            <span>• {detail.DichVuCuaShop?.DichVuHeThong?.tenDichVu}</span>
-                            <span className="font-semibold">{parseInt(detail.gia).toLocaleString("vi-VN")}đ</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-action">
-              <button onClick={() => setShowDetailModal(false)} className="btn">
-                Đóng
-              </button>
-            </div>
-          </div>
-          <div className="modal-backdrop" onClick={() => setShowDetailModal(false)}></div>
+      {bookings.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {bookings.map((booking) => (
+            <StaffBookingCard
+              key={booking.maLichHen}
+              booking={booking}
+              onViewDetail={openDetailModal}
+              onConfirm={handleConfirm}
+              onAssign={openAssignModal}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
+          <FaClipboardList className="mx-auto text-6xl text-gray-300 mb-4" />
+          <p className="text-xl font-bold text-gray-600">Không có đơn hàng nào</p>
         </div>
       )}
 
-      {/* Assign Modal */}
+      {/* Modals */}
+      {showDetailModal && selectedBooking && (
+        <StaffBookingDetailModal
+          booking={selectedBooking}
+          onClose={() => {
+            setShowDetailModal(false);
+            setSelectedBooking(null);
+          }}
+        />
+      )}
+
       {showAssignModal && selectedBooking && (
-        <div className="modal modal-open">
-          <div className="modal-box w-11/12 max-w-md">
-            <h3 className="font-bold text-lg mb-4">👨‍🔧 Gán Kỹ Thuật Viên</h3>
-
-            <p className="mb-4">Đơn hàng: #{selectedBooking.maLichHen}</p>
-
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-semibold">Chọn Kỹ Thuật Viên</span>
-              </label>
-              <select className="select select-bordered" value={assignTechId} onChange={(e) => setAssignTechId(e.target.value)}>
-                <option value="">-- Chọn kỹ thuật viên --</option>
-                {employees.map((emp) => (
-                  <option key={emp.maNguoiDung} value={emp.maNguoiDung}>
-                    {emp.hoTen}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="modal-action">
-              <button onClick={() => setShowAssignModal(false)} className="btn btn-ghost">
-                Hủy
-              </button>
-              <button onClick={handleAssignTechnician} className="btn btn-primary" disabled={loading}>
-                {loading ? "Đang xử lý..." : "Gán"}
-              </button>
-            </div>
-          </div>
-          <div className="modal-backdrop" onClick={() => setShowAssignModal(false)}></div>
-        </div>
+        <StaffAssignTechnicianModal
+          booking={selectedBooking}
+          employees={employees}
+          onConfirm={handleAssignTechnician}
+          onClose={() => {
+            setShowAssignModal(false);
+            setSelectedBooking(null);
+          }}
+        />
       )}
     </div>
   );
