@@ -1,31 +1,27 @@
 // src/pages/admin/ShopManagement.jsx
 import { useState, useEffect } from "react";
-// import apiClient from "../../api/apiClient";
 import { shopService } from "@/api";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "http://localhost:5000";
-
-const getImageUrl = (path) => {
-  if (!path) return "https://placehold.co/400x300?text=No+Image";
-  if (path.startsWith("http")) return path;
-  return `${API_BASE}${path}`;
-};
+import { showToast } from "@/utils/toast";
+import { FaSearch, FaEdit, FaToggleOn, FaToggleOff, FaEye, FaSpinner } from "react-icons/fa";
+import { getShopImageUrl } from "@/utils/constants";
+import EditShopModal from "@/components/admin/EditShopModal";
+import ShopDetailModal from "@/components/admin/ShopDetailModal";
+import ConfirmModal from "@/components/common/ConfirmModal";
 
 const ShopManagement = () => {
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
   const [filter, setFilter] = useState("ALL");
   const [searchTerm, setSearchTerm] = useState("");
+
   const [selectedShop, setSelectedShop] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editData, setEditData] = useState({
-    tenCuaHang: "",
-    diaChi: "",
-    soDienThoai: "",
-    trangThai: "HOAT_DONG",
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    shop: null,
+    action: null,
   });
 
   useEffect(() => {
@@ -37,11 +33,9 @@ const ShopManagement = () => {
       setLoading(true);
       const params = filter !== "ALL" ? { trangThai: filter } : {};
       const res = await shopService.getShops(params);
-      // const res = await apiClient.get("/admin/shops", { params });
       setShops(res.data || []);
-      setError("");
     } catch (err) {
-      setError(err.message || "Lỗi khi tải dữ liệu");
+      showToast.error(err.message || "Lỗi khi tải dữ liệu");
     } finally {
       setLoading(false);
     }
@@ -59,66 +53,91 @@ const ShopManagement = () => {
 
   const openEditModal = (shop) => {
     setSelectedShop(shop);
-    setEditData({
-      tenCuaHang: shop.tenCuaHang,
-      diaChi: shop.diaChi || "",
-      soDienThoai: shop.soDienThoai || "",
-      trangThai: shop.trangThai,
-    });
     setShowEditModal(true);
   };
 
-  const handleUpdate = async () => {
+  const handleUpdate = async (formData) => {
+    if (!selectedShop) return;
+
+    setActionLoading(true);
+    const loadingToast = showToast.loading("Đang cập nhật...");
+
     try {
-      setLoading(true);
-      await shopService.updateShop(selectedShop.maCuaHang, editData);
-      // await apiClient.put(`/admin/shops/${selectedShop.maCuaHang}`, editData);
-      setSuccess("Cập nhật cửa hàng thành công!");
+      await shopService.updateShop(selectedShop.maCuaHang, formData);
+      showToast.dismiss(loadingToast);
+      showToast.success("Cập nhật cửa hàng thành công!");
       setShowEditModal(false);
       await loadShops();
-      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      setError(err.message || "Lỗi cập nhật cửa hàng");
+      showToast.dismiss(loadingToast);
+      showToast.error(err.message || "Lỗi cập nhật cửa hàng");
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
-  const handleDelete = async (shopId) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa cửa hàng này? Hành động không thể hoàn tác!")) {
-      try {
-        setLoading(true);
-        await shopService.deleteShop(shopId);
-        // await apiClient.delete(`/admin/shops/${shopId}`);
-        setSuccess("Xóa cửa hàng thành công!");
-        await loadShops();
-        setTimeout(() => setSuccess(""), 3000);
-      } catch (err) {
-        setError(err.message || "Lỗi xóa cửa hàng");
-      } finally {
-        setLoading(false);
-      }
+  const openConfirmModal = (shop) => {
+    setConfirmModal({
+      isOpen: true,
+      shop,
+      action: shop.trangThai === "HOAT_DONG" ? "deactivate" : "activate",
+    });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal({
+      isOpen: false,
+      shop: null,
+      action: null,
+    });
+  };
+
+  const handleToggleStatus = async () => {
+    const { shop } = confirmModal;
+    if (!shop) return;
+
+    setActionLoading(true);
+    const newStatus = shop.trangThai === "HOAT_DONG" ? "BI_KHOA" : "HOAT_DONG";
+    const loadingToast = showToast.loading(newStatus === "BI_KHOA" ? "Đang vô hiệu hóa..." : "Đang kích hoạt...");
+
+    try {
+      await shopService.updateShop(shop.maCuaHang, {
+        ...shop,
+        trangThai: newStatus,
+      });
+      showToast.dismiss(loadingToast);
+      showToast.success(newStatus === "BI_KHOA" ? "Vô hiệu hóa cửa hàng thành công!" : "Kích hoạt cửa hàng thành công!");
+      closeConfirmModal();
+      await loadShops();
+    } catch (err) {
+      showToast.dismiss(loadingToast);
+      showToast.error(err.message || "Lỗi thay đổi trạng thái");
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const getStatusBadge = (status) => {
-    const badges = {
-      CHO_DUYET: "badge-warning",
-      HOAT_DONG: "badge-success",
-      BI_KHOA: "badge-error",
+    const config = {
+      CHO_DUYET: { text: "Chờ duyệt", class: "bg-yellow-100 text-yellow-700 border-yellow-300" },
+      HOAT_DONG: { text: "Hoạt động", class: "bg-green-100 text-green-700 border-green-300" },
+      BI_KHOA: { text: "Bị khóa", class: "bg-red-100 text-red-700 border-red-300" },
     };
-    const labels = {
-      CHO_DUYET: "Chờ duyệt",
-      HOAT_DONG: "Hoạt động",
-      BI_KHOA: "Bị khóa",
-    };
-    return <span className={`badge ${badges[status]}`}>{labels[status]}</span>;
+    const { text, class: className } = config[status] || config.CHO_DUYET;
+    return <span className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border ${className}`}>{text}</span>;
   };
 
-  if (loading && shops.length === 0) {
+  const filterButtons = [
+    { value: "ALL", label: "Tất cả" },
+    { value: "CHO_DUYET", label: "Chờ duyệt" },
+    { value: "HOAT_DONG", label: "Hoạt động" },
+    { value: "BI_KHOA", label: "Bị khóa" },
+  ];
+
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
+        <FaSpinner className="animate-spin text-4xl text-[#8e2800]" />
       </div>
     );
   }
@@ -126,144 +145,117 @@ const ShopManagement = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">🏪 Quản Lý Cửa Hàng</h1>
-        <p className="text-gray-600 mt-2">Quản lý tất cả các cửa hàng trong hệ thống</p>
+      <div className="bg-white border border-gray-200 rounded-lg px-6 py-4">
+        <h1 className="text-2xl font-bold text-gray-800">Quản Lý Cửa Hàng</h1>
+        <p className="text-gray-600 mt-1">Quản lý tất cả các cửa hàng trong hệ thống</p>
       </div>
-
-      {/* Success Alert */}
-      {success && (
-        <div className="alert alert-success">
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>{success}</span>
-        </div>
-      )}
-
-      {/* Error Alert */}
-      {error && (
-        <div className="alert alert-error">
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>{error}</span>
-        </div>
-      )}
 
       {/* Filters & Search */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* Filter Tabs */}
-            <div className="tabs tabs-boxed shrink-0">
-              {[
-                { value: "ALL", label: "Tất cả" },
-                { value: "CHO_DUYET", label: "Chờ Duyệt" },
-                { value: "HOAT_DONG", label: "Hoạt Động" },
-                { value: "BI_KHOA", label: "Bị Khóa" },
-              ].map((tab) => (
-                <button key={tab.value} onClick={() => setFilter(tab.value)} className={`tab ${filter === tab.value ? "tab-active" : ""}`}>
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+      <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
+        {/* Filter Tabs */}
+        <div className="flex flex-wrap gap-2">
+          {filterButtons.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setFilter(tab.value)}
+              className={`px-4 py-2.5 rounded-lg font-medium transition-all ${
+                filter === tab.value ? "bg-[#8e2800] text-white" : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-            {/* Search */}
-            <input
-              type="text"
-              placeholder="Tìm kiếm theo tên hoặc địa chỉ..."
-              className="input input-bordered flex-1"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="stat bg-base-100 shadow rounded-lg">
-          <div className="stat-title">Tổng cửa hàng</div>
-          <div className="stat-value text-primary">{shops.length}</div>
-        </div>
-        <div className="stat bg-base-100 shadow rounded-lg">
-          <div className="stat-title">Chờ duyệt</div>
-          <div className="stat-value text-warning">{shops.filter((s) => s.trangThai === "CHO_DUYET").length}</div>
-        </div>
-        <div className="stat bg-base-100 shadow rounded-lg">
-          <div className="stat-title">Hoạt động</div>
-          <div className="stat-value text-success">{shops.filter((s) => s.trangThai === "HOAT_DONG").length}</div>
-        </div>
-        <div className="stat bg-base-100 shadow rounded-lg">
-          <div className="stat-title">Bị khóa</div>
-          <div className="stat-value text-error">{shops.filter((s) => s.trangThai === "BI_KHOA").length}</div>
+        {/* Search */}
+        <div className="relative">
+          <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Tìm theo tên hoặc địa chỉ..."
+            className="w-full pl-12 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
       </div>
 
       {/* Shops Table */}
-      <div className="card bg-base-100 shadow-xl overflow-x-auto">
-        <div className="card-body p-0">
-          <table className="table">
-            <thead>
-              <tr className="bg-base-200">
-                <th>Cửa Hàng</th>
-                <th>Người Đại Diện</th>
-                <th>Liên Hệ</th>
-                <th>Trạng Thái</th>
-                <th>Ngày Tạo</th>
-                <th>Thao Tác</th>
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Cửa Hàng</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Người Đại Diện</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Liên Hệ</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Trạng Thái</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Ngày Tạo</th>
+                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">Thao Tác</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-200">
               {filteredShops.length > 0 ? (
                 filteredShops.map((shop) => (
-                  <tr key={shop.maCuaHang} className="hover">
-                    <td>
+                  <tr key={shop.maCuaHang} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="avatar">
-                          <div className="mask mask-squircle w-12 h-12">
-                            <img src={getImageUrl(shop.anhCuaHang)} alt={shop.tenCuaHang} />
-                          </div>
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                          <img src={getShopImageUrl(shop.anhCuaHang)} alt={shop.tenCuaHang} className="w-full h-full object-cover" />
                         </div>
                         <div>
-                          <div className="font-bold">{shop.tenCuaHang}</div>
-                          <div className="text-sm opacity-50">{shop.diaChi}</div>
+                          <div className="font-medium text-gray-800">{shop.tenCuaHang}</div>
+                          <div className="text-sm text-gray-600">{shop.diaChi}</div>
                         </div>
                       </div>
                     </td>
-                    <td>
-                      <div>{shop.NguoiDaiDien?.hoTen || "N/A"}</div>
-                      <div className="text-sm opacity-50">{shop.NguoiDaiDien?.email || ""}</div>
+                    <td className="px-6 py-4">
+                      <div className="text-sm">
+                        <div className="font-medium text-gray-800">{shop.NguoiDaiDien?.hoTen || "N/A"}</div>
+                        <div className="text-gray-600">{shop.NguoiDaiDien?.email || ""}</div>
+                      </div>
                     </td>
-                    <td>
-                      <div className="text-sm">📞 {shop.soDienThoai}</div>
-                      <div className="text-sm opacity-50">📍 {shop.diaChi}</div>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-700">{shop.soDienThoai}</div>
                     </td>
-                    <td>{getStatusBadge(shop.trangThai)}</td>
-                    <td>{new Date(shop.ngayTao).toLocaleDateString("vi-VN")}</td>
-                    <td className="space-x-2">
-                      <button onClick={() => openDetailModal(shop)} className="btn btn-sm btn-ghost">
-                        👁️
-                      </button>
-                      <button onClick={() => openEditModal(shop)} className="btn btn-sm btn-info">
-                        ✏️
-                      </button>
-                      <button onClick={() => handleDelete(shop.maCuaHang)} className="btn btn-sm btn-error">
-                        🗑️
-                      </button>
+                    <td className="px-6 py-4">{getStatusBadge(shop.trangThai)}</td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-700">{new Date(shop.ngayTao).toLocaleDateString("vi-VN")}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => openDetailModal(shop)}
+                          className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
+                          title="Xem chi tiết"
+                        >
+                          <FaEye />
+                        </button>
+                        <button
+                          onClick={() => openEditModal(shop)}
+                          className="p-2 text-blue-700 hover:bg-blue-50 rounded-lg transition-colors border border-blue-200"
+                          title="Sửa"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() => openConfirmModal(shop)}
+                          disabled={actionLoading}
+                          className={`p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 transition-colors ${
+                            shop.trangThai === "HOAT_DONG" ? "text-green-600" : "text-red-600"
+                          }`}
+                          title={shop.trangThai === "HOAT_DONG" ? "Vô hiệu hóa" : "Kích hoạt"}
+                        >
+                          {shop.trangThai === "HOAT_DONG" ? <FaToggleOn className="text-2xl" /> : <FaToggleOff className="text-2xl" />}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="text-center py-8">
-                    Không tìm thấy cửa hàng
+                  <td colSpan="6" className="px-6 py-12 text-center">
+                    <p className="text-gray-500 text-lg">Không tìm thấy cửa hàng</p>
                   </td>
                 </tr>
               )}
@@ -272,133 +264,45 @@ const ShopManagement = () => {
         </div>
       </div>
 
-      {/* Detail Modal */}
-      {showDetailModal && selectedShop && (
-        <div className="modal modal-open">
-          <div className="modal-box w-11/12 max-w-2xl">
-            <h3 className="font-bold text-lg mb-4">🏪 Chi Tiết Cửa Hàng</h3>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Tên Cửa Hàng</p>
-                  <p className="font-semibold">{selectedShop.tenCuaHang}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Trạng Thái</p>
-                  {getStatusBadge(selectedShop.trangThai)}
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Địa Chỉ</p>
-                  <p className="font-semibold">{selectedShop.diaChi}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Số Điện Thoại</p>
-                  <p className="font-semibold">{selectedShop.soDienThoai}</p>
-                </div>
-              </div>
-
-              {selectedShop.moTa && (
-                <div>
-                  <p className="text-sm text-gray-600">Mô Tả</p>
-                  <p className="font-semibold">{selectedShop.moTa}</p>
-                </div>
-              )}
-
-              <div className="divider">Người Đại Diện</div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Họ Tên</p>
-                  <p className="font-semibold">{selectedShop.NguoiDaiDien?.hoTen || "N/A"}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Email</p>
-                  <p className="font-semibold">{selectedShop.NguoiDaiDien?.email || "N/A"}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-action">
-              <button onClick={() => setShowDetailModal(false)} className="btn">
-                Đóng
-              </button>
-            </div>
-          </div>
-          <div className="modal-backdrop" onClick={() => setShowDetailModal(false)}></div>
-        </div>
+      {/* Modals */}
+      {showDetailModal && (
+        <ShopDetailModal
+          shop={selectedShop}
+          onClose={() => {
+            setShowDetailModal(false);
+            setSelectedShop(null);
+          }}
+        />
       )}
 
-      {/* Edit Modal */}
-      {showEditModal && selectedShop && (
-        <div className="modal modal-open">
-          <div className="modal-box w-11/12 max-w-md">
-            <h3 className="font-bold text-lg mb-4">✏️ Cập Nhật Cửa Hàng</h3>
-
-            <div className="space-y-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Tên Cửa Hàng</span>
-                </label>
-                <input
-                  type="text"
-                  className="input input-bordered"
-                  value={editData.tenCuaHang}
-                  onChange={(e) => setEditData({ ...editData, tenCuaHang: e.target.value })}
-                />
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Địa Chỉ</span>
-                </label>
-                <input
-                  type="text"
-                  className="input input-bordered"
-                  value={editData.diaChi}
-                  onChange={(e) => setEditData({ ...editData, diaChi: e.target.value })}
-                />
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Số Điện Thoại</span>
-                </label>
-                <input
-                  type="tel"
-                  className="input input-bordered"
-                  value={editData.soDienThoai}
-                  onChange={(e) => setEditData({ ...editData, soDienThoai: e.target.value })}
-                />
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Trạng Thái</span>
-                </label>
-                <select
-                  className="select select-bordered"
-                  value={editData.trangThai}
-                  onChange={(e) => setEditData({ ...editData, trangThai: e.target.value })}
-                >
-                  <option value="CHO_DUYET">Chờ Duyệt</option>
-                  <option value="HOAT_DONG">Hoạt Động</option>
-                  <option value="BI_KHOA">Bị Khóa</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="modal-action">
-              <button onClick={() => setShowEditModal(false)} className="btn btn-ghost">
-                Hủy
-              </button>
-              <button onClick={handleUpdate} className="btn btn-primary" disabled={loading}>
-                {loading ? "Đang lưu..." : "Lưu"}
-              </button>
-            </div>
-          </div>
-          <div className="modal-backdrop" onClick={() => setShowEditModal(false)}></div>
-        </div>
+      {showEditModal && (
+        <EditShopModal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedShop(null);
+          }}
+          onSubmit={handleUpdate}
+          shop={selectedShop}
+          loading={actionLoading}
+        />
       )}
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirmModal}
+        onConfirm={handleToggleStatus}
+        title={confirmModal.action === "deactivate" ? "Xác Nhận Vô Hiệu Hóa" : "Xác Nhận Kích Hoạt"}
+        message={
+          confirmModal.action === "deactivate"
+            ? `Vô hiệu hóa cửa hàng "${confirmModal.shop?.tenCuaHang}"? Cửa hàng sẽ không thể hoạt động.`
+            : `Kích hoạt lại cửa hàng "${confirmModal.shop?.tenCuaHang}"?`
+        }
+        confirmText={confirmModal.action === "deactivate" ? "Vô hiệu hóa" : "Kích hoạt"}
+        cancelText="Hủy"
+        type={confirmModal.action === "deactivate" ? "warning" : "success"}
+        loading={actionLoading}
+      />
     </div>
   );
 };

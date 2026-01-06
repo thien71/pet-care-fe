@@ -1,26 +1,26 @@
 // src/pages/admin/UserManagement.jsx
 import { useState, useEffect } from "react";
-// import apiClient from "../../api/apiClient";
-
 import { userService, serviceService } from "@/api";
+import { showToast } from "@/utils/toast";
+import { FaSearch, FaEdit, FaToggleOn, FaToggleOff, FaEnvelope, FaPhone, FaSpinner } from "react-icons/fa";
+import EditUserModal from "@/components/admin/EditUserModal";
+import ConfirmModal from "@/components/common/ConfirmModal";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [editData, setEditData] = useState({
-    hoTen: "",
-    email: "",
-    soDienThoai: "",
-    diaChi: "",
-    maVaiTro: 1,
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    user: null,
+    action: null,
   });
 
-  // Load users và roles
   useEffect(() => {
     loadData();
   }, []);
@@ -29,12 +29,10 @@ const UserManagement = () => {
     try {
       setLoading(true);
       const [usersRes, rolesRes] = await Promise.all([userService.getUsers(), serviceService.getRoles()]);
-      // const [usersRes, rolesRes] = await Promise.all([apiClient.get("/admin/users"), apiClient.get("/admin/roles")]);
       setUsers(usersRes.data || []);
       setRoles(rolesRes.data || []);
-      setError("");
     } catch (err) {
-      setError(err.message || "Lỗi khi tải dữ liệu");
+      showToast.error(err.message || "Lỗi khi tải dữ liệu");
     } finally {
       setLoading(false);
     }
@@ -46,54 +44,75 @@ const UserManagement = () => {
 
   const openEditModal = (user) => {
     setSelectedUser(user);
-    setEditData({
-      hoTen: user.hoTen,
-      email: user.email,
-      soDienThoai: user.soDienThoai || "",
-      diaChi: user.diaChi || "",
-      maVaiTro: user.maVaiTro,
-    });
-    setShowModal(true);
+    setShowEditModal(true);
   };
 
-  const handleUpdateUser = async () => {
+  const handleUpdateUser = async (formData) => {
+    if (!selectedUser) return;
+
+    setActionLoading(true);
+    const loadingToast = showToast.loading("Đang cập nhật...");
+
     try {
-      setLoading(true);
-      await userService.updateUser(selectedUser.maNguoiDung, editData);
-      // await apiClient.put(`/admin/users/${selectedUser.maNguoiDung}`, editData);
-      setShowModal(false);
+      await userService.updateUser(selectedUser.maNguoiDung, formData);
+      showToast.dismiss(loadingToast);
+      showToast.success("Cập nhật người dùng thành công!");
+      setShowEditModal(false);
       setSelectedUser(null);
       await loadData();
     } catch (err) {
-      setError(err.message || "Lỗi cập nhật người dùng");
+      showToast.dismiss(loadingToast);
+      showToast.error(err.message || "Lỗi cập nhật người dùng");
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa người dùng này?")) {
-      try {
-        setLoading(true);
-        await userService.deleteUser(userId);
-        // await apiClient.delete(`/admin/users/${userId}`);
-        await loadData();
-      } catch (err) {
-        setError(err.message || "Lỗi xóa người dùng");
-      } finally {
-        setLoading(false);
-      }
+  const openConfirmModal = (user) => {
+    setConfirmModal({
+      isOpen: true,
+      user,
+      action: user.trangThai === 1 ? "deactivate" : "activate",
+    });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal({
+      isOpen: false,
+      user: null,
+      action: null,
+    });
+  };
+
+  const handleToggleStatus = async () => {
+    const { user } = confirmModal;
+    if (!user) return;
+
+    setActionLoading(true);
+    const newStatus = user.trangThai === 1 ? 0 : 1;
+    const loadingToast = showToast.loading(newStatus === 0 ? "Đang vô hiệu hóa..." : "Đang kích hoạt...");
+
+    try {
+      await userService.updateUser(user.maNguoiDung, {
+        ...user,
+        trangThai: newStatus,
+      });
+      showToast.dismiss(loadingToast);
+      showToast.success(newStatus === 0 ? "Vô hiệu hóa tài khoản thành công!" : "Kích hoạt tài khoản thành công!");
+      closeConfirmModal();
+      await loadData();
+    } catch (err) {
+      showToast.dismiss(loadingToast);
+      showToast.error(err.message || "Lỗi thay đổi trạng thái");
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  const getRoleName = (roleId) => {
-    return roles.find((r) => r.maVaiTro === roleId)?.tenVaiTro || "N/A";
-  };
-
-  if (loading && users.length === 0) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
+        <FaSpinner className="animate-spin text-4xl text-[#8e2800]" />
       </div>
     );
   }
@@ -101,32 +120,19 @@ const UserManagement = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">👥 Quản lý Người Dùng</h1>
+      <div className="bg-white border border-gray-200 rounded-lg px-6 py-4">
+        <h1 className="text-2xl font-bold text-gray-800">Quản Lý Người Dùng</h1>
+        <p className="text-gray-600 mt-1">Quản lý tài khoản người dùng trong hệ thống</p>
       </div>
 
-      {/* Error Alert */}
-      {error && (
-        <div className="alert alert-error">
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>{error}</span>
-        </div>
-      )}
-
-      {/* Search Box */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
+      {/* Search */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="relative">
+          <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Tìm theo tên hoặc email..."
-            className="input input-bordered w-full"
+            className="w-full pl-12 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -134,48 +140,88 @@ const UserManagement = () => {
       </div>
 
       {/* Users Table */}
-      <div className="card bg-base-100 shadow-xl overflow-x-auto">
-        <div className="card-body p-0">
-          <table className="table">
-            <thead>
-              <tr className="bg-base-200">
-                <th>Tên</th>
-                <th>Email</th>
-                <th>Vai Trò</th>
-                <th>Số Điện Thoại</th>
-                <th>Trạng Thái</th>
-                <th>Thao Tác</th>
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Người Dùng</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Email</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Số Điện Thoại</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Vai Trò</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Trạng Thái</th>
+                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">Thao Tác</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-200">
               {filteredUsers.length > 0 ? (
                 filteredUsers.map((user) => (
-                  <tr key={user.maNguoiDung} className="hover">
-                    <td className="font-semibold">{user.hoTen}</td>
-                    <td>{user.email}</td>
-                    <td>
-                      <span className="badge badge-primary">{user.VaiTro?.tenVaiTro || "N/A"}</span>
+                  <tr key={user.maNguoiDung} className={`hover:bg-gray-50 transition-colors ${user.trangThai === 0 ? "opacity-60" : ""}`}>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-[#8e2800] text-white flex items-center justify-center font-bold">
+                          {user.hoTen.charAt(0)}
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-800">{user.hoTen}</div>
+                        </div>
+                      </div>
                     </td>
-                    <td>{user.soDienThoai || "N/A"}</td>
-                    <td>
-                      <span className={`badge ${user.trangThai ? "badge-success" : "badge-error"}`}>
-                        {user.trangThai ? "Kích hoạt" : "Vô hiệu hóa"}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-gray-700">
+                        <FaEnvelope className="text-gray-400" />
+                        <span>{user.email}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-gray-700">
+                        <FaPhone className="text-gray-400" />
+                        <span>{user.soDienThoai || "Chưa cập nhật"}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 border border-blue-300">
+                        {user.VaiTro?.tenVaiTro || "N/A"}
                       </span>
                     </td>
-                    <td className="space-x-2">
-                      <button onClick={() => openEditModal(user)} className="btn btn-sm btn-info">
-                        ✏️
-                      </button>
-                      <button onClick={() => handleDeleteUser(user.maNguoiDung)} className="btn btn-sm btn-error">
-                        🗑️
-                      </button>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium ${
+                          user.trangThai === 1
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : "bg-red-100 text-red-700 border border-red-300"
+                        }`}
+                      >
+                        {user.trangThai === 1 ? "Hoạt động" : "Vô hiệu hóa"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => openEditModal(user)}
+                          className="p-2 text-blue-700 hover:bg-blue-50 rounded-lg transition-colors border border-blue-200"
+                          title="Chỉnh sửa"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() => openConfirmModal(user)}
+                          disabled={actionLoading}
+                          className={`p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 transition-colors ${
+                            user.trangThai === 1 ? "text-green-600" : "text-red-600"
+                          }`}
+                          title={user.trangThai === 1 ? "Vô hiệu hóa" : "Kích hoạt"}
+                        >
+                          {user.trangThai === 1 ? <FaToggleOn className="text-2xl" /> : <FaToggleOff className="text-2xl" />}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="text-center py-8">
-                    Không tìm thấy người dùng
+                  <td colSpan="6" className="px-6 py-12 text-center">
+                    <p className="text-gray-500 text-lg">Không tìm thấy người dùng</p>
                   </td>
                 </tr>
               )}
@@ -184,91 +230,36 @@ const UserManagement = () => {
         </div>
       </div>
 
-      {/* Edit Modal */}
-      {showModal && (
-        <div className="modal modal-open">
-          <div className="modal-box w-11/12 max-w-2xl">
-            <h3 className="font-bold text-lg mb-4">✏️ Cập nhật người dùng</h3>
-
-            <div className="space-y-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Họ tên</span>
-                </label>
-                <input
-                  type="text"
-                  className="input input-bordered"
-                  value={editData.hoTen}
-                  onChange={(e) => setEditData({ ...editData, hoTen: e.target.value })}
-                />
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Email</span>
-                </label>
-                <input type="email" className="input input-bordered" value={editData.email} disabled />
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Số điện thoại</span>
-                </label>
-                <input
-                  type="tel"
-                  className="input input-bordered"
-                  value={editData.soDienThoai}
-                  onChange={(e) => setEditData({ ...editData, soDienThoai: e.target.value })}
-                />
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Địa chỉ</span>
-                </label>
-                <input
-                  type="text"
-                  className="input input-bordered"
-                  value={editData.diaChi}
-                  onChange={(e) => setEditData({ ...editData, diaChi: e.target.value })}
-                />
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Vai Trò</span>
-                </label>
-                <select
-                  className="select select-bordered"
-                  value={editData.maVaiTro}
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      maVaiTro: parseInt(e.target.value),
-                    })
-                  }
-                >
-                  {roles.map((role) => (
-                    <option key={role.maVaiTro} value={role.maVaiTro}>
-                      {role.tenVaiTro}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="modal-action">
-              <button onClick={() => setShowModal(false)} className="btn btn-ghost">
-                Hủy
-              </button>
-              <button onClick={handleUpdateUser} className="btn btn-primary" disabled={loading}>
-                {loading ? "Đang lưu..." : "Lưu"}
-              </button>
-            </div>
-          </div>
-          <div className="modal-backdrop" onClick={() => setShowModal(false)}></div>
-        </div>
+      {/* Modals */}
+      {showEditModal && (
+        <EditUserModal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedUser(null);
+          }}
+          onSubmit={handleUpdateUser}
+          user={selectedUser}
+          roles={roles}
+          loading={actionLoading}
+        />
       )}
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirmModal}
+        onConfirm={handleToggleStatus}
+        title={confirmModal.action === "deactivate" ? "Xác nhận vô hiệu hóa" : "Xác nhận kích hoạt"}
+        message={
+          confirmModal.action === "deactivate"
+            ? `Bạn có chắc chắn muốn vô hiệu hóa tài khoản "${confirmModal.user?.hoTen}"? Người dùng này sẽ không thể đăng nhập vào hệ thống.`
+            : `Bạn có chắc chắn muốn kích hoạt lại tài khoản "${confirmModal.user?.hoTen}"?`
+        }
+        confirmText={confirmModal.action === "deactivate" ? "Vô hiệu hóa" : "Kích hoạt"}
+        cancelText="Hủy"
+        type={confirmModal.action === "deactivate" ? "warning" : "success"}
+        loading={actionLoading}
+      />
     </div>
   );
 };

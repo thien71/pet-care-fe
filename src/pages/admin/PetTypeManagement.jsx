@@ -1,15 +1,19 @@
 // src/pages/admin/PetTypeManagement.jsx
 import { useState, useEffect } from "react";
-// import apiClient from "../../api/apiClient";
 import { serviceService } from "@/api";
+import { showToast } from "@/utils/toast";
+import { FaPlus, FaPaw, FaEdit, FaTrash, FaSpinner } from "react-icons/fa";
+import PetTypeModal from "@/components/admin/PetTypeModal";
+import ConfirmModal from "@/components/common/ConfirmModal";
 
 const PetTypeManagement = () => {
   const [petTypes, setPetTypes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
+
   const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({ tenLoai: "" });
+  const [editingPetType, setEditingPetType] = useState(null);
+  const [deletePetType, setDeletePetType] = useState(null);
 
   useEffect(() => {
     loadPetTypes();
@@ -19,170 +23,179 @@ const PetTypeManagement = () => {
     try {
       setLoading(true);
       const res = await serviceService.getPetTypes();
-      // const res = await apiClient.get("/admin/pet-types");
       setPetTypes(res.data || []);
-      setError("");
     } catch (err) {
-      setError(err.message || "Lỗi khi tải dữ liệu");
+      showToast.error(err.message || "Lỗi khi tải dữ liệu");
     } finally {
       setLoading(false);
     }
   };
 
   const openAddModal = () => {
-    setEditingId(null);
-    setFormData({ tenLoai: "" });
+    setEditingPetType(null);
     setShowModal(true);
   };
 
   const openEditModal = (petType) => {
-    setEditingId(petType.maLoai);
-    setFormData({ tenLoai: petType.tenLoai });
+    setEditingPetType(petType);
     setShowModal(true);
   };
 
-  const handleSave = async () => {
-    if (!formData.tenLoai.trim()) {
-      setError("Vui lòng nhập tên loại thú cưng");
-      return;
-    }
+  const handleSave = async (formData) => {
+    setActionLoading(true);
+    const loadingToast = showToast.loading(editingPetType ? "Đang cập nhật..." : "Đang thêm...");
 
     try {
-      setLoading(true);
-      if (editingId) {
-        await serviceService.updatePetType(editingId, formData);
-        // await apiClient.put(`/admin/pet-types/${editingId}`, formData);
+      if (editingPetType) {
+        await serviceService.updatePetType(editingPetType.maLoai, formData);
+        showToast.dismiss(loadingToast);
+        showToast.success("Cập nhật loại thú cưng thành công!");
       } else {
         await serviceService.createPetType(formData);
-        // await apiClient.post("/admin/pet-types", formData);
+        showToast.dismiss(loadingToast);
+        showToast.success("Thêm loại thú cưng thành công!");
       }
       setShowModal(false);
-      setFormData({ tenLoai: "" });
       await loadPetTypes();
     } catch (err) {
-      setError(err.message || "Lỗi khi lưu dữ liệu");
+      showToast.dismiss(loadingToast);
+      showToast.error(err.message || "Lỗi khi lưu dữ liệu");
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa loại thú cưng này?")) {
-      try {
-        setLoading(true);
-        await serviceService.deletePetType(id);
-        // await apiClient.delete(`/admin/pet-types/${id}`);
-        await loadPetTypes();
-      } catch (err) {
-        setError(err.message || "Lỗi xóa loại thú cưng");
-      } finally {
-        setLoading(false);
-      }
+  const handleDelete = async () => {
+    if (!deletePetType) return;
+
+    setActionLoading(true);
+    const loadingToast = showToast.loading("Đang xóa...");
+
+    try {
+      await serviceService.deletePetType(deletePetType.maLoai);
+      showToast.dismiss(loadingToast);
+      showToast.success("Xóa loại thú cưng thành công!");
+      setDeletePetType(null);
+      await loadPetTypes();
+    } catch (err) {
+      showToast.dismiss(loadingToast);
+      showToast.error(err.message || "Lỗi xóa loại thú cưng");
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  if (loading && petTypes.length === 0) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
+        <FaSpinner className="animate-spin text-4xl text-[#8e2800]" />
       </div>
     );
   }
 
-  const petEmojis = {
-    CHO: "🐕",
-    MEO: "🐱",
-    CHIM: "🐦",
-    CA: "🐠",
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">🐾 Quản lý Loại Thú Cưng</h1>
-        <button onClick={openAddModal} className="btn btn-primary gap-2">
-          <span>➕</span>
-          Thêm loại mới
+      <div className="bg-white border border-gray-200 rounded-lg px-6 py-4 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Quản Lý Loại Thú Cưng</h1>
+          <p className="text-gray-600 mt-1">Quản lý các loại thú cưng trong hệ thống</p>
+        </div>
+        <button
+          onClick={openAddModal}
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors font-medium"
+        >
+          <FaPlus />
+          Thêm Loại
         </button>
       </div>
 
-      {/* Error Alert */}
-      {error && (
-        <div className="alert alert-error">
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>{error}</span>
+      {/* Pet Types Table */}
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Icon</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tên Loại</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {petTypes.length > 0 ? (
+                petTypes.map((petType) => (
+                  <tr key={petType.maLoai} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                        <FaPaw className="text-xl text-[#8e2800]" />
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="font-medium text-gray-800">{petType.tenLoai}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => openEditModal(petType)}
+                          className="p-2 text-blue-700 hover:bg-blue-50 rounded-lg transition-colors border border-blue-200"
+                          title="Sửa"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() => setDeletePetType(petType)}
+                          className="p-2 text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-red-200"
+                          title="Xóa"
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="3" className="px-6 py-12 text-center">
+                    <FaPaw className="mx-auto text-6xl text-gray-300 mb-4" />
+                    <p className="text-gray-500 text-lg">Chưa có loại thú cưng nào</p>
+                    <button
+                      onClick={openAddModal}
+                      className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors font-medium"
+                    >
+                      <FaPlus />
+                      Thêm Loại Đầu Tiên
+                    </button>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
-
-      {/* Pet Types Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {petTypes.length > 0 ? (
-          petTypes.map((petType) => (
-            <div key={petType.maLoai} className="card bg-base-100 shadow-xl">
-              <div className="card-body items-center text-center">
-                <div className="text-6xl">{petEmojis[petType.tenLoai] || "🐾"}</div>
-                <h2 className="card-title text-2xl">{petType.tenLoai}</h2>
-                <div className="card-actions">
-                  <button onClick={() => openEditModal(petType)} className="btn btn-sm btn-info">
-                    ✏️ Sửa
-                  </button>
-                  <button onClick={() => handleDelete(petType.maLoai)} className="btn btn-sm btn-error">
-                    🗑️ Xóa
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="col-span-3 text-center py-12">
-            <p className="text-gray-500 mb-4">Chưa có loại thú cưng nào</p>
-            <button onClick={openAddModal} className="btn btn-primary gap-2">
-              <span>➕</span>
-              Thêm loại mới
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Add/Edit Modal */}
-      {showModal && (
-        <div className="modal modal-open">
-          <div className="modal-box w-11/12 max-w-md">
-            <h3 className="font-bold text-lg mb-4">{editingId ? "✏️ Sửa loại thú cưng" : "➕ Thêm loại thú cưng"}</h3>
+      {/* Modals */}
+      <PetTypeModal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setEditingPetType(null);
+        }}
+        onSubmit={handleSave}
+        petType={editingPetType}
+        loading={actionLoading}
+      />
 
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Tên loại</span>
-              </label>
-              <input
-                type="text"
-                placeholder="Ví dụ: CHO, MEO, CHIM, CA"
-                className="input input-bordered"
-                value={formData.tenLoai}
-                onChange={(e) => setFormData({ ...formData, tenLoai: e.target.value })}
-              />
-            </div>
-
-            <div className="modal-action">
-              <button onClick={() => setShowModal(false)} className="btn btn-ghost">
-                Hủy
-              </button>
-              <button onClick={handleSave} className="btn btn-primary" disabled={loading}>
-                {loading ? "Đang lưu..." : "Lưu"}
-              </button>
-            </div>
-          </div>
-          <div className="modal-backdrop" onClick={() => setShowModal(false)}></div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={!!deletePetType}
+        onClose={() => setDeletePetType(null)}
+        onConfirm={handleDelete}
+        title="Xác Nhận Xóa"
+        message={`Bạn có chắc chắn muốn xóa loại "${deletePetType?.tenLoai}"? Hành động này không thể hoàn tác.`}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        type="danger"
+        loading={actionLoading}
+      />
     </div>
   );
 };
