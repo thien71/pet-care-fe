@@ -164,9 +164,6 @@ const Sidebar = ({ items = [] }) => {
                 </button>
               </li>
             )}
-
-            <div className="divider my-0.5"></div>
-
             {/* Đăng xuất */}
             <li>
               <button

@@ -2,8 +2,7 @@
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -55,6 +54,20 @@ apiClient.interceptors.response.use(
   (response) => response.data,
   async (error) => {
     const originalRequest = error.config;
+
+    // ⭐ Xử lý shop bị khóa
+    if (error.response?.data?.code === "SHOP_LOCKED" || error.response?.data?.code === "SHOP_EXPIRED") {
+      const redirectTo = error.response.data.redirectTo;
+
+      showToast.error(error.response.data.message);
+
+      // Redirect sau 1.5s
+      setTimeout(() => {
+        window.location.href = redirectTo;
+      }, 1500);
+
+      return Promise.reject(error);
+    }
 
     // Xử lý token hết hạn
     if (error.response?.status === 401 && !originalRequest._retry) {

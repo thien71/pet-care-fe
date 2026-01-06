@@ -2,8 +2,9 @@
 import { useState, useEffect } from "react";
 import { paymentService } from "@/api";
 import { showToast } from "@/utils/toast";
-import { FaCheck, FaTimes, FaSpinner } from "react-icons/fa";
+import { FaCheck, FaTimes, FaSpinner, FaImage } from "react-icons/fa";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import { BACKEND_URL } from "@/utils/constants";
 
 const PaymentConfirm = () => {
   const [payments, setPayments] = useState([]);
@@ -55,6 +56,19 @@ const PaymentConfirm = () => {
       payment: null,
       action: null,
     });
+  };
+
+  const [imageModal, setImageModal] = useState({
+    isOpen: false,
+    imageUrl: null,
+  });
+
+  const openImageModal = (imageUrl) => {
+    setImageModal({ isOpen: true, imageUrl });
+  };
+
+  const closeImageModal = () => {
+    setImageModal({ isOpen: false, imageUrl: null });
   };
 
   const handleConfirm = async () => {
@@ -193,28 +207,35 @@ const PaymentConfirm = () => {
                     <td className="px-6 py-4">{getStatusBadge(payment.trangThai)}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
-                        {payment.trangThai === "CHUA_THANH_TOAN" && (
+                        {/* Nút xem biên lai */}
+                        {payment.bienLaiThanhToan && (
+                          <button
+                            onClick={() => openImageModal(`${BACKEND_URL}${payment.bienLaiThanhToan}`)}
+                            className="p-2 text-blue-700 hover:bg-blue-50 rounded-lg border border-blue-200"
+                            title="Xem biên lai"
+                          >
+                            <FaImage />
+                          </button>
+                        )}
+
+                        {/* Nút xác nhận/từ chối */}
+                        {payment.trangThai === "CHO_XAC_NHAN" && (
                           <>
                             <button
                               onClick={() => openConfirmModal(payment)}
-                              disabled={actionLoading}
-                              className="p-2 text-green-700 hover:bg-green-50 rounded-lg transition-colors border border-green-200 disabled:opacity-50"
+                              className="p-2 text-green-700 hover:bg-green-50 rounded-lg border border-green-200"
                               title="Xác nhận"
                             >
                               <FaCheck />
                             </button>
                             <button
                               onClick={() => openRejectModal(payment)}
-                              disabled={actionLoading}
-                              className="p-2 text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-red-200 disabled:opacity-50"
+                              className="p-2 text-red-700 hover:bg-red-50 rounded-lg border border-red-200"
                               title="Từ chối"
                             >
                               <FaTimes />
                             </button>
                           </>
-                        )}
-                        {payment.trangThai === "DA_THANH_TOAN" && (
-                          <span className="text-sm text-green-700 font-medium">✅ Đã xác nhận</span>
                         )}
                       </div>
                     </td>
@@ -233,7 +254,7 @@ const PaymentConfirm = () => {
       </div>
 
       {/* Confirm Modal */}
-      <ConfirmModal
+      {/* <ConfirmModal
         isOpen={confirmModal.isOpen && confirmModal.action === "confirm"}
         onClose={closeConfirmModal}
         onConfirm={handleConfirm}
@@ -243,15 +264,38 @@ const PaymentConfirm = () => {
         cancelText="Hủy"
         type="success"
         loading={actionLoading}
-      />
+      /> */}
 
-      {/* Reject Modal */}
+      {/* Image Modal */}
+      {imageModal.isOpen && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={closeImageModal}>
+          <div className="relative max-w-4xl w-full">
+            <button onClick={closeImageModal} className="absolute -top-12 right-0 p-2 bg-white rounded-lg hover:bg-gray-100">
+              <FaTimes />
+            </button>
+            <img src={imageModal.imageUrl} alt="Biên lai" className="w-full rounded-lg" />
+          </div>
+        </div>
+      )}
+
+      {/* Reject Modal với input lý do */}
       <ConfirmModal
         isOpen={confirmModal.isOpen && confirmModal.action === "reject"}
         onClose={closeConfirmModal}
         onConfirm={handleReject}
         title="Từ Chối Thanh Toán"
-        message={`Bạn có chắc chắn từ chối thanh toán của cửa hàng "${confirmModal.payment?.CuaHang?.tenCuaHang}"? Cửa hàng sẽ cần thanh toán lại.`}
+        // message={
+        //   <>
+        //     <p className="mb-4">Bạn có chắc chắn từ chối thanh toán của cửa hàng "{confirmModal.payment?.CuaHang?.tenCuaHang}"?</p>
+        //     <textarea
+        //       value={rejectReason}
+        //       onChange={(e) => setRejectReason(e.target.value)}
+        //       rows={3}
+        //       placeholder="Nhập lý do từ chối..."
+        //       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] resize-none"
+        //     />
+        //   </>
+        // }
         confirmText="Từ Chối"
         cancelText="Hủy"
         type="warning"

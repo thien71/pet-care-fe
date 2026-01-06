@@ -4,6 +4,7 @@ import { paymentService } from "@/api";
 import { FaSpinner, FaCreditCard, FaCheckCircle, FaClock, FaExclamationTriangle } from "react-icons/fa";
 import { showToast } from "@/utils/toast";
 import PurchasePackageModal from "@/components/owner/PurchasePackageModal";
+import UploadPaymentProofModal from "@/components/owner/UploadPaymentProofModal";
 
 const OwnerPayments = () => {
   const [packages, setPackages] = useState([]);
@@ -12,6 +13,23 @@ const OwnerPayments = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
+
+  const [uploadModal, setUploadModal] = useState({
+    isOpen: false,
+    payment: null,
+  });
+
+  const openUploadModal = (payment) => {
+    setUploadModal({ isOpen: true, payment });
+  };
+
+  const closeUploadModal = () => {
+    setUploadModal({ isOpen: false, payment: null });
+  };
+
+  const handleUploadSuccess = async () => {
+    await loadData();
+  };
 
   useEffect(() => {
     loadData();
@@ -71,11 +89,41 @@ const OwnerPayments = () => {
 
   const getStatusBadge = (status) => {
     const config = {
-      DA_THANH_TOAN: "bg-green-100 text-green-700 border-green-200",
-      CHUA_THANH_TOAN: "bg-yellow-100 text-yellow-700 border-yellow-200",
-      QUA_HAN: "bg-red-100 text-red-700 border-red-200",
+      DA_THANH_TOAN: {
+        text: "Đã thanh toán",
+        class: "bg-green-100 text-green-700 border-green-200",
+        icon: FaCheckCircle,
+      },
+      CHO_XAC_NHAN: {
+        text: "Chờ xác nhận",
+        class: "bg-yellow-100 text-yellow-700 border-yellow-200",
+        icon: FaClock,
+      },
+      CHUA_THANH_TOAN: {
+        text: "Chưa thanh toán",
+        class: "bg-gray-100 text-gray-700 border-gray-200",
+        icon: FaClock,
+      },
+      TU_CHOI: {
+        text: "Bị từ chối",
+        class: "bg-red-100 text-red-700 border-red-200",
+        icon: FaTimes,
+      },
+      QUA_HAN: {
+        text: "Quá hạn",
+        class: "bg-red-100 text-red-700 border-red-200",
+        icon: FaExclamationTriangle,
+      },
     };
-    return config[status] || config.CHUA_THANH_TOAN;
+    const cfg = config[status] || config.CHUA_THANH_TOAN;
+    const Icon = cfg.icon;
+
+    return (
+      <span className={`inline-flex items-center gap-2 px-3 py-1 rounded text-xs font-medium border ${cfg.class}`}>
+        <Icon />
+        {cfg.text}
+      </span>
+    );
   };
 
   const getCurrentSubscription = () => {
@@ -191,7 +239,7 @@ const OwnerPayments = () => {
         </div>
       </div>
 
-      {/* Payment History */}
+      {/* Payment History với nút Upload */}
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-800">Lịch Sử Thanh Toán</h2>
@@ -202,21 +250,21 @@ const OwnerPayments = () => {
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Gói</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Số Tiền</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Thời Gian</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Trạng Thái</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Ngày Đăng Ký</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Gói</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Số Tiền</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Thời Gian</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Trạng Thái</th>
+                  <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase">Thao Tác</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {myPayments.map((payment) => (
-                  <tr key={payment.maThanhToan} className="hover:bg-gray-50 transition-colors">
+                  <tr key={payment.maThanhToan} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="font-medium text-gray-800">{payment.GoiThanhToan?.tenGoi || "N/A"}</div>
                       <div className="text-xs text-gray-500">{payment.GoiThanhToan?.thoiGian} tháng</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       <span className="font-bold text-[#8e2800]">{parseInt(payment.soTien).toLocaleString("vi-VN")}đ</span>
                     </td>
                     <td className="px-6 py-4">
@@ -226,18 +274,44 @@ const OwnerPayments = () => {
                         <div>{new Date(payment.thoiGianKetThuc).toLocaleDateString("vi-VN")}</div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center gap-2 px-3 py-1 rounded text-xs font-medium border ${getStatusBadge(
-                          payment.trangThai
-                        )}`}
-                      >
-                        {getStatusIcon(payment.trangThai)}
-                        {getStatusText(payment.trangThai)}
-                      </span>
+                    <td className="px-6 py-4">
+                      {getStatusBadge(payment.trangThai)}
+
+                      {/* Hiển thị lý do từ chối nếu có */}
+                      {payment.trangThai === "TU_CHOI" && payment.ghiChu && (
+                        <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
+                          <strong>Lý do:</strong> {payment.ghiChu}
+                        </div>
+                      )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-600">{new Date(payment.ngayTao).toLocaleDateString("vi-VN")}</div>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        {/* Nút upload biên lai */}
+                        {(payment.trangThai === "CHUA_THANH_TOAN" || payment.trangThai === "TU_CHOI") && (
+                          <button
+                            onClick={() => openUploadModal(payment)}
+                            className="px-4 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] text-sm font-medium flex items-center gap-2"
+                          >
+                            <FaUpload />
+                            Upload Biên Lai
+                          </button>
+                        )}
+
+                        {/* Hiển thị trạng thái */}
+                        {payment.trangThai === "CHO_XAC_NHAN" && (
+                          <span className="text-sm text-yellow-700 font-medium flex items-center gap-1">
+                            <FaClock />
+                            Chờ admin xác nhận
+                          </span>
+                        )}
+
+                        {payment.trangThai === "DA_THANH_TOAN" && (
+                          <span className="text-sm text-green-700 font-medium flex items-center gap-1">
+                            <FaCheckCircle />
+                            Đã thanh toán
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -248,6 +322,14 @@ const OwnerPayments = () => {
           <div className="p-8 text-center text-gray-500">Chưa có lịch sử thanh toán</div>
         )}
       </div>
+
+      {/* Upload Modal */}
+      <UploadPaymentProofModal
+        isOpen={uploadModal.isOpen}
+        onClose={closeUploadModal}
+        payment={uploadModal.payment}
+        onSuccess={handleUploadSuccess}
+      />
 
       {/* Purchase Modal */}
       <PurchasePackageModal
