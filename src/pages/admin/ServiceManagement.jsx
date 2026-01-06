@@ -2,9 +2,8 @@
 import { useState, useEffect } from "react";
 import { serviceService } from "@/api";
 import { showToast } from "@/utils/toast";
-import { FaPlus, FaEdit, FaToggleOn, FaToggleOff, FaClock, FaSpinner, FaSearch } from "react-icons/fa";
+import { FaPlus, FaEdit, FaToggleOn, FaToggleOff, FaClock, FaSpinner, FaSearch, FaInfoCircle, FaTrash } from "react-icons/fa";
 import ServiceModal from "@/components/admin/ServiceModal";
-import ConfirmModal from "@/components/common/ConfirmModal";
 
 const ServiceManagement = () => {
   const [services, setServices] = useState([]);
@@ -17,7 +16,7 @@ const ServiceManagement = () => {
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     service: null,
-    action: null,
+    action: null, // 'deactivate' | 'activate' | 'delete'
   });
 
   useEffect(() => {
@@ -72,11 +71,19 @@ const ServiceManagement = () => {
     }
   };
 
-  const openConfirmModal = (service) => {
+  const openToggleModal = (service) => {
     setConfirmModal({
       isOpen: true,
       service,
       action: service.trangThai === 1 ? "deactivate" : "activate",
+    });
+  };
+
+  const openDeleteModal = (service) => {
+    setConfirmModal({
+      isOpen: true,
+      service,
+      action: "delete",
     });
   };
 
@@ -113,6 +120,103 @@ const ServiceManagement = () => {
     }
   };
 
+  const handleDelete = async () => {
+    const { service } = confirmModal;
+    if (!service) return;
+
+    setActionLoading(true);
+    const loadingToast = showToast.loading("Đang xóa...");
+
+    try {
+      await serviceService.deleteSystemService(service.maDichVu);
+      showToast.dismiss(loadingToast);
+      showToast.success("Xóa dịch vụ thành công!");
+      closeConfirmModal();
+      await loadServices();
+    } catch (err) {
+      showToast.dismiss(loadingToast);
+      showToast.error(err.message || "Lỗi khi xóa dịch vụ");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleConfirm = () => {
+    if (confirmModal.action === "delete") {
+      handleDelete();
+    } else {
+      handleToggleStatus();
+    }
+  };
+
+  const getConfirmMessage = () => {
+    const { service, action } = confirmModal;
+    if (!service) return "";
+
+    if (action === "delete") {
+      return (
+        <div className="space-y-3">
+          <p>Bạn có chắc chắn muốn xóa dịch vụ "{service.tenDichVu}"?</p>
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex gap-2 items-start">
+              <FaInfoCircle className="text-red-600 mt-0.5 shrink-0" />
+              <div className="text-sm text-red-800">
+                <p className="font-medium mb-1">Cảnh báo:</p>
+                <ul className="space-y-1 list-disc list-inside">
+                  <li>Nếu có cửa hàng đang sử dụng dịch vụ này, không thể xóa</li>
+                  <li>Hành động này không thể hoàn tác</li>
+                  <li>Nên vô hiệu hóa thay vì xóa để bảo vệ dữ liệu</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    } else if (action === "deactivate") {
+      return (
+        <div className="space-y-3">
+          <p>Bạn có chắc chắn muốn vô hiệu hóa dịch vụ "{service.tenDichVu}"?</p>
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex gap-2 items-start">
+              <FaInfoCircle className="text-blue-600 mt-0.5 shrink-0" />
+              <div className="text-sm text-blue-800">
+                <p className="font-medium mb-1">Lưu ý quan trọng:</p>
+                <ul className="space-y-1 list-disc list-inside">
+                  <li>Các cửa hàng hiện có vẫn giữ được dịch vụ này</li>
+                  <li>Cửa hàng mới sẽ không thể thêm dịch vụ này nữa</li>
+                  <li>Bạn có thể kích hoạt lại bất cứ lúc nào</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    } else {
+      return `Bạn có chắc chắn muốn kích hoạt lại dịch vụ "${service.tenDichVu}"? Các cửa hàng sẽ có thể thêm dịch vụ này vào danh sách của họ.`;
+    }
+  };
+
+  const getConfirmButtonConfig = () => {
+    const { action } = confirmModal;
+
+    if (action === "delete") {
+      return {
+        text: "Xóa",
+        className: "bg-red-600 hover:bg-red-700",
+      };
+    } else if (action === "deactivate") {
+      return {
+        text: "Vô Hiệu Hóa",
+        className: "bg-yellow-600 hover:bg-yellow-700",
+      };
+    } else {
+      return {
+        text: "Kích Hoạt",
+        className: "bg-green-600 hover:bg-green-700",
+      };
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -120,6 +224,8 @@ const ServiceManagement = () => {
       </div>
     );
   }
+
+  const buttonConfig = getConfirmButtonConfig();
 
   return (
     <div className="space-y-6">
@@ -207,7 +313,7 @@ const ServiceManagement = () => {
                           <FaEdit />
                         </button>
                         <button
-                          onClick={() => openConfirmModal(service)}
+                          onClick={() => openToggleModal(service)}
                           disabled={actionLoading}
                           className={`p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 transition-colors ${
                             service.trangThai === 1 ? "text-green-600" : "text-red-600"
@@ -215,6 +321,14 @@ const ServiceManagement = () => {
                           title={service.trangThai === 1 ? "Vô hiệu hóa" : "Kích hoạt"}
                         >
                           {service.trangThai === 1 ? <FaToggleOn className="text-2xl" /> : <FaToggleOff className="text-2xl" />}
+                        </button>
+                        <button
+                          onClick={() => openDeleteModal(service)}
+                          disabled={actionLoading}
+                          className="p-2 text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-red-200 disabled:opacity-50"
+                          title="Xóa"
+                        >
+                          <FaTrash />
                         </button>
                       </div>
                     </td>
@@ -244,21 +358,37 @@ const ServiceManagement = () => {
         loading={actionLoading}
       />
 
-      <ConfirmModal
-        isOpen={confirmModal.isOpen}
-        onClose={closeConfirmModal}
-        onConfirm={handleToggleStatus}
-        title={confirmModal.action === "deactivate" ? "Xác Nhận Vô Hiệu Hóa" : "Xác Nhận Kích Hoạt"}
-        message={
-          confirmModal.action === "deactivate"
-            ? `Vô hiệu hóa dịch vụ "${confirmModal.service?.tenDichVu}"? Dịch vụ này sẽ bị ẩn khỏi danh sách các cửa hàng có thể thêm.`
-            : `Kích hoạt lại dịch vụ "${confirmModal.service?.tenDichVu}"?`
-        }
-        confirmText={confirmModal.action === "deactivate" ? "Vô hiệu hóa" : "Kích hoạt"}
-        cancelText="Hủy"
-        type={confirmModal.action === "deactivate" ? "warning" : "success"}
-        loading={actionLoading}
-      />
+      {/* Custom Confirm Modal */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-gray-800">
+                {confirmModal.action === "delete" && "Xác Nhận Xóa"}
+                {confirmModal.action === "deactivate" && "Xác Nhận Vô Hiệu Hóa"}
+                {confirmModal.action === "activate" && "Xác Nhận Kích Hoạt"}
+              </h3>
+            </div>
+            <div className="px-6 py-4">{getConfirmMessage()}</div>
+            <div className="px-6 py-4 border-t border-gray-200 flex gap-3 justify-end">
+              <button
+                onClick={closeConfirmModal}
+                disabled={actionLoading}
+                className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium disabled:opacity-50 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleConfirm}
+                disabled={actionLoading}
+                className={`px-6 py-2.5 text-white rounded-lg font-medium disabled:opacity-50 transition-colors ${buttonConfig.className}`}
+              >
+                {actionLoading ? "Đang xử lý..." : buttonConfig.text}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

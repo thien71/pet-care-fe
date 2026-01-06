@@ -1,20 +1,136 @@
 // src/pages/admin/PaymentPackages.jsx
 import { useState, useEffect } from "react";
-// import apiClient from "../../api/apiClient";
 import { paymentService } from "@/api";
+import { showToast } from "@/utils/toast";
+import { FaPlus, FaEdit, FaTrash, FaSpinner } from "react-icons/fa";
+import ConfirmModal from "@/components/common/ConfirmModal";
 
-const PaymentPackages = () => {
-  const [packages, setPackages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+const PaymentPackageModal = ({ isOpen, onClose, onSubmit, packageData, loading }) => {
   const [formData, setFormData] = useState({
     tenGoi: "",
     soTien: "",
     thoiGian: "",
   });
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (packageData) {
+      setFormData({
+        tenGoi: packageData.tenGoi || "",
+        soTien: packageData.soTien || "",
+        thoiGian: packageData.thoiGian || "",
+      });
+    } else {
+      setFormData({ tenGoi: "", soTien: "", thoiGian: "" });
+    }
+    setErrors({});
+  }, [packageData, isOpen]);
+
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.tenGoi.trim()) newErrors.tenGoi = "Tên gói không được để trống";
+    if (!formData.soTien || formData.soTien <= 0) newErrors.soTien = "Số tiền phải lớn hơn 0";
+    if (!formData.thoiGian || formData.thoiGian <= 0) newErrors.thoiGian = "Thời gian phải lớn hơn 0";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = () => {
+    if (!validate()) return;
+    onSubmit(formData);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-lg max-w-md w-full border border-gray-200">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-bold text-gray-800">{packageData ? "Cập Nhật Gói" : "Tạo Gói Mới"}</h3>
+        </div>
+        <div className="px-6 py-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tên Gói *</label>
+            <input
+              type="text"
+              placeholder="Ví dụ: Gói Cơ Bản, Gói VIP"
+              className={`w-full px-4 py-2.5 border ${
+                errors.tenGoi ? "border-red-300" : "border-gray-200"
+              } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent`}
+              value={formData.tenGoi}
+              onChange={(e) => setFormData({ ...formData, tenGoi: e.target.value })}
+            />
+            {errors.tenGoi && <p className="text-red-600 text-sm mt-1">{errors.tenGoi}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Giá (đ) *</label>
+            <input
+              type="number"
+              placeholder="100000"
+              min="0"
+              className={`w-full px-4 py-2.5 border ${
+                errors.soTien ? "border-red-300" : "border-gray-200"
+              } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent`}
+              value={formData.soTien}
+              onChange={(e) => setFormData({ ...formData, soTien: e.target.value })}
+            />
+            {errors.soTien && <p className="text-red-600 text-sm mt-1">{errors.soTien}</p>}
+            {formData.soTien > 0 && <p className="text-sm text-gray-600 mt-1">{parseInt(formData.soTien).toLocaleString("vi-VN")}đ</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Thời Gian (tháng) *</label>
+            <input
+              type="number"
+              placeholder="1"
+              min="1"
+              className={`w-full px-4 py-2.5 border ${
+                errors.thoiGian ? "border-red-300" : "border-gray-200"
+              } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent`}
+              value={formData.thoiGian}
+              onChange={(e) => setFormData({ ...formData, thoiGian: e.target.value })}
+            />
+            {errors.thoiGian && <p className="text-red-600 text-sm mt-1">{errors.thoiGian}</p>}
+          </div>
+          {formData.soTien > 0 && formData.thoiGian > 0 && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                Giá / tháng:{" "}
+                {(parseInt(formData.soTien) / parseInt(formData.thoiGian)).toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
+              </p>
+            </div>
+          )}
+        </div>
+        <div className="px-6 py-4 border-t border-gray-200 flex gap-3 justify-end">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium disabled:opacity-50 transition-colors"
+          >
+            Hủy
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="px-6 py-2.5 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] font-medium disabled:opacity-50 transition-colors"
+          >
+            {loading ? "Đang lưu..." : "Lưu"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const PaymentPackages = () => {
+  const [packages, setPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editingPackage, setEditingPackage] = useState(null);
+  const [deletePackage, setDeletePackage] = useState(null);
 
   useEffect(() => {
     loadPackages();
@@ -24,276 +140,181 @@ const PaymentPackages = () => {
     try {
       setLoading(true);
       const res = await paymentService.getPaymentPackages();
-      // const res = await apiClient.get("/admin/payment-packages");
       setPackages(res.data || []);
-      setError("");
     } catch (err) {
-      setError(err.message || "Lỗi khi tải dữ liệu");
+      showToast.error(err.message || "Lỗi khi tải dữ liệu");
     } finally {
       setLoading(false);
     }
   };
 
   const openAddModal = () => {
-    setEditingId(null);
-    setFormData({ tenGoi: "", soTien: "", thoiGian: "" });
+    setEditingPackage(null);
     setShowModal(true);
   };
 
   const openEditModal = (pkg) => {
-    setEditingId(pkg.maGoi);
-    setFormData({
-      tenGoi: pkg.tenGoi,
-      soTien: pkg.soTien,
-      thoiGian: pkg.thoiGian,
-    });
+    setEditingPackage(pkg);
     setShowModal(true);
   };
 
-  const handleSave = async () => {
-    if (!formData.tenGoi.trim() || !formData.soTien || !formData.thoiGian) {
-      setError("Vui lòng điền đầy đủ thông tin");
-      return;
-    }
+  const handleSave = async (formData) => {
+    setActionLoading(true);
+    const loadingToast = showToast.loading(editingPackage ? "Đang cập nhật..." : "Đang thêm...");
 
     try {
-      setLoading(true);
-      if (editingId) {
-        await paymentService.updatePaymentPackage(editingId, formData);
-        // await apiClient.put(`/admin/payment-packages/${editingId}`, formData);
-        setSuccess("Cập nhật gói thành công!");
+      if (editingPackage) {
+        await paymentService.updatePaymentPackage(editingPackage.maGoi, formData);
+        showToast.dismiss(loadingToast);
+        showToast.success("Cập nhật gói thành công!");
       } else {
         await paymentService.createPaymentPackage(formData);
-        // await apiClient.post("/admin/payment-packages", formData);
-        setSuccess("Tạo gói mới thành công!");
+        showToast.dismiss(loadingToast);
+        showToast.success("Tạo gói mới thành công!");
       }
       setShowModal(false);
-      setFormData({ tenGoi: "", soTien: "", thoiGian: "" });
       await loadPackages();
-      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      setError(err.message || "Lỗi khi lưu dữ liệu");
+      showToast.dismiss(loadingToast);
+      showToast.error(err.message || "Lỗi khi lưu dữ liệu");
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa gói thanh toán này?")) {
-      try {
-        setLoading(true);
-        await paymentService.deletePaymentPackage(id);
-        // await apiClient.delete(`/admin/payment-packages/${id}`);
-        setSuccess("Xóa gói thành công!");
-        await loadPackages();
-        setTimeout(() => setSuccess(""), 3000);
-      } catch (err) {
-        setError(err.message || "Lỗi xóa gói");
-      } finally {
-        setLoading(false);
-      }
+  const handleDelete = async () => {
+    if (!deletePackage) return;
+
+    setActionLoading(true);
+    const loadingToast = showToast.loading("Đang xóa...");
+
+    try {
+      await paymentService.deletePaymentPackage(deletePackage.maGoi);
+      showToast.dismiss(loadingToast);
+      showToast.success("Xóa gói thành công!");
+      setDeletePackage(null);
+      await loadPackages();
+    } catch (err) {
+      showToast.dismiss(loadingToast);
+      showToast.error(err.message || "Lỗi xóa gói");
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  const getPackageIcon = (name) => {
-    if (name.toLowerCase().includes("cơ bản")) return "🥉";
-    if (name.toLowerCase().includes("nâng cao")) return "🥈";
-    if (name.toLowerCase().includes("vip")) return "🥇";
-    return "💳";
-  };
-
-  if (loading && packages.length === 0) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
+        <FaSpinner className="animate-spin text-4xl text-[#8e2800]" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="bg-white border border-gray-200 rounded-lg px-6 py-4 flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">💳 Quản Lý Gói Thanh Toán</h1>
-          <p className="text-gray-600 mt-2">Quản lý các gói thanh toán cho cửa hàng</p>
+          <h1 className="text-2xl font-bold text-gray-800">Quản Lý Gói Thanh Toán</h1>
+          <p className="text-gray-600 mt-1">Quản lý các gói thanh toán cho cửa hàng</p>
         </div>
-        <button onClick={openAddModal} className="btn btn-primary gap-2">
-          <span>➕</span>
-          Tạo gói mới
+        <button
+          onClick={openAddModal}
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors font-medium"
+        >
+          <FaPlus />
+          Tạo Gói Mới
         </button>
       </div>
 
-      {/* Success Alert */}
-      {success && (
-        <div className="alert alert-success">
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>{success}</span>
-        </div>
-      )}
-
-      {/* Error Alert */}
-      {error && (
-        <div className="alert alert-error">
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>{error}</span>
-        </div>
-      )}
-
-      {/* Packages Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {packages.length > 0 ? (
-          packages.map((pkg) => (
-            <div key={pkg.maGoi} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
-              <div className="card-body items-center text-center">
-                <div className="text-6xl mb-4">{getPackageIcon(pkg.tenGoi)}</div>
-                <h2 className="card-title text-2xl">{pkg.tenGoi}</h2>
-
-                <div className="divider my-2"></div>
-
-                <div className="space-y-2 w-full">
-                  <div className="stat bg-base-200 rounded-lg">
-                    <div className="stat-title">Giá</div>
-                    <div className="stat-value text-2xl text-primary">{parseInt(pkg.soTien).toLocaleString("vi-VN")}đ</div>
-                  </div>
-
-                  <div className="stat bg-base-200 rounded-lg">
-                    <div className="stat-title">Thời Gian</div>
-                    <div className="stat-value text-xl text-secondary">{pkg.thoiGian} tháng</div>
-                  </div>
-
-                  <div className="stat bg-base-200 rounded-lg">
-                    <div className="stat-title">Giá / Tháng</div>
-                    <div className="stat-value text-lg text-accent">
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tên Gói</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Giá</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Thời Gian</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Giá / Tháng</th>
+              <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {packages.length > 0 ? (
+              packages.map((pkg) => (
+                <tr key={pkg.maGoi} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4">
+                    <span className="font-medium text-gray-800">{pkg.tenGoi}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="font-bold text-[#8e2800]">{parseInt(pkg.soTien).toLocaleString("vi-VN")}đ</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-gray-700">{pkg.thoiGian} tháng</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-gray-700">
                       {(parseInt(pkg.soTien) / pkg.thoiGian).toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => openEditModal(pkg)}
+                        className="p-2 text-blue-700 hover:bg-blue-50 rounded-lg transition-colors border border-blue-200"
+                        title="Sửa"
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        onClick={() => setDeletePackage(pkg)}
+                        className="p-2 text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-red-200"
+                        title="Xóa"
+                      >
+                        <FaTrash />
+                      </button>
                     </div>
-                  </div>
-                </div>
-
-                <div className="card-actions mt-6">
-                  <button onClick={() => openEditModal(pkg)} className="btn btn-info btn-sm">
-                    ✏️ Sửa
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="5" className="px-6 py-12 text-center">
+                  <p className="text-gray-500 text-lg mb-4">Chưa có gói thanh toán nào</p>
+                  <button
+                    onClick={openAddModal}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors font-medium"
+                  >
+                    <FaPlus />
+                    Tạo Gói Đầu Tiên
                   </button>
-                  <button onClick={() => handleDelete(pkg.maGoi)} className="btn btn-error btn-sm">
-                    🗑️ Xóa
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="col-span-3 text-center py-12">
-            <p className="text-gray-500 text-lg mb-4">Chưa có gói thanh toán nào</p>
-            <button onClick={openAddModal} className="btn btn-primary gap-2">
-              <span>➕</span>
-              Tạo gói đầu tiên
-            </button>
-          </div>
-        )}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
-      {/* Add/Edit Modal */}
-      {showModal && (
-        <div className="modal modal-open">
-          <div className="modal-box w-11/12 max-w-md">
-            <h3 className="font-bold text-lg mb-4">{editingId ? "✏️ Cập nhật gói" : "➕ Tạo gói mới"}</h3>
+      <PaymentPackageModal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setEditingPackage(null);
+        }}
+        onSubmit={handleSave}
+        packageData={editingPackage}
+        loading={actionLoading}
+      />
 
-            <div className="space-y-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Tên Gói *</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ví dụ: Gói Cơ Bản, Gói VIP"
-                  className="input input-bordered"
-                  value={formData.tenGoi}
-                  onChange={(e) => setFormData({ ...formData, tenGoi: e.target.value })}
-                />
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Giá (đ) *</span>
-                </label>
-                <input
-                  type="number"
-                  placeholder="100000"
-                  className="input input-bordered"
-                  value={formData.soTien}
-                  onChange={(e) => setFormData({ ...formData, soTien: e.target.value })}
-                  min="0"
-                />
-                <label className="label">
-                  <span className="label-text-alt">{formData.soTien ? `${parseInt(formData.soTien).toLocaleString("vi-VN")}đ` : ""}</span>
-                </label>
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Thời Gian (tháng) *</span>
-                </label>
-                <input
-                  type="number"
-                  placeholder="1"
-                  className="input input-bordered"
-                  value={formData.thoiGian}
-                  onChange={(e) => setFormData({ ...formData, thoiGian: e.target.value })}
-                  min="1"
-                />
-              </div>
-
-              {formData.soTien && formData.thoiGian && (
-                <div className="alert alert-info">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    ></path>
-                  </svg>
-                  <span>
-                    Giá / tháng:{" "}
-                    {(parseInt(formData.soTien) / parseInt(formData.thoiGian)).toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className="modal-action">
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  setFormData({ tenGoi: "", soTien: "", thoiGian: "" });
-                }}
-                className="btn btn-ghost"
-              >
-                Hủy
-              </button>
-              <button onClick={handleSave} className="btn btn-primary" disabled={loading}>
-                {loading ? "Đang lưu..." : "Lưu"}
-              </button>
-            </div>
-          </div>
-          <div
-            className="modal-backdrop"
-            onClick={() => {
-              setShowModal(false);
-              setFormData({ tenGoi: "", soTien: "", thoiGian: "" });
-            }}
-          ></div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={!!deletePackage}
+        onClose={() => setDeletePackage(null)}
+        onConfirm={handleDelete}
+        title="Xác Nhận Xóa"
+        message={`Bạn có chắc chắn muốn xóa gói "${deletePackage?.tenGoi}"? Hành động này không thể hoàn tác.`}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        type="danger"
+        loading={actionLoading}
+      />
     </div>
   );
 };

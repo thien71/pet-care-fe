@@ -1,32 +1,25 @@
 // src/pages/admin/ShopApproval.jsx
 import { useState, useEffect } from "react";
-// import apiClient from "../../api/apiClient";
 import { shopService } from "@/api";
-
-// Ở đầu component, TRƯỚC useState
-const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "http://localhost:5000";
-
-const getImageUrl = (path) => {
-  if (!path) return "https://placehold.co/400x300?text=No+Image";
-
-  // Nếu đã là URL đầy đủ
-  if (path.startsWith("http")) return path;
-
-  // Nếu là đường dẫn tương đối
-  const fullUrl = `${API_BASE}${path}`;
-  console.log("🖼️ Image URL:", fullUrl); // Debug
-  return fullUrl;
-};
+import { showToast } from "@/utils/toast";
+import { FaEye, FaCheck, FaTimes, FaSpinner } from "react-icons/fa";
+import { getShopImageUrl } from "@/utils/constants";
+import ConfirmModal from "@/components/common/ConfirmModal";
+import ShopDetailModal from "@/components/admin/ShopDetailModal";
 
 const ShopApproval = () => {
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
   const [filter, setFilter] = useState("CHO_DUYET");
   const [selectedShop, setSelectedShop] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    shop: null,
+    action: null,
+  });
   const [rejectReason, setRejectReason] = useState("");
-  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     loadShops();
@@ -36,13 +29,9 @@ const ShopApproval = () => {
     try {
       setLoading(true);
       const res = await shopService.getShopApprovals({ trangThai: filter });
-      // const res = await apiClient.get("/admin/shop-approvals", {
-      //   params: { trangThai: filter },
-      // });
       setShops(res.data || []);
-      setError("");
     } catch (err) {
-      setError(err.message || "Lỗi khi tải dữ liệu");
+      showToast.error(err.message || "Lỗi khi tải dữ liệu");
     } finally {
       setLoading(false);
     }
@@ -53,60 +42,106 @@ const ShopApproval = () => {
     setShowDetailModal(true);
   };
 
+  const openApproveModal = (shop) => {
+    setConfirmModal({
+      isOpen: true,
+      shop,
+      action: "approve",
+    });
+  };
+
+  const openRejectModal = (shop) => {
+    setSelectedShop(shop);
+    setConfirmModal({
+      isOpen: true,
+      shop,
+      action: "reject",
+    });
+    setRejectReason("");
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal({
+      isOpen: false,
+      shop: null,
+      action: null,
+    });
+    setRejectReason("");
+  };
+
   const handleApprove = async () => {
+    const { shop } = confirmModal;
+    if (!shop) return;
+
+    setActionLoading(true);
+    const loadingToast = showToast.loading("Đang duyệt...");
+
     try {
-      setActionLoading(true);
-      await shopService.approveShop(selectedShop.maCuaHang);
-      // await apiClient.put(`/admin/shops/${selectedShop.maCuaHang}/approve`);
-      setShowDetailModal(false);
+      await shopService.approveShop(shop.maCuaHang);
+      showToast.dismiss(loadingToast);
+      showToast.success("Duyệt cửa hàng thành công!");
+      closeConfirmModal();
       await loadShops();
     } catch (err) {
-      setError(err.message || "Lỗi khi duyệt cửa hàng");
+      showToast.dismiss(loadingToast);
+      showToast.error(err.message || "Lỗi khi duyệt cửa hàng");
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleReject = async () => {
+    const { shop } = confirmModal;
+    if (!shop) return;
+
     if (!rejectReason.trim()) {
-      setError("Vui lòng nhập lý do từ chối");
+      showToast.error("Vui lòng nhập lý do từ chối");
       return;
     }
 
+    setActionLoading(true);
+    const loadingToast = showToast.loading("Đang từ chối...");
+
     try {
-      setActionLoading(true);
-      await shopService.rejectShop(selectedShop.maCuaHang, { lyDo: rejectReason });
-      // await apiClient.put(`/admin/shops/${selectedShop.maCuaHang}/reject`, {
-      //   lyDo: rejectReason,
-      // });
-      setShowDetailModal(false);
-      setRejectReason("");
+      await shopService.rejectShop(shop.maCuaHang, rejectReason);
+      showToast.dismiss(loadingToast);
+      showToast.success("Từ chối cửa hàng thành công!");
+      closeConfirmModal();
       await loadShops();
     } catch (err) {
-      setError(err.message || "Lỗi khi từ chối cửa hàng");
+      showToast.dismiss(loadingToast);
+      showToast.error(err.message || "Lỗi khi từ chối cửa hàng");
     } finally {
       setActionLoading(false);
     }
   };
 
   const getStatusBadge = (status) => {
-    const badges = {
-      CHO_DUYET: "badge-warning",
-      HOAT_DONG: "badge-success",
-      BI_KHOA: "badge-error",
+    const config = {
+      CHO_DUYET: { text: "Chờ duyệt", class: "bg-yellow-100 text-yellow-700 border-yellow-300" },
+      HOAT_DONG: { text: "Hoạt động", class: "bg-green-100 text-green-700 border-green-300" },
+      BI_KHOA: { text: "Bị khóa", class: "bg-red-100 text-red-700 border-red-300" },
     };
-    const labels = {
-      CHO_DUYET: "Chờ duyệt",
-      HOAT_DONG: "Hoạt động",
-      BI_KHOA: "Bị khóa",
-    };
-    return <span className={`badge ${badges[status]}`}>{labels[status]}</span>;
+    const { text, class: className } = config[status] || config.CHO_DUYET;
+    return <span className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border ${className}`}>{text}</span>;
   };
 
-  if (loading && shops.length === 0) {
+  const filterStats = {
+    CHO_DUYET: shops.filter((s) => s.trangThai === "CHO_DUYET").length,
+    HOAT_DONG: shops.filter((s) => s.trangThai === "HOAT_DONG").length,
+    BI_KHOA: shops.filter((s) => s.trangThai === "BI_KHOA").length,
+  };
+
+  const filterButtons = [
+    { value: "CHO_DUYET", label: "Chờ Duyệt", count: filterStats.CHO_DUYET },
+    { value: "HOAT_DONG", label: "Hoạt Động", count: filterStats.HOAT_DONG },
+    { value: "BI_KHOA", label: "Bị Khóa", count: filterStats.BI_KHOA },
+  ];
+
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
+        <FaSpinner className="animate-spin text-4xl text-[#8e2800]" />
       </div>
     );
   }
@@ -114,236 +149,172 @@ const ShopApproval = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">🏪 Duyệt Đơn Đăng Ký Cửa Hàng</h1>
-        <p className="text-gray-600 mt-2">Kiểm tra và duyệt các đơn đăng ký cửa hàng mới</p>
+      <div className="bg-white border border-gray-200 rounded-lg px-6 py-4">
+        <h1 className="text-2xl font-bold text-gray-800">Duyệt Đơn Đăng Ký Cửa Hàng</h1>
+        <p className="text-gray-600 mt-1">Kiểm tra và duyệt các đơn đăng ký cửa hàng mới</p>
       </div>
-
-      {/* Error Alert */}
-      {error && (
-        <div className="alert alert-error">
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>{error}</span>
-        </div>
-      )}
 
       {/* Filter Tabs */}
-      <div className="tabs tabs-boxed bg-base-100 p-4 rounded-lg shadow">
-        {[
-          { value: "CHO_DUYET", label: "Chờ Duyệt" },
-          { value: "HOAT_DONG", label: "Hoạt Động" },
-          { value: "BI_KHOA", label: "Bị Khóa" },
-        ].map((tab) => (
-          <button key={tab.value} onClick={() => setFilter(tab.value)} className={`tab ${filter === tab.value ? "tab-active" : ""}`}>
-            {tab.label}
-          </button>
-        ))}
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="flex flex-wrap gap-2">
+          {filterButtons.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setFilter(tab.value)}
+              className={`px-4 py-2.5 rounded-lg font-medium transition-all ${
+                filter === tab.value ? "bg-[#8e2800] text-white" : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
+              }`}
+            >
+              {tab.label} ({tab.count})
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Shops Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {shops.length > 0 ? (
-          shops.map((shop) => (
-            <div key={shop.maCuaHang} className="card bg-base-100 shadow-xl">
-              {shop.anhCuaHang ? (
-                <figure className="h-48 bg-base-200 overflow-hidden">
-                  <img
-                    src={getImageUrl(shop.anhCuaHang)}
-                    alt={shop.tenCuaHang}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      console.error("Failed to load image:", e.target.src);
-                      e.target.src = "https://placehold.co/400x300?text=Image+Load+Failed";
-                    }}
-                  />
-                </figure>
+      {/* Shops Table */}
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Cửa Hàng</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Người Đại Diện</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Liên Hệ</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Trạng Thái</th>
+                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {shops.length > 0 ? (
+                shops.map((shop) => (
+                  <tr key={shop.maCuaHang} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
+                          <img src={getShopImageUrl(shop.anhCuaHang)} alt={shop.tenCuaHang} className="w-full h-full object-cover" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-800">{shop.tenCuaHang}</div>
+                          <div className="text-sm text-gray-600 line-clamp-1">{shop.diaChi}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm">
+                        <div className="font-medium text-gray-800">{shop.NguoiDaiDien?.hoTen || "N/A"}</div>
+                        <div className="text-gray-600">{shop.NguoiDaiDien?.email || ""}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-700">{shop.soDienThoai}</div>
+                    </td>
+                    <td className="px-6 py-4">{getStatusBadge(shop.trangThai)}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => openDetailModal(shop)}
+                          className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
+                          title="Xem chi tiết"
+                        >
+                          <FaEye />
+                        </button>
+                        {shop.trangThai === "CHO_DUYET" && (
+                          <>
+                            <button
+                              onClick={() => openApproveModal(shop)}
+                              disabled={actionLoading}
+                              className="p-2 text-green-700 hover:bg-green-50 rounded-lg transition-colors border border-green-200 disabled:opacity-50"
+                              title="Duyệt"
+                            >
+                              <FaCheck />
+                            </button>
+                            <button
+                              onClick={() => openRejectModal(shop)}
+                              disabled={actionLoading}
+                              className="p-2 text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-red-200 disabled:opacity-50"
+                              title="Từ chối"
+                            >
+                              <FaTimes />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : (
-                <figure className="h-48 bg-base-200 overflow-hidden flex items-center justify-center">
-                  <span className="text-gray-400">Không có ảnh</span>
-                </figure>
+                <tr>
+                  <td colSpan="5" className="px-6 py-12 text-center">
+                    <p className="text-gray-500 text-lg">Không có cửa hàng nào</p>
+                  </td>
+                </tr>
               )}
-              <div className="card-body">
-                <div className="flex justify-between items-start">
-                  <h2 className="card-title text-lg">{shop.tenCuaHang}</h2>
-                  {getStatusBadge(shop.trangThai)}
-                </div>
-
-                <p className="text-sm text-gray-600 flex items-start gap-2">
-                  <span>📍</span>
-                  {shop.diaChi}
-                </p>
-
-                <p className="text-sm text-gray-600 flex items-start gap-2">
-                  <span>📞</span>
-                  {shop.soDienThoai}
-                </p>
-
-                {shop.moTa && <p className="text-sm text-gray-600 line-clamp-2">{shop.moTa}</p>}
-
-                <div className="card-actions justify-end mt-4">
-                  <button onClick={() => openDetailModal(shop)} className="btn btn-primary btn-sm">
-                    Chi Tiết
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="col-span-3 text-center py-12">
-            <p className="text-gray-500 text-lg">Không có cửa hàng</p>
-          </div>
-        )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Detail Modal */}
+      {/* Modals */}
       {showDetailModal && selectedShop && (
-        <div className="modal modal-open">
-          <div className="modal-box w-11/12 max-w-2xl">
-            <h3 className="font-bold text-lg mb-4">🏪 {selectedShop.tenCuaHang}</h3>
+        <ShopDetailModal
+          shop={selectedShop}
+          onClose={() => {
+            setShowDetailModal(false);
+            setSelectedShop(null);
+          }}
+        />
+      )}
 
-            {/* Shop Info */}
-            <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Địa Chỉ</p>
-                  <p className="font-semibold">{selectedShop.diaChi}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Số Điện Thoại</p>
-                  <p className="font-semibold">{selectedShop.soDienThoai}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Kinh Độ</p>
-                  <p className="font-semibold">{selectedShop.kinhDo || "N/A"}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Vĩ Độ</p>
-                  <p className="font-semibold">{selectedShop.viDo || "N/A"}</p>
-                </div>
-              </div>
+      {/* Approve Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen && confirmModal.action === "approve"}
+        onClose={closeConfirmModal}
+        onConfirm={handleApprove}
+        title="Xác Nhận Duyệt"
+        message={`Bạn có chắc chắn muốn duyệt cửa hàng "${confirmModal.shop?.tenCuaHang}"? Cửa hàng sẽ được kích hoạt và có thể hoạt động.`}
+        confirmText="Duyệt"
+        cancelText="Hủy"
+        type="success"
+        loading={actionLoading}
+      />
 
-              {selectedShop.moTa && (
-                <div>
-                  <p className="text-sm text-gray-600">Mô Tả</p>
-                  <p className="font-semibold">{selectedShop.moTa}</p>
-                </div>
-              )}
-
-              <div className="divider">Tài Liệu</div>
-
-              {/* Documents */}
-              <div className="space-y-2">
-                {selectedShop.giayPhepKD && (
-                  <a
-                    href={getImageUrl(selectedShop.giayPhepKD)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-sm btn-outline w-full justify-start gap-2"
-                    onClick={(e) => {
-                      const url = getImageUrl(selectedShop.giayPhepKD);
-                      console.log("Opening:", url);
-                    }}
-                  >
-                    📄 Giấy Phép Kinh Doanh
-                  </a>
-                )}
-                {selectedShop.anhCuaHang && (
-                  <a
-                    href={getImageUrl(selectedShop.anhCuaHang)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-sm btn-outline w-full justify-start gap-2"
-                    onClick={(e) => {
-                      const url = getImageUrl(selectedShop.anhCuaHang);
-                      console.log("Opening:", url);
-                    }}
-                  >
-                    🖼️ Ảnh Cửa Hàng
-                  </a>
-                )}
-                {selectedShop.cccdMatTruoc && (
-                  <a
-                    href={getImageUrl(selectedShop.cccdMatTruoc)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-sm btn-outline w-full justify-start gap-2"
-                    onClick={(e) => {
-                      const url = getImageUrl(selectedShop.cccdMatTruoc);
-                      console.log("Opening:", url);
-                    }}
-                  >
-                    🆔 CCCD Mặt Trước
-                  </a>
-                )}
-                {selectedShop.cccdMatSau && (
-                  <a
-                    href={getImageUrl(selectedShop.cccdMatSau)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-sm btn-outline w-full justify-start gap-2"
-                    onClick={(e) => {
-                      const url = getImageUrl(selectedShop.cccdMatSau);
-                      console.log("Opening:", url);
-                    }}
-                  >
-                    🆔 CCCD Mặt Sau
-                  </a>
-                )}
-              </div>
-
-              {/* Reject Reason Input */}
-              {selectedShop.trangThai === "CHO_DUYET" && (
-                <>
-                  <div className="divider">Từ Chối (nếu cần)</div>
-                  <textarea
-                    placeholder="Nhập lý do từ chối (nếu muốn từ chối)..."
-                    className="textarea textarea-bordered w-full"
-                    value={rejectReason}
-                    onChange={(e) => setRejectReason(e.target.value)}
-                    rows="3"
-                  ></textarea>
-                </>
-              )}
+      {/* Reject Modal */}
+      {confirmModal.isOpen && confirmModal.action === "reject" && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-gray-800">Xác Nhận Từ Chối</h3>
             </div>
-
-            {/* Actions */}
-            <div className="modal-action">
+            <div className="px-6 py-4 space-y-4">
+              <p className="text-gray-700">Bạn có chắc chắn muốn từ chối cửa hàng "{confirmModal.shop?.tenCuaHang}"?</p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Lý Do Từ Chối *</label>
+                <textarea
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] focus:border-transparent resize-none"
+                  rows="3"
+                  placeholder="Nhập lý do từ chối..."
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 flex gap-3 justify-end">
               <button
-                onClick={() => {
-                  setShowDetailModal(false);
-                  setRejectReason("");
-                }}
-                className="btn btn-ghost"
+                onClick={closeConfirmModal}
+                disabled={actionLoading}
+                className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium disabled:opacity-50 transition-colors"
               >
-                Đóng
+                Hủy
               </button>
-
-              {selectedShop.trangThai === "CHO_DUYET" && (
-                <>
-                  <button onClick={handleReject} className="btn btn-error" disabled={actionLoading}>
-                    {actionLoading ? "Đang xử lý..." : "Từ Chối"}
-                  </button>
-                  <button onClick={handleApprove} className="btn btn-success" disabled={actionLoading}>
-                    {actionLoading ? "Đang xử lý..." : "Duyệt"}
-                  </button>
-                </>
-              )}
+              <button
+                onClick={handleReject}
+                disabled={actionLoading}
+                className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium disabled:opacity-50 transition-colors"
+              >
+                {actionLoading ? "Đang xử lý..." : "Từ Chối"}
+              </button>
             </div>
           </div>
-          <div
-            className="modal-backdrop"
-            onClick={() => {
-              setShowDetailModal(false);
-              setRejectReason("");
-            }}
-          ></div>
         </div>
       )}
     </div>

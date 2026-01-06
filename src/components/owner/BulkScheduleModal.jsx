@@ -15,9 +15,9 @@ const BulkScheduleModal = ({ isOpen, onClose, onSuccess }) => {
   const [repeatWeeks, setRepeatWeeks] = useState(1);
 
   const shifts = [
-    { id: 1, name: "Ca sáng", time: "08:00-12:00" },
-    { id: 2, name: "Ca chiều", time: "13:00-17:00" },
-    { id: 3, name: "Ca tối", time: "18:00-22:00" },
+    { id: 1, name: "Ca sáng", time: "07:00-12:00" },
+    { id: 2, name: "Ca chiều", time: "12:00-17:00" },
+    { id: 3, name: "Ca tối", time: "17:00-22:00" },
   ];
 
   const dayNumbers = [1, 2, 3, 4, 5, 6, 0];
