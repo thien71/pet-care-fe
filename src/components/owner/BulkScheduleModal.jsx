@@ -96,10 +96,16 @@ const BulkScheduleModal = ({ isOpen, onClose, onSuccess }) => {
     onClose();
   };
 
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget && !submitting && !loading) {
+      handleClose();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 overflow-y-auto" onClick={handleOverlayClick}>
       <div className="bg-white rounded-lg max-w-2xl w-full border border-gray-200 my-8">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">

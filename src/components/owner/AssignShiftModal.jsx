@@ -32,7 +32,6 @@ const AssignShiftModal = ({ isOpen, onClose, onSubmit, employees, selectedDate }
     await onSubmit(formData);
     setLoading(false);
 
-    // Reset form
     setFormData({
       maNhanVien: "",
       maCa: "",
@@ -49,10 +48,16 @@ const AssignShiftModal = ({ isOpen, onClose, onSubmit, employees, selectedDate }
     onClose();
   };
 
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget && !loading) {
+      handleClose();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={handleOverlayClick}>
       <div className="bg-white rounded-lg max-w-md w-full border border-gray-200">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">

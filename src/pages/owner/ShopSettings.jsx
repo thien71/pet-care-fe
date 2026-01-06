@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { shopService } from "@/api";
-import { FaEdit, FaSave, FaTimes, FaSpinner, FaStore, FaCheckCircle, FaCalendar, FaUser } from "react-icons/fa";
+import { FaEdit, FaSave, FaTimes, FaSpinner, FaStore, FaCheckCircle, FaCalendar, FaUser, FaCamera } from "react-icons/fa";
 import { showToast } from "@/utils/toast";
 import { getShopImageUrl } from "@/utils/constants";
 
@@ -11,16 +11,16 @@ const ShopSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [shopData, setShopData] = useState({
+  const [shop, setShop] = useState(null);
+  const [formData, setFormData] = useState({
     tenCuaHang: "",
     diaChi: "",
     soDienThoai: "",
     moTa: "",
-    anhCuaHang: "",
-    trangThai: "",
-    ngayTao: "",
   });
-  const [editMode, setEditMode] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [editing, setEditing] = useState(false);
   const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
@@ -31,14 +31,12 @@ const ShopSettings = () => {
     try {
       setLoading(true);
       const res = await shopService.getShopInfo();
-      setShopData({
+      setShop(res.data);
+      setFormData({
         tenCuaHang: res.data.tenCuaHang || "",
         diaChi: res.data.diaChi || "",
         soDienThoai: res.data.soDienThoai || "",
         moTa: res.data.moTa || "",
-        anhCuaHang: res.data.anhCuaHang || "",
-        trangThai: res.data.trangThai || "",
-        ngayTao: res.data.ngayTao || "",
       });
       setError("");
     } catch (err) {
@@ -52,17 +50,17 @@ const ShopSettings = () => {
   const validateForm = () => {
     const errors = {};
 
-    if (!shopData.tenCuaHang.trim()) {
+    if (!formData.tenCuaHang.trim()) {
       errors.tenCuaHang = "Tên cửa hàng không được để trống";
-    } else if (shopData.tenCuaHang.trim().length < 3) {
+    } else if (formData.tenCuaHang.trim().length < 3) {
       errors.tenCuaHang = "Tên cửa hàng phải có ít nhất 3 ký tự";
     }
 
-    if (!shopData.diaChi.trim()) {
+    if (!formData.diaChi.trim()) {
       errors.diaChi = "Địa chỉ không được để trống";
     }
 
-    if (shopData.soDienThoai && !/^[0-9]{10}$/.test(shopData.soDienThoai)) {
+    if (formData.soDienThoai && !/^[0-9]{10}$/.test(formData.soDienThoai)) {
       errors.soDienThoai = "Số điện thoại phải có 10 chữ số";
     }
 
@@ -72,14 +70,39 @@ const ShopSettings = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setShopData({ ...shopData, [name]: value });
+    setFormData({ ...formData, [name]: value });
 
     if (formErrors[name]) {
       setFormErrors({ ...formErrors, [name]: "" });
     }
   };
 
-  const handleSave = async () => {
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        showToast.error("Vui lòng chọn file ảnh");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showToast.error("Ảnh không được vượt quá 5MB");
+        return;
+      }
+
+      setImageFile(file);
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+
     if (!validateForm()) {
       showToast.error("Vui lòng kiểm tra lại thông tin");
       return;
@@ -87,11 +110,41 @@ const ShopSettings = () => {
 
     try {
       setSaving(true);
-      await shopService.updateShopInfo(shopData);
-      showToast.success("Cập nhật thông tin cửa hàng thành công!");
-      setEditMode(false);
-      setError("");
+      let updateData;
+
+      if (imageFile) {
+        const formDataToSend = new FormData();
+        formDataToSend.append("tenCuaHang", formData.tenCuaHang);
+        formDataToSend.append("diaChi", formData.diaChi);
+        formDataToSend.append("soDienThoai", formData.soDienThoai);
+        formDataToSend.append("moTa", formData.moTa);
+        formDataToSend.append("anhCuaHang", imageFile);
+        updateData = formDataToSend;
+      } else {
+        updateData = formData;
+      }
+
+      const response = await shopService.updateShopInfo(updateData);
+
+      if (response && response.data) {
+        setShop(response.data);
+        setFormData({
+          tenCuaHang: response.data.tenCuaHang || "",
+          diaChi: response.data.diaChi || "",
+          soDienThoai: response.data.soDienThoai || "",
+          moTa: response.data.moTa || "",
+        });
+
+        setImageFile(null);
+        setPreviewImage(null);
+      }
+
+      setEditing(false);
       setFormErrors({});
+
+      setTimeout(() => {
+        showToast.success("Cập nhật thông tin cửa hàng thành công!");
+      }, 100);
     } catch (err) {
       showToast.error(err.message || "Lỗi khi cập nhật thông tin");
       setError(err.message || "Lỗi khi cập nhật thông tin");
@@ -101,20 +154,38 @@ const ShopSettings = () => {
   };
 
   const handleCancel = () => {
-    setEditMode(false);
+    setEditing(false);
     setFormErrors({});
-    loadShopData();
+    setImageFile(null);
+    setPreviewImage(null);
+    setFormData({
+      tenCuaHang: shop?.tenCuaHang || "",
+      diaChi: shop?.diaChi || "",
+      soDienThoai: shop?.soDienThoai || "",
+      moTa: shop?.moTa || "",
+    });
   };
+
+  const getDisplayImage = () => {
+    if (previewImage) return previewImage;
+    if (shop?.anhCuaHang) return getShopImageUrl(shop.anhCuaHang);
+    return null;
+  };
+
+  const displayImage = getDisplayImage();
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <FaSpinner className="animate-spin text-4xl text-[#8e2800]" />
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#8e2800] border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-gray-600">Đang tải dữ liệu...</p>
+        </div>
       </div>
     );
   }
 
-  if (error && !shopData.tenCuaHang) {
+  if (error && !shop) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -136,11 +207,11 @@ const ShopSettings = () => {
             <FaStore className="text-2xl text-[#8e2800]" />
             <h1 className="text-2xl font-bold text-gray-800">Cài Đặt Cửa Hàng</h1>
           </div>
-          <p className="text-gray-600">Quản lý thông tin cửa hàng của bạn</p>
+          <p className="text-gray-600 mt-1">Quản lý thông tin cửa hàng của bạn</p>
         </div>
-        {!editMode && (
+        {!editing && (
           <button
-            onClick={() => setEditMode(true)}
+            onClick={() => setEditing(true)}
             className="flex items-center gap-2 px-4 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors font-medium"
           >
             <FaEdit />
@@ -151,127 +222,150 @@ const ShopSettings = () => {
 
       {/* Shop Info Card */}
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <form onSubmit={(e) => e.preventDefault()}>
-          <div className="p-6 space-y-6">
-            {/* Tên Cửa Hàng */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tên Cửa Hàng <span className="text-red-600">*</span>
-              </label>
-              <input
-                type="text"
-                name="tenCuaHang"
-                className={`w-full px-4 py-2 border rounded-lg transition-colors ${
-                  editMode
-                    ? "border-gray-300 focus:border-[#8e2800] focus:ring-1 focus:ring-[#8e2800]"
-                    : "border-gray-200 bg-gray-50 cursor-not-allowed"
-                } ${formErrors.tenCuaHang ? "border-red-500" : ""}`}
-                value={shopData.tenCuaHang}
-                onChange={handleChange}
-                disabled={!editMode}
-              />
-              {formErrors.tenCuaHang && <p className="text-red-600 text-sm mt-1">{formErrors.tenCuaHang}</p>}
+        <form onSubmit={handleSave}>
+          <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Shop Image Section */}
+            <div className="md:col-span-1 flex flex-col items-center">
+              <div className="relative group w-full">
+                <div className="w-full aspect-4/3 rounded-lg overflow-hidden border-4 border-gray-200 bg-gray-100 flex items-center justify-center">
+                  {displayImage ? (
+                    <img
+                      src={displayImage}
+                      alt="Shop"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                        e.target.parentElement.innerHTML = `
+                          <div class="w-full h-full bg-[#8e2800] flex items-center justify-center text-white text-4xl font-bold">
+                            ${shop?.tenCuaHang?.charAt(0).toUpperCase() || "S"}
+                          </div>
+                        `;
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-[#8e2800] flex items-center justify-center text-white text-4xl font-bold">
+                      {shop?.tenCuaHang?.charAt(0).toUpperCase() || "S"}
+                    </div>
+                  )}
+                </div>
+
+                {editing && (
+                  <label className="absolute bottom-4 right-4 w-12 h-12 bg-[#8e2800] rounded-full flex items-center justify-center cursor-pointer hover:bg-[#6d1f00] transition-colors shadow-lg">
+                    <FaCamera className="text-white text-xl" />
+                    <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                  </label>
+                )}
+              </div>
             </div>
 
-            {/* Grid 2 columns */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Form Fields */}
+            <div className="md:col-span-2 space-y-4">
+              {/* Tên Cửa Hàng */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Địa Chỉ <span className="text-red-600">*</span>
+                  Tên Cửa Hàng <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="tenCuaHang"
+                  value={formData.tenCuaHang}
+                  onChange={handleChange}
+                  disabled={!editing}
+                  className={`w-full px-4 py-2 border rounded-lg transition-colors ${
+                    editing
+                      ? "border-gray-300 focus:border-[#8e2800] focus:ring-1 focus:ring-[#8e2800]"
+                      : "border-gray-200 bg-gray-50 cursor-not-allowed"
+                  } ${formErrors.tenCuaHang ? "border-red-500" : ""}`}
+                  placeholder="Nhập tên cửa hàng"
+                />
+                {formErrors.tenCuaHang && <p className="mt-1 text-sm text-red-500">{formErrors.tenCuaHang}</p>}
+              </div>
+
+              {/* Địa Chỉ */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Địa Chỉ <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   name="diaChi"
+                  value={formData.diaChi}
+                  onChange={handleChange}
+                  disabled={!editing}
                   className={`w-full px-4 py-2 border rounded-lg transition-colors ${
-                    editMode
+                    editing
                       ? "border-gray-300 focus:border-[#8e2800] focus:ring-1 focus:ring-[#8e2800]"
                       : "border-gray-200 bg-gray-50 cursor-not-allowed"
                   } ${formErrors.diaChi ? "border-red-500" : ""}`}
-                  value={shopData.diaChi}
-                  onChange={handleChange}
-                  disabled={!editMode}
+                  placeholder="Nhập địa chỉ cửa hàng"
                 />
-                {formErrors.diaChi && <p className="text-red-600 text-sm mt-1">{formErrors.diaChi}</p>}
+                {formErrors.diaChi && <p className="mt-1 text-sm text-red-500">{formErrors.diaChi}</p>}
               </div>
 
+              {/* Số Điện Thoại */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Số Điện Thoại</label>
                 <input
                   type="tel"
                   name="soDienThoai"
+                  value={formData.soDienThoai}
+                  onChange={handleChange}
+                  disabled={!editing}
                   className={`w-full px-4 py-2 border rounded-lg transition-colors ${
-                    editMode
+                    editing
                       ? "border-gray-300 focus:border-[#8e2800] focus:ring-1 focus:ring-[#8e2800]"
                       : "border-gray-200 bg-gray-50 cursor-not-allowed"
                   } ${formErrors.soDienThoai ? "border-red-500" : ""}`}
-                  value={shopData.soDienThoai}
-                  onChange={handleChange}
-                  disabled={!editMode}
+                  placeholder="0912345678"
                 />
-                {formErrors.soDienThoai && <p className="text-red-600 text-sm mt-1">{formErrors.soDienThoai}</p>}
+                {formErrors.soDienThoai && <p className="mt-1 text-sm text-red-500">{formErrors.soDienThoai}</p>}
               </div>
-            </div>
 
-            {/* Mô Tả */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Mô Tả</label>
-              <textarea
-                name="moTa"
-                className={`w-full px-4 py-2 border rounded-lg transition-colors resize-none ${
-                  editMode
-                    ? "border-gray-300 focus:border-[#8e2800] focus:ring-1 focus:ring-[#8e2800]"
-                    : "border-gray-200 bg-gray-50 cursor-not-allowed"
-                }`}
-                value={shopData.moTa}
-                onChange={handleChange}
-                disabled={!editMode}
-                rows={4}
-              ></textarea>
-            </div>
-
-            {/* Ảnh Cửa Hàng (readonly for now) */}
-            {shopData.anhCuaHang && (
+              {/* Mô Tả */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Ảnh Cửa Hàng</label>
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  <img
-                    src={getShopImageUrl(shopData.anhCuaHang)}
-                    alt="Shop"
-                    className="w-full h-48 object-cover"
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                    }}
-                  />
-                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Mô Tả</label>
+                <textarea
+                  name="moTa"
+                  value={formData.moTa}
+                  onChange={handleChange}
+                  disabled={!editing}
+                  rows={3}
+                  className={`w-full px-4 py-2 border rounded-lg transition-colors resize-none ${
+                    editing
+                      ? "border-gray-300 focus:border-[#8e2800] focus:ring-1 focus:ring-[#8e2800]"
+                      : "border-gray-200 bg-gray-50 cursor-not-allowed"
+                  }`}
+                  placeholder="Nhập mô tả về cửa hàng"
+                />
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Actions */}
-          {editMode && (
-            <div className="px-6 pb-6 flex gap-3 justify-end border-t border-gray-200 pt-4">
+          {/* Action Buttons */}
+          {editing && (
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
               <button
-                onClick={handleCancel}
                 type="button"
-                className="flex items-center gap-2 px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                onClick={handleCancel}
+                disabled={saving}
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
               >
-                <FaTimes />
                 Hủy
               </button>
               <button
-                onClick={handleSave}
+                type="submit"
                 disabled={saving}
                 className="flex items-center gap-2 px-6 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] transition-colors disabled:opacity-50 font-medium"
               >
                 {saving ? (
                   <>
-                    <FaSpinner className="animate-spin" />
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     <span>Đang lưu...</span>
                   </>
                 ) : (
                   <>
                     <FaSave />
-                    <span>Lưu</span>
+                    <span>Lưu thay đổi</span>
                   </>
                 )}
               </button>
@@ -280,37 +374,34 @@ const ShopSettings = () => {
         </form>
       </div>
 
-      {/* Status Card */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">Trạng Thái Cửa Hàng</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <div className="flex items-center gap-3 mb-2">
-              <FaCheckCircle className="text-2xl text-[#8e2800]" />
-              <p className="text-sm text-gray-600">Trạng Thái</p>
-            </div>
-            <p className={`text-lg font-bold ${shopData.trangThai === "HOAT_DONG" ? "text-green-600" : "text-yellow-600"}`}>
-              {shopData.trangThai === "HOAT_DONG" ? "Hoạt động" : "Chờ duyệt"}
-            </p>
+      {/* Status Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <FaCheckCircle className="text-2xl text-[#8e2800]" />
+            <p className="text-sm text-gray-600">Trạng Thái</p>
           </div>
+          <p className={`text-lg font-semibold ${shop?.trangThai === "HOAT_DONG" ? "text-green-600" : "text-yellow-600"}`}>
+            {shop?.trangThai === "HOAT_DONG" ? "Hoạt động" : "Chờ duyệt"}
+          </p>
+        </div>
 
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <div className="flex items-center gap-3 mb-2">
-              <FaCalendar className="text-2xl text-[#8e2800]" />
-              <p className="text-sm text-gray-600">Ngày Tạo</p>
-            </div>
-            <p className="text-lg font-bold text-gray-800">
-              {shopData.ngayTao ? new Date(shopData.ngayTao).toLocaleDateString("vi-VN") : "N/A"}
-            </p>
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <FaCalendar className="text-2xl text-[#8e2800]" />
+            <p className="text-sm text-gray-600">Ngày Tạo</p>
           </div>
+          <p className="text-lg font-semibold text-gray-800">
+            {shop?.ngayTao ? new Date(shop.ngayTao).toLocaleDateString("vi-VN") : "N/A"}
+          </p>
+        </div>
 
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <div className="flex items-center gap-3 mb-2">
-              <FaUser className="text-2xl text-[#8e2800]" />
-              <p className="text-sm text-gray-600">Chủ Sở Hữu</p>
-            </div>
-            <p className="text-lg font-bold text-gray-800">{user?.hoTen}</p>
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <FaUser className="text-2xl text-[#8e2800]" />
+            <p className="text-sm text-gray-600">Chủ Sở Hữu</p>
           </div>
+          <p className="text-lg font-semibold text-gray-800">{user?.hoTen}</p>
         </div>
       </div>
     </div>

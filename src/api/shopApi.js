@@ -61,6 +61,13 @@ export const shopService = {
   },
 
   updateShopInfo: async (shopData) => {
+    if (shopData instanceof FormData) {
+      return await apiClient.put("/shops/my/info", shopData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+    }
     return await apiClient.put("/shops/my/info", shopData);
   },
 
