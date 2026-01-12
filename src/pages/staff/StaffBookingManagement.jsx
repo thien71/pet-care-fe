@@ -1,4 +1,4 @@
-// src/pages/staff/StaffBookingManagement.jsx
+// src/pages/staff/StaffBookingManagement.jsx (FIXED)
 import { useState, useEffect } from "react";
 import { bookingService, staffService } from "@/api";
 import { showToast } from "@/utils/toast";
@@ -9,7 +9,7 @@ import StaffAssignTechnicianModal from "@/components/staff/StaffAssignTechnician
 import ConfirmPaymentModal from "@/components/owner/ConfirmPaymentModal";
 
 const StaffBookingManagement = () => {
-  const [bookings, setBookings] = useState([]);
+  const [allBookings, setAllBookings] = useState([]); // ⭐ Đổi từ bookings → allBookings
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("CHO_XAC_NHAN");
@@ -21,14 +21,15 @@ const StaffBookingManagement = () => {
 
   useEffect(() => {
     loadData();
-  }, [filter]);
+  }, []); // ⭐ Chỉ load 1 lần khi mount
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const bookingsRes = await bookingService.getShopBookings({ trangThai: filter });
+      // ⭐ Load TẤT CẢ bookings, không filter ở đây
+      const bookingsRes = await bookingService.getShopBookings();
       const employeesRes = await staffService.getEmployees();
-      setBookings(bookingsRes.data || []);
+      setAllBookings(bookingsRes.data || []);
       setEmployees(employeesRes.data || []);
     } catch (err) {
       showToast.error(err.message || "Lỗi khi tải dữ liệu");
@@ -104,28 +105,29 @@ const StaffBookingManagement = () => {
     { value: "HUY", label: "Đã hủy", icon: FaTimesCircle },
   ];
 
+  // ⭐ Hàm tính số lượng theo status
   const getCountByStatus = (status) => {
     if (status === "CHO_THANH_TOAN") {
-      return bookings.filter((b) => b.trangThai === "HOAN_THANH" && b.trangThaiThanhToan === "CHUA_THANH_TOAN").length;
+      return allBookings.filter((b) => b.trangThai === "HOAN_THANH" && b.trangThaiThanhToan === "CHUA_THANH_TOAN").length;
     }
     if (status === "HOAN_THANH") {
-      return bookings.filter((b) => b.trangThai === "HOAN_THANH" && b.trangThaiThanhToan === "DA_THANH_TOAN").length;
+      return allBookings.filter((b) => b.trangThai === "HOAN_THANH" && b.trangThaiThanhToan === "DA_THANH_TOAN").length;
     }
-    return bookings.filter((b) => b.trangThai === status).length;
+    return allBookings.filter((b) => b.trangThai === status).length;
   };
 
-  // Filter bookings
-  const filteredBookings = bookings.filter((booking) => {
+  // ⭐ Filter bookings dựa trên tab được chọn
+  const filteredBookings = allBookings.filter((booking) => {
     if (filter === "CHO_THANH_TOAN") {
       return booking.trangThai === "HOAN_THANH" && booking.trangThaiThanhToan === "CHUA_THANH_TOAN";
     }
     if (filter === "HOAN_THANH") {
       return booking.trangThai === "HOAN_THANH" && booking.trangThaiThanhToan === "DA_THANH_TOAN";
     }
-    return true;
+    return booking.trangThai === filter;
   });
 
-  if (loading && bookings.length === 0) {
+  if (loading && allBookings.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="w-12 h-12 border-4 border-[#8e2800] border-t-transparent rounded-full animate-spin"></div>
@@ -171,21 +173,21 @@ const StaffBookingManagement = () => {
         </div>
       </div>
 
-      {/* Statistics */}
+      {/* Statistics
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="bg-white p-6 rounded-lg border border-gray-200">
           <div className="flex items-center gap-3 mb-2">
             <FaHourglassHalf className="text-2xl text-yellow-600" />
             <p className="text-sm text-gray-600">Chờ xác nhận</p>
           </div>
-          <p className="text-3xl font-bold text-gray-800">{bookings.filter((b) => b.trangThai === "CHO_XAC_NHAN").length}</p>
+          <p className="text-3xl font-bold text-gray-800">{getCountByStatus("CHO_XAC_NHAN")}</p>
         </div>
         <div className="bg-white p-6 rounded-lg border border-gray-200">
           <div className="flex items-center gap-3 mb-2">
             <FaClock className="text-2xl text-blue-600" />
             <p className="text-sm text-gray-600">Đang thực hiện</p>
           </div>
-          <p className="text-3xl font-bold text-gray-800">{bookings.filter((b) => b.trangThai === "DANG_THUC_HIEN").length}</p>
+          <p className="text-3xl font-bold text-gray-800">{getCountByStatus("DANG_THUC_HIEN")}</p>
         </div>
         <div className="bg-white p-6 rounded-lg border border-gray-200">
           <div className="flex items-center gap-3 mb-2">
@@ -199,20 +201,20 @@ const StaffBookingManagement = () => {
             <FaCheckCircle className="text-2xl text-green-600" />
             <p className="text-sm text-gray-600">Hoàn thành</p>
           </div>
-          <p className="text-3xl font-bold text-gray-800">{bookings.filter((b) => b.trangThai === "HOAN_THANH").length}</p>
+          <p className="text-3xl font-bold text-gray-800">{getCountByStatus("HOAN_THANH")}</p>
         </div>
         <div className="bg-white p-6 rounded-lg border border-gray-200">
           <div className="flex items-center gap-3 mb-2">
             <FaClipboardList className="text-2xl text-gray-600" />
             <p className="text-sm text-gray-600">Tổng đơn</p>
           </div>
-          <p className="text-3xl font-bold text-gray-800">{bookings.length}</p>
+          <p className="text-3xl font-bold text-gray-800">{allBookings.length}</p>
         </div>
-      </div>
+      </div> */}
 
       {/* Bookings Grid */}
       {filteredBookings.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredBookings.map((booking) => (
             <StaffBookingCard
               key={booking.maLichHen}

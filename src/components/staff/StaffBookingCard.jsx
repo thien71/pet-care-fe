@@ -1,8 +1,21 @@
-// src/components/staff/StaffBookingCard.jsx
-import { FaUser, FaCalendarAlt, FaPaw, FaMoneyBillWave, FaUserTie, FaEye, FaCheckCircle, FaUserCog } from "react-icons/fa";
+// src/components/staff/StaffBookingCard.jsx (FIXED)
+import { FaUser, FaCalendarAlt, FaPaw, FaMoneyBillWave, FaUserTie, FaEye, FaCheckCircle, FaUserCog, FaWallet } from "react-icons/fa";
 
 const StaffBookingCard = ({ booking, onViewDetail, onConfirm, onAssign, onConfirmPayment }) => {
-  const getStatusBadge = (status) => {
+  // ⭐ Kiểm tra xem có đang chờ thanh toán không
+  const isWaitingPayment = booking.trangThai === "HOAN_THANH" && booking.trangThaiThanhToan === "CHUA_THANH_TOAN";
+
+  const getStatusBadge = () => {
+    // ⭐ Ưu tiên hiển thị trạng thái thanh toán nếu đang chờ thanh toán
+    if (isWaitingPayment) {
+      return (
+        <span className="inline-flex items-center gap-2 px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200">
+          <FaWallet />
+          Chờ thanh toán
+        </span>
+      );
+    }
+
     const config = {
       CHO_XAC_NHAN: { text: "Chờ xác nhận", class: "bg-yellow-100 text-yellow-700 border-yellow-200" },
       DA_XAC_NHAN: { text: "Đã xác nhận", class: "bg-blue-100 text-blue-700 border-blue-200" },
@@ -10,32 +23,9 @@ const StaffBookingCard = ({ booking, onViewDetail, onConfirm, onAssign, onConfir
       HOAN_THANH: { text: "Hoàn thành", class: "bg-green-100 text-green-700 border-green-200" },
       HUY: { text: "Đã hủy", class: "bg-red-100 text-red-700 border-red-200" },
     };
-    const cfg = config[status] || config.CHO_XAC_NHAN;
+    const cfg = config[booking.trangThai] || config.CHO_XAC_NHAN;
     return <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${cfg.class}`}>{cfg.text}</span>;
   };
-
-  const getPaymentBadge = (paymentStatus) => {
-    if (paymentStatus === "DA_THANH_TOAN") {
-      return (
-        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-          <FaCheckCircle className="mr-1" />
-          Đã thanh toán
-        </span>
-      );
-    }
-    if (paymentStatus === "CHUA_THANH_TOAN" && booking.trangThai === "HOAN_THANH") {
-      return (
-        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200">
-          <FaMoneyBillWave className="mr-1" />
-          Chờ thanh toán
-        </span>
-      );
-    }
-    return null;
-  };
-
-  // Kiểm tra xem có đang chờ thanh toán không
-  const isWaitingPayment = booking.trangThai === "HOAN_THANH" && booking.trangThaiThanhToan === "CHUA_THANH_TOAN";
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors">
@@ -99,7 +89,7 @@ const StaffBookingCard = ({ booking, onViewDetail, onConfirm, onAssign, onConfir
             </button>
           )}
 
-          {(booking.trangThai === "DA_XAC_NHAN" || booking.trangThai === "DANG_THUC_HIEN") && !booking.NhanVien && (
+          {(booking.trangThai === "DA_XAC_NHAN" || booking.trangThai === "DANG_THUC_HIEN") && (
             <button
               onClick={() => onAssign(booking)}
               className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center justify-center gap-2"
@@ -109,6 +99,7 @@ const StaffBookingCard = ({ booking, onViewDetail, onConfirm, onAssign, onConfir
             </button>
           )}
 
+          {/* ⭐ Nút xác nhận thanh toán chỉ hiện khi chờ thanh toán */}
           {isWaitingPayment && (
             <button
               onClick={() => onConfirmPayment(booking)}
