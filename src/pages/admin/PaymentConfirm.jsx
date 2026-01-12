@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { paymentService } from "@/api";
 import { showToast } from "@/utils/toast";
-import { FaCheck, FaTimes, FaSpinner, FaImage } from "react-icons/fa";
+import { FaCheck, FaTimes, FaSpinner, FaImage, FaClock, FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaGift } from "react-icons/fa";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { BACKEND_URL } from "@/utils/constants";
 
@@ -10,11 +10,18 @@ const PaymentConfirm = () => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [filter, setFilter] = useState("CHUA_THANH_TOAN");
+  const [filter, setFilter] = useState("CHO_XAC_NHAN");
+  const [rejectReason, setRejectReason] = useState("");
+
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     payment: null,
     action: null,
+  });
+
+  const [imageModal, setImageModal] = useState({
+    isOpen: false,
+    imageUrl: null,
   });
 
   useEffect(() => {
@@ -24,7 +31,7 @@ const PaymentConfirm = () => {
   const loadPayments = async () => {
     try {
       setLoading(true);
-      const params = { trangThai: filter };
+      const params = filter === "ALL" ? {} : { trangThai: filter };
       const res = await paymentService.getPaymentConfirmations(params);
       setPayments(res.data || []);
     } catch (err) {
@@ -40,6 +47,7 @@ const PaymentConfirm = () => {
       payment,
       action: "confirm",
     });
+    setRejectReason("");
   };
 
   const openRejectModal = (payment) => {
@@ -48,6 +56,7 @@ const PaymentConfirm = () => {
       payment,
       action: "reject",
     });
+    setRejectReason("");
   };
 
   const closeConfirmModal = () => {
@@ -56,12 +65,8 @@ const PaymentConfirm = () => {
       payment: null,
       action: null,
     });
+    setRejectReason("");
   };
-
-  const [imageModal, setImageModal] = useState({
-    isOpen: false,
-    imageUrl: null,
-  });
 
   const openImageModal = (imageUrl) => {
     setImageModal({ isOpen: true, imageUrl });
@@ -96,13 +101,18 @@ const PaymentConfirm = () => {
     const { payment } = confirmModal;
     if (!payment) return;
 
+    if (!rejectReason || !rejectReason.trim()) {
+      showToast.error("Vui lòng nhập lý do từ chối");
+      return;
+    }
+
     setActionLoading(true);
     const loadingToast = showToast.loading("Đang từ chối...");
 
     try {
-      await paymentService.rejectPayment(payment.maThanhToan);
+      await paymentService.rejectPayment(payment.maThanhToan, rejectReason);
       showToast.dismiss(loadingToast);
-      showToast.success("Từ chối thanh toán!");
+      showToast.success("Từ chối thanh toán thành công!");
       closeConfirmModal();
       await loadPayments();
     } catch (err) {
@@ -113,26 +123,110 @@ const PaymentConfirm = () => {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const config = {
-      DA_THANH_TOAN: { text: "Đã thanh toán", class: "bg-green-100 text-green-700 border-green-300" },
-      CHUA_THANH_TOAN: { text: "Chưa thanh toán", class: "bg-yellow-100 text-yellow-700 border-yellow-300" },
-      QUA_HAN: { text: "Quá hạn", class: "bg-red-100 text-red-700 border-red-300" },
+  // ⭐ CẬP NHẬT: Thêm icon và màu sắc cho từng trạng thái
+  const getStatusConfig = (status) => {
+    const configs = {
+      TRIAL: {
+        text: "Dùng thử",
+        class: "bg-purple-100 text-purple-700 border-purple-300",
+        icon: FaGift,
+      },
+      CHUA_THANH_TOAN: {
+        text: "Chưa thanh toán",
+        class: "bg-gray-100 text-gray-700 border-gray-300",
+        icon: FaClock,
+      },
+      CHO_XAC_NHAN: {
+        text: "Chờ xác nhận",
+        class: "bg-yellow-100 text-yellow-700 border-yellow-300",
+        icon: FaClock,
+      },
+      DA_THANH_TOAN: {
+        text: "Đã thanh toán",
+        class: "bg-green-100 text-green-700 border-green-300",
+        icon: FaCheckCircle,
+      },
+      TU_CHOI: {
+        text: "Đã từ chối",
+        class: "bg-red-100 text-red-700 border-red-300",
+        icon: FaTimesCircle,
+      },
+      QUA_HAN: {
+        text: "Quá hạn",
+        class: "bg-orange-100 text-orange-700 border-orange-300",
+        icon: FaExclamationTriangle,
+      },
     };
-    const { text, class: className } = config[status] || config.CHUA_THANH_TOAN;
-    return <span className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border ${className}`}>{text}</span>;
+    return configs[status] || configs.CHUA_THANH_TOAN;
   };
 
+  const getStatusBadge = (status) => {
+    const config = getStatusConfig(status);
+    const Icon = config.icon;
+
+    return (
+      <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium border ${config.class}`}>
+        <Icon className="text-base" />
+        {config.text}
+      </span>
+    );
+  };
+
+  // ⭐ CẬP NHẬT: Filter statistics cho tất cả trạng thái
   const filterStats = {
-    CHUA_THANH_TOAN: payments.filter((p) => p.trangThai === "CHUA_THANH_TOAN").length,
+    ALL: payments.length,
+    CHO_XAC_NHAN: payments.filter((p) => p.trangThai === "CHO_XAC_NHAN").length,
     DA_THANH_TOAN: payments.filter((p) => p.trangThai === "DA_THANH_TOAN").length,
+    TRIAL: payments.filter((p) => p.trangThai === "TRIAL").length,
+    CHUA_THANH_TOAN: payments.filter((p) => p.trangThai === "CHUA_THANH_TOAN").length,
+    TU_CHOI: payments.filter((p) => p.trangThai === "TU_CHOI").length,
     QUA_HAN: payments.filter((p) => p.trangThai === "QUA_HAN").length,
   };
 
+  // ⭐ CẬP NHẬT: Filter buttons với tất cả trạng thái
   const filterButtons = [
-    { value: "CHUA_THANH_TOAN", label: "Chưa Thanh Toán", count: filterStats.CHUA_THANH_TOAN },
-    { value: "DA_THANH_TOAN", label: "Đã Thanh Toán", count: filterStats.DA_THANH_TOAN },
-    { value: "QUA_HAN", label: "Quá Hạn", count: filterStats.QUA_HAN },
+    {
+      value: "CHO_XAC_NHAN",
+      label: "Chờ Xác Nhận",
+      count: filterStats.CHO_XAC_NHAN,
+      color: "yellow",
+    },
+    {
+      value: "DA_THANH_TOAN",
+      label: "Đã Thanh Toán",
+      count: filterStats.DA_THANH_TOAN,
+      color: "green",
+    },
+    {
+      value: "TRIAL",
+      label: "Dùng Thử",
+      count: filterStats.TRIAL,
+      color: "purple",
+    },
+    {
+      value: "CHUA_THANH_TOAN",
+      label: "Chưa Thanh Toán",
+      count: filterStats.CHUA_THANH_TOAN,
+      color: "gray",
+    },
+    {
+      value: "TU_CHOI",
+      label: "Đã Từ Chối",
+      count: filterStats.TU_CHOI,
+      color: "red",
+    },
+    {
+      value: "QUA_HAN",
+      label: "Quá Hạn",
+      count: filterStats.QUA_HAN,
+      color: "orange",
+    },
+    {
+      value: "ALL",
+      label: "Tất Cả",
+      count: filterStats.ALL,
+      color: "blue",
+    },
   ];
 
   if (loading) {
@@ -151,7 +245,7 @@ const PaymentConfirm = () => {
         <p className="text-gray-600 mt-1">Xác nhận các khoản thanh toán từ cửa hàng</p>
       </div>
 
-      {/* Filter Tabs */}
+      {/* ⭐ Filter Tabs - CẬP NHẬT */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex flex-wrap gap-2">
           {filterButtons.map((tab) => (
@@ -159,10 +253,19 @@ const PaymentConfirm = () => {
               key={tab.value}
               onClick={() => setFilter(tab.value)}
               className={`px-4 py-2.5 rounded-lg font-medium transition-all ${
-                filter === tab.value ? "bg-[#8e2800] text-white" : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
+                filter === tab.value
+                  ? "bg-[#8e2800] text-white shadow-lg"
+                  : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
               }`}
             >
-              {tab.label} ({tab.count})
+              {tab.label}
+              <span
+                className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${
+                  filter === tab.value ? "bg-white/20 text-white" : "bg-gray-200 text-gray-700"
+                }`}
+              >
+                {tab.count}
+              </span>
             </button>
           ))}
         </div>
@@ -191,8 +294,8 @@ const PaymentConfirm = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div>
-                        <div className="font-medium text-gray-800">{payment.GoiThanhToan?.tenGoi || "N/A"}</div>
-                        <div className="text-sm text-gray-600">Gói {payment.GoiThanhToan?.thoiGian} tháng</div>
+                        <div className="font-medium text-gray-800">{payment.GoiThanhToan?.tenGoi || "Dùng thử"}</div>
+                        {payment.GoiThanhToan && <div className="text-sm text-gray-600">Gói {payment.GoiThanhToan.thoiGian} tháng</div>}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -204,39 +307,53 @@ const PaymentConfirm = () => {
                         <div>Đến: {new Date(payment.thoiGianKetThuc).toLocaleDateString("vi-VN")}</div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">{getStatusBadge(payment.trangThai)}</td>
+                    <td className="px-6 py-4">
+                      {getStatusBadge(payment.trangThai)}
+
+                      {/* Hiển thị lý do từ chối */}
+                      {payment.trangThai === "TU_CHOI" && payment.ghiChu && (
+                        <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
+                          <strong>Lý do:</strong> {payment.ghiChu}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
                         {/* Nút xem biên lai */}
                         {payment.bienLaiThanhToan && (
                           <button
                             onClick={() => openImageModal(`${BACKEND_URL}${payment.bienLaiThanhToan}`)}
-                            className="p-2 text-blue-700 hover:bg-blue-50 rounded-lg border border-blue-200"
+                            className="p-2 text-blue-700 hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors"
                             title="Xem biên lai"
                           >
                             <FaImage />
                           </button>
                         )}
 
-                        {/* Nút xác nhận/từ chối */}
+                        {/* ⭐ Nút xác nhận/từ chối - CHỈ hiển thị cho CHO_XAC_NHAN */}
                         {payment.trangThai === "CHO_XAC_NHAN" && (
                           <>
                             <button
                               onClick={() => openConfirmModal(payment)}
-                              className="p-2 text-green-700 hover:bg-green-50 rounded-lg border border-green-200"
+                              className="p-2 text-green-700 hover:bg-green-50 rounded-lg border border-green-200 transition-colors"
                               title="Xác nhận"
                             >
                               <FaCheck />
                             </button>
                             <button
                               onClick={() => openRejectModal(payment)}
-                              className="p-2 text-red-700 hover:bg-red-50 rounded-lg border border-red-200"
+                              className="p-2 text-red-700 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
                               title="Từ chối"
                             >
                               <FaTimes />
                             </button>
                           </>
                         )}
+
+                        {/* Hiển thị trạng thái cho các case khác */}
+                        {payment.trangThai === "DA_THANH_TOAN" && <span className="text-sm text-green-600 font-medium">✓ Đã xác nhận</span>}
+
+                        {payment.trangThai === "TRIAL" && <span className="text-sm text-purple-600 font-medium">🎁 Đang dùng thử</span>}
                       </div>
                     </td>
                   </tr>
@@ -253,54 +370,79 @@ const PaymentConfirm = () => {
         </div>
       </div>
 
-      {/* Confirm Modal */}
-      {/* <ConfirmModal
-        isOpen={confirmModal.isOpen && confirmModal.action === "confirm"}
-        onClose={closeConfirmModal}
-        onConfirm={handleConfirm}
-        title="Xác Nhận Thanh Toán"
-        message={`Bạn có chắc chắn xác nhận thanh toán cho cửa hàng "${confirmModal.payment?.CuaHang?.tenCuaHang}"?`}
-        confirmText="Xác Nhận"
-        cancelText="Hủy"
-        type="success"
-        loading={actionLoading}
-      /> */}
-
       {/* Image Modal */}
       {imageModal.isOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={closeImageModal}>
-          <div className="relative max-w-4xl w-full">
-            <button onClick={closeImageModal} className="absolute -top-12 right-0 p-2 bg-white rounded-lg hover:bg-gray-100">
+          <div className="relative max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={closeImageModal}
+              className="absolute -top-12 right-0 p-2 bg-white rounded-lg hover:bg-gray-100 transition-colors"
+            >
               <FaTimes />
             </button>
-            <img src={imageModal.imageUrl} alt="Biên lai" className="w-full rounded-lg" />
+            <img src={imageModal.imageUrl} alt="Biên lai" className="w-full rounded-lg shadow-2xl" />
           </div>
         </div>
       )}
 
+      {/* Confirm Modal */}
+      {confirmModal.isOpen && confirmModal.action === "confirm" && (
+        <ConfirmModal
+          isOpen={true}
+          onClose={closeConfirmModal}
+          onConfirm={handleConfirm}
+          title="Xác Nhận Thanh Toán"
+          message={`Bạn có chắc chắn xác nhận thanh toán cho cửa hàng "${confirmModal.payment?.CuaHang?.tenCuaHang}"?`}
+          confirmText="Xác Nhận"
+          cancelText="Hủy"
+          type="success"
+          loading={actionLoading}
+        />
+      )}
+
       {/* Reject Modal với input lý do */}
-      <ConfirmModal
-        isOpen={confirmModal.isOpen && confirmModal.action === "reject"}
-        onClose={closeConfirmModal}
-        onConfirm={handleReject}
-        title="Từ Chối Thanh Toán"
-        // message={
-        //   <>
-        //     <p className="mb-4">Bạn có chắc chắn từ chối thanh toán của cửa hàng "{confirmModal.payment?.CuaHang?.tenCuaHang}"?</p>
-        //     <textarea
-        //       value={rejectReason}
-        //       onChange={(e) => setRejectReason(e.target.value)}
-        //       rows={3}
-        //       placeholder="Nhập lý do từ chối..."
-        //       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] resize-none"
-        //     />
-        //   </>
-        // }
-        confirmText="Từ Chối"
-        cancelText="Hủy"
-        type="warning"
-        loading={actionLoading}
-      />
+      {confirmModal.isOpen && confirmModal.action === "reject" && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Từ Chối Thanh Toán</h3>
+
+            <p className="text-gray-600 mb-4">
+              Bạn có chắc chắn từ chối thanh toán của cửa hàng "{confirmModal.payment?.CuaHang?.tenCuaHang}"?
+            </p>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Lý do từ chối <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                rows={4}
+                placeholder="Nhập lý do từ chối..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8e2800] resize-none"
+              />
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={closeConfirmModal}
+                disabled={actionLoading}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleReject}
+                disabled={actionLoading || !rejectReason.trim()}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {actionLoading && <FaSpinner className="animate-spin" />}
+                Từ Chối
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
