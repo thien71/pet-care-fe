@@ -2,10 +2,11 @@
 import { useState, useEffect } from "react";
 import { bookingService, staffService } from "@/api";
 import { showToast } from "@/utils/toast";
-import { FaClipboardList, FaClock, FaCheckCircle, FaTimesCircle, FaHourglassHalf } from "react-icons/fa";
+import { FaClipboardList, FaClock, FaCheckCircle, FaTimesCircle, FaHourglassHalf, FaMoneyBillWave } from "react-icons/fa";
 import StaffBookingCard from "@/components/staff/StaffBookingCard";
 import StaffBookingDetailModal from "@/components/staff/StaffBookingDetailModal";
 import StaffAssignTechnicianModal from "@/components/staff/StaffAssignTechnicianModal";
+import ConfirmPaymentModal from "@/components/owner/ConfirmPaymentModal";
 
 const StaffBookingManagement = () => {
   const [bookings, setBookings] = useState([]);
@@ -15,6 +16,8 @@ const StaffBookingManagement = () => {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -61,6 +64,22 @@ const StaffBookingManagement = () => {
     }
   };
 
+  const handleConfirmPayment = async () => {
+    if (!selectedBooking) return;
+
+    try {
+      setActionLoading(true);
+      await bookingService.confirmPayment(selectedBooking.maLichHen);
+      showToast.success("Xác nhận thanh toán thành công!");
+      setShowPaymentModal(false);
+      await loadData();
+    } catch (err) {
+      showToast.error(err.message || "Lỗi xác nhận thanh toán");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const openDetailModal = (booking) => {
     setSelectedBooking(booking);
     setShowDetailModal(true);
@@ -71,17 +90,40 @@ const StaffBookingManagement = () => {
     setShowAssignModal(true);
   };
 
+  const openPaymentModal = (booking) => {
+    setSelectedBooking(booking);
+    setShowPaymentModal(true);
+  };
+
   const filterButtons = [
     { value: "CHO_XAC_NHAN", label: "Chờ xác nhận", icon: FaHourglassHalf },
     { value: "DA_XAC_NHAN", label: "Đã xác nhận", icon: FaCheckCircle },
     { value: "DANG_THUC_HIEN", label: "Đang thực hiện", icon: FaClock },
+    { value: "CHO_THANH_TOAN", label: "Chờ thanh toán", icon: FaMoneyBillWave },
     { value: "HOAN_THANH", label: "Hoàn thành", icon: FaCheckCircle },
     { value: "HUY", label: "Đã hủy", icon: FaTimesCircle },
   ];
 
   const getCountByStatus = (status) => {
+    if (status === "CHO_THANH_TOAN") {
+      return bookings.filter((b) => b.trangThai === "HOAN_THANH" && b.trangThaiThanhToan === "CHUA_THANH_TOAN").length;
+    }
+    if (status === "HOAN_THANH") {
+      return bookings.filter((b) => b.trangThai === "HOAN_THANH" && b.trangThaiThanhToan === "DA_THANH_TOAN").length;
+    }
     return bookings.filter((b) => b.trangThai === status).length;
   };
+
+  // Filter bookings
+  const filteredBookings = bookings.filter((booking) => {
+    if (filter === "CHO_THANH_TOAN") {
+      return booking.trangThai === "HOAN_THANH" && booking.trangThaiThanhToan === "CHUA_THANH_TOAN";
+    }
+    if (filter === "HOAN_THANH") {
+      return booking.trangThai === "HOAN_THANH" && booking.trangThaiThanhToan === "DA_THANH_TOAN";
+    }
+    return true;
+  });
 
   if (loading && bookings.length === 0) {
     return (
@@ -130,7 +172,7 @@ const StaffBookingManagement = () => {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="bg-white p-6 rounded-lg border border-gray-200">
           <div className="flex items-center gap-3 mb-2">
             <FaHourglassHalf className="text-2xl text-yellow-600" />
@@ -144,6 +186,13 @@ const StaffBookingManagement = () => {
             <p className="text-sm text-gray-600">Đang thực hiện</p>
           </div>
           <p className="text-3xl font-bold text-gray-800">{bookings.filter((b) => b.trangThai === "DANG_THUC_HIEN").length}</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <FaMoneyBillWave className="text-2xl text-orange-600" />
+            <p className="text-sm text-gray-600">Chờ thanh toán</p>
+          </div>
+          <p className="text-3xl font-bold text-gray-800">{getCountByStatus("CHO_THANH_TOAN")}</p>
         </div>
         <div className="bg-white p-6 rounded-lg border border-gray-200">
           <div className="flex items-center gap-3 mb-2">
@@ -162,15 +211,16 @@ const StaffBookingManagement = () => {
       </div>
 
       {/* Bookings Grid */}
-      {bookings.length > 0 ? (
+      {filteredBookings.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {bookings.map((booking) => (
+          {filteredBookings.map((booking) => (
             <StaffBookingCard
               key={booking.maLichHen}
               booking={booking}
               onViewDetail={openDetailModal}
               onConfirm={handleConfirm}
               onAssign={openAssignModal}
+              onConfirmPayment={openPaymentModal}
             />
           ))}
         </div>
@@ -201,6 +251,18 @@ const StaffBookingManagement = () => {
             setShowAssignModal(false);
             setSelectedBooking(null);
           }}
+        />
+      )}
+
+      {showPaymentModal && selectedBooking && (
+        <ConfirmPaymentModal
+          booking={selectedBooking}
+          onConfirm={handleConfirmPayment}
+          onClose={() => {
+            setShowPaymentModal(false);
+            setSelectedBooking(null);
+          }}
+          loading={actionLoading}
         />
       )}
     </div>

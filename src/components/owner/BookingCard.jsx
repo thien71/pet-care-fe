@@ -1,8 +1,32 @@
 // src/components/owner/BookingCard.jsx
-import { FaCalendar, FaUser, FaPaw, FaDollarSign, FaCheckCircle, FaTimesCircle, FaUserMd, FaEye } from "react-icons/fa";
+import {
+  FaCalendar,
+  FaUser,
+  FaPaw,
+  FaDollarSign,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaUserMd,
+  FaEye,
+  FaMoneyBillWave,
+  FaWallet,
+} from "react-icons/fa";
 
-const BookingCard = ({ booking, onViewDetail, onConfirm, onCancel, onAssign }) => {
-  const getStatusBadge = (status) => {
+const BookingCard = ({ booking, onViewDetail, onConfirm, onCancel, onAssign, onConfirmPayment }) => {
+  // Kiểm tra xem có đang chờ thanh toán không
+  const isWaitingPayment = booking.trangThai === "HOAN_THANH" && booking.trangThaiThanhToan === "CHUA_THANH_TOAN";
+
+  const getStatusBadge = () => {
+    // Ưu tiên hiển thị trạng thái thanh toán nếu đang chờ thanh toán
+    if (isWaitingPayment) {
+      return (
+        <span className="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium border bg-orange-100 text-orange-700 border-orange-200">
+          <FaWallet className="text-orange-600" />
+          Chờ thanh toán
+        </span>
+      );
+    }
+
     const badges = {
       CHO_XAC_NHAN: {
         class: "bg-yellow-50 text-yellow-700 border-yellow-200",
@@ -25,9 +49,9 @@ const BookingCard = ({ booking, onViewDetail, onConfirm, onCancel, onAssign }) =
         label: "Đã hủy",
       },
     };
-    const badge = badges[status] || {
+    const badge = badges[booking.trangThai] || {
       class: "bg-gray-50 text-gray-700 border-gray-200",
-      label: status,
+      label: booking.trangThai,
     };
     return <span className={`inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium border ${badge.class}`}>{badge.label}</span>;
   };
@@ -38,7 +62,7 @@ const BookingCard = ({ booking, onViewDetail, onConfirm, onCancel, onAssign }) =
         {/* Header */}
         <div className="flex justify-between items-start">
           <h3 className="text-lg font-bold text-gray-800">#{booking.maLichHen}</h3>
-          {getStatusBadge(booking.trangThai)}
+          {getStatusBadge()}
         </div>
 
         {/* Customer Info */}
@@ -81,7 +105,6 @@ const BookingCard = ({ booking, onViewDetail, onConfirm, onCancel, onAssign }) =
             className="flex items-center gap-2 px-2 py-2 border-none bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium border border-gray-200"
           >
             <FaEye className="w-4 h-4" />
-            {/* <span>Xem</span> */}
           </button>
 
           {booking.trangThai === "CHO_XAC_NHAN" && (
@@ -110,6 +133,16 @@ const BookingCard = ({ booking, onViewDetail, onConfirm, onCancel, onAssign }) =
             >
               <FaUserMd className="w-4 h-4" />
               <span>Gán KTV</span>
+            </button>
+          )}
+
+          {isWaitingPayment && (
+            <button
+              onClick={() => onConfirmPayment(booking)}
+              className="flex items-center gap-2 px-2 py-2 bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition-colors text-sm font-medium border border-orange-200"
+            >
+              <FaMoneyBillWave className="w-4 h-4" />
+              <span>Xác nhận TT</span>
             </button>
           )}
         </div>

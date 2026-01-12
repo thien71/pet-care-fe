@@ -1,7 +1,7 @@
 // src/components/staff/StaffBookingCard.jsx
 import { FaUser, FaCalendarAlt, FaPaw, FaMoneyBillWave, FaUserTie, FaEye, FaCheckCircle, FaUserCog } from "react-icons/fa";
 
-const StaffBookingCard = ({ booking, onViewDetail, onConfirm, onAssign }) => {
+const StaffBookingCard = ({ booking, onViewDetail, onConfirm, onAssign, onConfirmPayment }) => {
   const getStatusBadge = (status) => {
     const config = {
       CHO_XAC_NHAN: { text: "Chờ xác nhận", class: "bg-yellow-100 text-yellow-700 border-yellow-200" },
@@ -14,13 +14,36 @@ const StaffBookingCard = ({ booking, onViewDetail, onConfirm, onAssign }) => {
     return <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${cfg.class}`}>{cfg.text}</span>;
   };
 
+  const getPaymentBadge = (paymentStatus) => {
+    if (paymentStatus === "DA_THANH_TOAN") {
+      return (
+        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+          <FaCheckCircle className="mr-1" />
+          Đã thanh toán
+        </span>
+      );
+    }
+    if (paymentStatus === "CHUA_THANH_TOAN" && booking.trangThai === "HOAN_THANH") {
+      return (
+        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200">
+          <FaMoneyBillWave className="mr-1" />
+          Chờ thanh toán
+        </span>
+      );
+    }
+    return null;
+  };
+
+  // Kiểm tra xem có đang chờ thanh toán không
+  const isWaitingPayment = booking.trangThai === "HOAN_THANH" && booking.trangThaiThanhToan === "CHUA_THANH_TOAN";
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors">
       <div className="p-6">
         {/* Header */}
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-lg font-bold text-gray-800">#{booking.maLichHen}</h3>
-          {getStatusBadge(booking.trangThai)}
+          {getStatusBadge()}
         </div>
 
         {/* Info */}
@@ -83,6 +106,16 @@ const StaffBookingCard = ({ booking, onViewDetail, onConfirm, onAssign }) => {
             >
               <FaUserCog />
               Gán KTV
+            </button>
+          )}
+
+          {isWaitingPayment && (
+            <button
+              onClick={() => onConfirmPayment(booking)}
+              className="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+            >
+              <FaMoneyBillWave />
+              Xác nhận thanh toán
             </button>
           )}
         </div>

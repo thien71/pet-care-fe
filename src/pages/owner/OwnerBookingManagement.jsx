@@ -9,6 +9,7 @@ import BookingDetailModal from "@/components/owner/BookingDetailModal";
 import ConfirmCancelModal from "@/components/owner/ConfirmCancelModal";
 import ConfirmBookingModal from "@/components/owner/ConfirmBookingModal";
 import AssignTechnicianModal from "@/components/owner/AssignTechnicianModal";
+import ConfirmPaymentModal from "@/components/owner/ConfirmPaymentModal";
 
 const OwnerBookingManagement = () => {
   const [allBookings, setAllBookings] = useState([]);
@@ -23,6 +24,7 @@ const OwnerBookingManagement = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -93,6 +95,22 @@ const OwnerBookingManagement = () => {
     }
   };
 
+  const handleConfirmPayment = async () => {
+    if (!selectedBooking) return;
+
+    try {
+      setActionLoading(true);
+      await bookingService.confirmPayment(selectedBooking.maLichHen);
+      showToast.success("Xác nhận thanh toán thành công!");
+      setShowPaymentModal(false);
+      await loadData();
+    } catch (err) {
+      showToast.error(err.message || "Lỗi xác nhận thanh toán");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // Modal handlers
   const openDetailModal = (booking) => {
     setSelectedBooking(booking);
@@ -114,19 +132,39 @@ const OwnerBookingManagement = () => {
     setShowAssignModal(true);
   };
 
+  const openPaymentModal = (booking) => {
+    setSelectedBooking(booking);
+    setShowPaymentModal(true);
+  };
+
   const closeAllModals = () => {
     setShowDetailModal(false);
     setShowConfirmModal(false);
     setShowCancelModal(false);
     setShowAssignModal(false);
+    setShowPaymentModal(false);
     setSelectedBooking(null);
   };
 
-  // Filter bookings
-  const filteredBookings = allBookings.filter((booking) => booking.trangThai === filter);
+  // Filter bookings - Thêm điều kiện cho "Chờ thanh toán"
+  const filteredBookings = allBookings.filter((booking) => {
+    if (filter === "CHO_THANH_TOAN") {
+      return booking.trangThai === "HOAN_THANH" && booking.trangThaiThanhToan === "CHUA_THANH_TOAN";
+    }
+    if (filter === "HOAN_THANH") {
+      return booking.trangThai === "HOAN_THANH" && booking.trangThaiThanhToan === "DA_THANH_TOAN";
+    }
+    return booking.trangThai === filter;
+  });
 
   // Count bookings by status
   const getCountByStatus = (status) => {
+    if (status === "CHO_THANH_TOAN") {
+      return allBookings.filter((b) => b.trangThai === "HOAN_THANH" && b.trangThaiThanhToan === "CHUA_THANH_TOAN").length;
+    }
+    if (status === "HOAN_THANH") {
+      return allBookings.filter((b) => b.trangThai === "HOAN_THANH" && b.trangThaiThanhToan === "DA_THANH_TOAN").length;
+    }
     return allBookings.filter((b) => b.trangThai === status).length;
   };
 
@@ -134,6 +172,7 @@ const OwnerBookingManagement = () => {
     { value: "CHO_XAC_NHAN", label: "Chờ xác nhận" },
     { value: "DA_XAC_NHAN", label: "Đã xác nhận" },
     { value: "DANG_THUC_HIEN", label: "Đang thực hiện" },
+    { value: "CHO_THANH_TOAN", label: "Chờ thanh toán" },
     { value: "HOAN_THANH", label: "Hoàn thành" },
     { value: "HUY", label: "Đã hủy" },
   ];
@@ -190,6 +229,7 @@ const OwnerBookingManagement = () => {
               onConfirm={openConfirmModal}
               onCancel={openCancelModal}
               onAssign={openAssignModal}
+              onConfirmPayment={openPaymentModal}
             />
           ))}
         </div>
@@ -219,6 +259,10 @@ const OwnerBookingManagement = () => {
           onClose={closeAllModals}
           loading={actionLoading}
         />
+      )}
+
+      {showPaymentModal && (
+        <ConfirmPaymentModal booking={selectedBooking} onConfirm={handleConfirmPayment} onClose={closeAllModals} loading={actionLoading} />
       )}
     </div>
   );
