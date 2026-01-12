@@ -33,6 +33,10 @@ export const bookingService = {
     return await apiClient.put(`/bookings/${id}/status`, statusData);
   },
 
+  confirmPayment: async (id) => {
+    return await apiClient.put(`/bookings/${id}/confirm-payment`);
+  },
+
   // ==================== TECHNICIAN ====================
   getMyAssignments: async (params) => {
     return await apiClient.get("/bookings/my-assignments", { params });

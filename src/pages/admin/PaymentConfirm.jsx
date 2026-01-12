@@ -1,4 +1,4 @@
-// src/pages/admin/PaymentConfirm.jsx
+// src/pages/admin/PaymentConfirm.jsx (FIXED)
 import { useState, useEffect } from "react";
 import { paymentService } from "@/api";
 import { showToast } from "@/utils/toast";
@@ -7,7 +7,7 @@ import ConfirmModal from "@/components/common/ConfirmModal";
 import { BACKEND_URL } from "@/utils/constants";
 
 const PaymentConfirm = () => {
-  const [payments, setPayments] = useState([]);
+  const [allPayments, setAllPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [filter, setFilter] = useState("CHO_XAC_NHAN");
@@ -25,15 +25,14 @@ const PaymentConfirm = () => {
   });
 
   useEffect(() => {
-    loadPayments();
-  }, [filter]);
+    loadAllPayments();
+  }, []);
 
-  const loadPayments = async () => {
+  const loadAllPayments = async () => {
     try {
       setLoading(true);
-      const params = filter === "ALL" ? {} : { trangThai: filter };
-      const res = await paymentService.getPaymentConfirmations(params);
-      setPayments(res.data || []);
+      const res = await paymentService.getPaymentConfirmations();
+      setAllPayments(res.data || []);
     } catch (err) {
       showToast.error(err.message || "Lỗi khi tải dữ liệu");
     } finally {
@@ -88,7 +87,7 @@ const PaymentConfirm = () => {
       showToast.dismiss(loadingToast);
       showToast.success("Xác nhận thanh toán thành công!");
       closeConfirmModal();
-      await loadPayments();
+      await loadAllPayments();
     } catch (err) {
       showToast.dismiss(loadingToast);
       showToast.error(err.message || "Lỗi xác nhận thanh toán");
@@ -114,7 +113,7 @@ const PaymentConfirm = () => {
       showToast.dismiss(loadingToast);
       showToast.success("Từ chối thanh toán thành công!");
       closeConfirmModal();
-      await loadPayments();
+      await loadAllPayments();
     } catch (err) {
       showToast.dismiss(loadingToast);
       showToast.error(err.message || "Lỗi từ chối thanh toán");
@@ -123,7 +122,6 @@ const PaymentConfirm = () => {
     }
   };
 
-  // ⭐ CẬP NHẬT: Thêm icon và màu sắc cho từng trạng thái
   const getStatusConfig = (status) => {
     const configs = {
       TRIAL: {
@@ -172,18 +170,20 @@ const PaymentConfirm = () => {
     );
   };
 
-  // ⭐ CẬP NHẬT: Filter statistics cho tất cả trạng thái
+  // ⭐ Filter statistics - tính từ allPayments
   const filterStats = {
-    ALL: payments.length,
-    CHO_XAC_NHAN: payments.filter((p) => p.trangThai === "CHO_XAC_NHAN").length,
-    DA_THANH_TOAN: payments.filter((p) => p.trangThai === "DA_THANH_TOAN").length,
-    TRIAL: payments.filter((p) => p.trangThai === "TRIAL").length,
-    CHUA_THANH_TOAN: payments.filter((p) => p.trangThai === "CHUA_THANH_TOAN").length,
-    TU_CHOI: payments.filter((p) => p.trangThai === "TU_CHOI").length,
-    QUA_HAN: payments.filter((p) => p.trangThai === "QUA_HAN").length,
+    ALL: allPayments.length,
+    CHO_XAC_NHAN: allPayments.filter((p) => p.trangThai === "CHO_XAC_NHAN").length,
+    DA_THANH_TOAN: allPayments.filter((p) => p.trangThai === "DA_THANH_TOAN").length,
+    TRIAL: allPayments.filter((p) => p.trangThai === "TRIAL").length,
+    CHUA_THANH_TOAN: allPayments.filter((p) => p.trangThai === "CHUA_THANH_TOAN").length,
+    TU_CHOI: allPayments.filter((p) => p.trangThai === "TU_CHOI").length,
+    QUA_HAN: allPayments.filter((p) => p.trangThai === "QUA_HAN").length,
   };
 
-  // ⭐ CẬP NHẬT: Filter buttons với tất cả trạng thái
+  // ⭐ Filter hiển thị
+  const displayedPayments = filter === "ALL" ? allPayments : allPayments.filter((p) => p.trangThai === filter);
+
   const filterButtons = [
     {
       value: "CHO_XAC_NHAN",
@@ -245,7 +245,7 @@ const PaymentConfirm = () => {
         <p className="text-gray-600 mt-1">Xác nhận các khoản thanh toán từ cửa hàng</p>
       </div>
 
-      {/* ⭐ Filter Tabs - CẬP NHẬT */}
+      {/* Filter Tabs */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex flex-wrap gap-2">
           {filterButtons.map((tab) => (
@@ -286,8 +286,8 @@ const PaymentConfirm = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {payments.length > 0 ? (
-                payments.map((payment) => (
+              {displayedPayments.length > 0 ? (
+                displayedPayments.map((payment) => (
                   <tr key={payment.maThanhToan} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <span className="font-medium text-gray-800">{payment.CuaHang?.tenCuaHang || "N/A"}</span>
@@ -310,7 +310,6 @@ const PaymentConfirm = () => {
                     <td className="px-6 py-4">
                       {getStatusBadge(payment.trangThai)}
 
-                      {/* Hiển thị lý do từ chối */}
                       {payment.trangThai === "TU_CHOI" && payment.ghiChu && (
                         <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
                           <strong>Lý do:</strong> {payment.ghiChu}
@@ -319,7 +318,6 @@ const PaymentConfirm = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
-                        {/* Nút xem biên lai */}
                         {payment.bienLaiThanhToan && (
                           <button
                             onClick={() => openImageModal(`${BACKEND_URL}${payment.bienLaiThanhToan}`)}
@@ -330,7 +328,6 @@ const PaymentConfirm = () => {
                           </button>
                         )}
 
-                        {/* ⭐ Nút xác nhận/từ chối - CHỈ hiển thị cho CHO_XAC_NHAN */}
                         {payment.trangThai === "CHO_XAC_NHAN" && (
                           <>
                             <button
@@ -350,7 +347,6 @@ const PaymentConfirm = () => {
                           </>
                         )}
 
-                        {/* Hiển thị trạng thái cho các case khác */}
                         {payment.trangThai === "DA_THANH_TOAN" && <span className="text-sm text-green-600 font-medium">✓ Đã xác nhận</span>}
 
                         {payment.trangThai === "TRIAL" && <span className="text-sm text-purple-600 font-medium">🎁 Đang dùng thử</span>}
@@ -400,7 +396,7 @@ const PaymentConfirm = () => {
         />
       )}
 
-      {/* Reject Modal với input lý do */}
+      {/* Reject Modal */}
       {confirmModal.isOpen && confirmModal.action === "reject" && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">

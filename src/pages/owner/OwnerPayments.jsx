@@ -1,10 +1,9 @@
-// src/pages/owner/OwnerPayments.jsx
+// src/pages/owner/OwnerPayments.jsx (UPDATED)
 import { useState, useEffect } from "react";
 import { paymentService } from "@/api";
-import { FaSpinner, FaCreditCard, FaCheckCircle, FaClock, FaExclamationTriangle, FaTimes, FaUpload } from "react-icons/fa";
+import { FaSpinner, FaCreditCard, FaCheckCircle, FaClock, FaExclamationTriangle, FaTimes } from "react-icons/fa";
 import { showToast } from "@/utils/toast";
 import PurchasePackageModal from "@/components/owner/PurchasePackageModal";
-import UploadPaymentProofModal from "@/components/owner/UploadPaymentProofModal";
 
 const OwnerPayments = () => {
   const [packages, setPackages] = useState([]);
@@ -13,23 +12,6 @@ const OwnerPayments = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
-
-  const [uploadModal, setUploadModal] = useState({
-    isOpen: false,
-    payment: null,
-  });
-
-  const openUploadModal = (payment) => {
-    setUploadModal({ isOpen: true, payment });
-  };
-
-  const closeUploadModal = () => {
-    setUploadModal({ isOpen: false, payment: null });
-  };
-
-  const handleUploadSuccess = async () => {
-    await loadData();
-  };
 
   useEffect(() => {
     loadData();
@@ -53,11 +35,25 @@ const OwnerPayments = () => {
     setShowPurchaseModal(true);
   };
 
-  const handlePurchase = async () => {
+  // ⭐ CẬP NHẬT: Nhận file từ modal
+  const handlePurchase = async (receiptFile) => {
     try {
       setActionLoading(true);
-      await paymentService.purchasePackage({ maGoi: selectedPackage.maGoi });
-      showToast.success("Đăng ký gói thành công! Admin sẽ xác nhận thanh toán trong vòng 24-48 giờ.");
+
+      // 1. Đăng ký gói
+      const paymentRes = await paymentService.purchasePackage({
+        maGoi: selectedPackage.maGoi,
+      });
+
+      // 2. Upload biên lai
+      const formData = new FormData();
+      formData.append("paymentId", paymentRes.data.maThanhToan);
+      formData.append("bienLai", receiptFile);
+      formData.append("ghiChu", "Upload cùng lúc đăng ký");
+
+      await paymentService.uploadPaymentProof(formData);
+
+      showToast.success("Đăng ký và upload biên lai thành công! Chờ admin xác nhận.");
       setShowPurchaseModal(false);
       await loadData();
     } catch (err) {
@@ -65,26 +61,6 @@ const OwnerPayments = () => {
     } finally {
       setActionLoading(false);
     }
-  };
-
-  const getStatusIcon = (status) => {
-    const config = {
-      DA_THANH_TOAN: { icon: FaCheckCircle, color: "text-green-600" },
-      CHUA_THANH_TOAN: { icon: FaClock, color: "text-yellow-600" },
-      QUA_HAN: { icon: FaExclamationTriangle, color: "text-red-600" },
-    };
-    const cfg = config[status] || config.CHUA_THANH_TOAN;
-    const Icon = cfg.icon;
-    return <Icon className={cfg.color} />;
-  };
-
-  const getStatusText = (status) => {
-    const labels = {
-      DA_THANH_TOAN: "Đã thanh toán",
-      CHUA_THANH_TOAN: "Chờ xác nhận",
-      QUA_HAN: "Quá hạn",
-    };
-    return labels[status] || "Không rõ";
   };
 
   const getStatusBadge = (status) => {
@@ -239,7 +215,7 @@ const OwnerPayments = () => {
         </div>
       </div>
 
-      {/* Payment History với nút Upload */}
+      {/* Payment History */}
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-800">Lịch Sử Thanh Toán</h2>
@@ -254,7 +230,6 @@ const OwnerPayments = () => {
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Số Tiền</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Thời Gian</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Trạng Thái</th>
-                  <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase">Thao Tác</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -277,41 +252,11 @@ const OwnerPayments = () => {
                     <td className="px-6 py-4">
                       {getStatusBadge(payment.trangThai)}
 
-                      {/* Hiển thị lý do từ chối nếu có */}
                       {payment.trangThai === "TU_CHOI" && payment.ghiChu && (
                         <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
                           <strong>Lý do:</strong> {payment.ghiChu}
                         </div>
                       )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        {/* Nút upload biên lai */}
-                        {(payment.trangThai === "CHUA_THANH_TOAN" || payment.trangThai === "TU_CHOI") && (
-                          <button
-                            onClick={() => openUploadModal(payment)}
-                            className="px-4 py-2 bg-[#8e2800] text-white rounded-lg hover:bg-[#6d1f00] text-sm font-medium flex items-center gap-2"
-                          >
-                            <FaUpload />
-                            Upload Biên Lai
-                          </button>
-                        )}
-
-                        {/* Hiển thị trạng thái */}
-                        {payment.trangThai === "CHO_XAC_NHAN" && (
-                          <span className="text-sm text-yellow-700 font-medium flex items-center gap-1">
-                            <FaClock />
-                            Chờ admin xác nhận
-                          </span>
-                        )}
-
-                        {payment.trangThai === "DA_THANH_TOAN" && (
-                          <span className="text-sm text-green-700 font-medium flex items-center gap-1">
-                            <FaCheckCircle />
-                            Đã thanh toán
-                          </span>
-                        )}
-                      </div>
                     </td>
                   </tr>
                 ))}
@@ -322,14 +267,6 @@ const OwnerPayments = () => {
           <div className="p-8 text-center text-gray-500">Chưa có lịch sử thanh toán</div>
         )}
       </div>
-
-      {/* Upload Modal */}
-      <UploadPaymentProofModal
-        isOpen={uploadModal.isOpen}
-        onClose={closeUploadModal}
-        payment={uploadModal.payment}
-        onSuccess={handleUploadSuccess}
-      />
 
       {/* Purchase Modal */}
       <PurchasePackageModal
