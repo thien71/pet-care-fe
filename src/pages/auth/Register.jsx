@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import EmailVerificationModal from "../../components/auth/EmailVerificationModal";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaArrowLeft, FaEye, FaEyeSlash } from "react-icons/fa";
 import Logo from "@/components/common/Logo";
 import { showToast } from "@/utils/toast";
 
@@ -103,46 +103,39 @@ const Register = () => {
             <Logo className="border border-white rounded-full" />
           </div>
           <h1 className="text-4xl font-bold mb-4">Pet Care Da Nang</h1>
-          <p className="text-xl text-white/90">
-            Gia nhập và nhận những dịch vụ tốt nhất
-          </p>
+          <p className="text-xl text-white/90">Gia nhập và nhận những dịch vụ tốt nhất</p>
         </div>
       </div>
 
       {/* Right - Register Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md relative">
+          {/* Back Button */}
+          <Link to="/" className="absolute -top-16 left-0 flex items-center gap-2 text-gray-600 hover:text-[#8e2800] transition-colors">
+            <FaArrowLeft className="text-lg" />
+            <span className="font-medium">Về trang chủ</span>
+          </Link>
           {/* Mobile Header */}
           <div className="lg:hidden text-center mb-8">
             <div className="text-5xl mb-3">
               <Logo className="border border-white rounded-full" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-800">
-              Pet Care Da Nang
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-800">Pet Care Da Nang</h1>
           </div>
 
           {/* Form Container */}
           <div className="bg-white">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              Tạo Tài Khoản Mới
-            </h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Tạo Tài Khoản Mới</h2>
             <p className="text-gray-600 text-sm mb-6">Đăng ký để bắt đầu</p>
 
             {/* Error Alert */}
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
+            {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Họ tên */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Họ và tên
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên</label>
                 <input
                   type="text"
                   name="hoTen"
@@ -157,9 +150,7 @@ const Register = () => {
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input
                   type="email"
                   name="email"
@@ -174,9 +165,7 @@ const Register = () => {
 
               {/* Password */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mật khẩu
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
@@ -194,11 +183,7 @@ const Register = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
                   >
-                    {showPassword ? (
-                      <FaEyeSlash className="text-[#8e2800]" />
-                    ) : (
-                      <FaEye className="text-[#8e2800]" />
-                    )}
+                    {showPassword ? <FaEyeSlash className="text-[#8e2800]" /> : <FaEye className="text-[#8e2800]" />}
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Tối thiểu 6 ký tự</p>
@@ -206,9 +191,7 @@ const Register = () => {
 
               {/* Confirm Password */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Xác nhận mật khẩu
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu</label>
                 <input
                   type={showPassword ? "text" : "password"}
                   name="confirmPassword"
@@ -234,10 +217,7 @@ const Register = () => {
             {/* Login Link */}
             <p className="text-center text-gray-600 text-sm mt-6">
               Đã có tài khoản?{" "}
-              <Link
-                to="/login"
-                className="text-[#8e2800] font-semibold hover:underline"
-              >
+              <Link to="/login" className="text-[#8e2800] font-semibold hover:underline">
                 Đăng nhập ngay
               </Link>
             </p>
@@ -246,11 +226,7 @@ const Register = () => {
       </div>
 
       {/* Modal */}
-      <EmailVerificationModal
-        isOpen={showVerificationModal}
-        email={registeredEmail}
-        onClose={() => setShowVerificationModal(false)}
-      />
+      <EmailVerificationModal isOpen={showVerificationModal} email={registeredEmail} onClose={() => setShowVerificationModal(false)} />
     </div>
   );
 };

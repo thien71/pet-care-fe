@@ -14,6 +14,7 @@ import {
   FaChevronLeft,
   FaChevronRight,
 } from "react-icons/fa";
+import ServiceCard from "@/components/service/ServiceCard";
 
 const SearchResults = () => {
   const navigate = useNavigate();
@@ -304,7 +305,7 @@ const SearchResults = () => {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {services.map((service) => (
                     <ServiceCard
                       key={service.maDichVuShop}
@@ -313,6 +314,15 @@ const SearchResults = () => {
                     />
                   ))}
                 </div>
+                {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {services.map((service) => (
+                    <ServiceCard
+                      key={service.maDichVuShop}
+                      service={service}
+                      onClick={() => navigate(`/service/${service.maDichVuShop}`)}
+                    />
+                  ))}
+                </div> */}
 
                 {/* Pagination */}
                 {totalPages > 1 && (
@@ -411,68 +421,6 @@ const FilterPanel = ({ priceRange, onPriceRangeChange, selectedPetType, onPetTyp
               <span className="text-sm text-gray-700">{type.label}</span>
             </label>
           ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Service Card Component
-const ServiceCard = ({ service, onClick }) => {
-  return (
-    <div
-      onClick={onClick}
-      className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer border border-gray-100 hover:border-[#8e2800] transform hover:-translate-y-1"
-    >
-      {/* Image */}
-      <div className="relative h-48 overflow-hidden bg-linear-to-br from-gray-200 to-gray-300">
-        {service.anhCuaHang ? (
-          <img
-            src={`http://localhost:5000${service.anhCuaHang}`}
-            alt={service.tenDichVu}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-            onError={(e) => {
-              e.target.src = "https://via.placeholder.com/400x300?text=" + service.tenDichVu;
-            }}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400">
-            <FaPaw className="text-6xl" />
-          </div>
-        )}
-
-        {/* Price Badge */}
-        <div className="absolute top-4 right-4 bg-[#8e2800] text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
-          {parseInt(service.gia).toLocaleString("vi-VN")}đ
-        </div>
-      </div>
-
-      <div className="p-5">
-        <h3 className="font-bold text-lg text-gray-900 line-clamp-2 mb-3 group-hover:text-[#8e2800] transition">{service.tenDichVu}</h3>
-
-        <div className="space-y-2 mb-4">
-          <div className="flex items-start gap-2 text-sm text-gray-600">
-            <FaStore className="text-[#8e2800] mt-1 shrink-0" />
-            <span className="line-clamp-1 font-medium">{service.tenCuaHang}</span>
-          </div>
-          <div className="flex items-start gap-2 text-xs text-gray-500">
-            <FaMapMarkerAlt className="text-[#8e2800] mt-0.5 shrink-0" />
-            <span className="line-clamp-1">{service.diaChi}</span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <FaStar className="text-yellow-400 text-sm" />
-              <span className="font-bold text-gray-900">{service.rating}</span>
-            </div>
-            <span className="text-xs text-gray-500">({service.reviewCount})</span>
-          </div>
-          <div className="flex items-center gap-1 text-xs text-gray-500">
-            <FaClock className="text-[#8e2800]" />
-            <span>{service.thoiLuong}p</span>
-          </div>
         </div>
       </div>
     </div>

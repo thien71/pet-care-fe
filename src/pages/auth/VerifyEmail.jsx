@@ -64,9 +64,7 @@ const VerifyEmail = () => {
             <div className="mb-6">
               <div className="w-16 h-16 border-4 border-gray-200 border-t-[#8e2800] rounded-full animate-spin mx-auto"></div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              Đang Xác Thực Email
-            </h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Đang Xác Thực Email</h2>
             <p className="text-gray-600">Vui lòng chờ...</p>
           </>
         ) : state.success ? (
@@ -75,12 +73,8 @@ const VerifyEmail = () => {
             <div className="mb-6">
               <div className="text-6xl">✅</div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              Xác Thực Thành Công!
-            </h2>
-            <p className="text-gray-600 mb-4">
-              Bạn sẽ được chuyển hướng tới trang chủ...
-            </p>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Xác Thực Thành Công!</h2>
+            <p className="text-gray-600 mb-4">Bạn sẽ được chuyển hướng tới trang chủ...</p>
           </>
         ) : (
           <>
@@ -88,9 +82,7 @@ const VerifyEmail = () => {
             <div className="mb-6">
               <div className="text-6xl">❌</div>
             </div>
-            <h2 className="text-2xl font-bold text-red-600 mb-2">
-              Xác Thực Thất Bại
-            </h2>
+            <h2 className="text-2xl font-bold text-red-600 mb-2">Xác Thực Thất Bại</h2>
             <p className="text-gray-600 mb-4">{state.error}</p>
             <a
               href="/login"

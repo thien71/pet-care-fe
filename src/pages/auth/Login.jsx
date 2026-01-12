@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import { useAuth } from "../../contexts/AuthContext";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaArrowLeft, FaEye, FaEyeSlash } from "react-icons/fa";
 import Logo from "@/components/common/Logo";
 import { showToast } from "@/utils/toast";
 
@@ -135,40 +135,33 @@ const Login = () => {
 
         {/* Right - Login Form */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
-          <div className="w-full max-w-md">
+          <div className="w-full max-w-md relative">
+            {/* Back Button */}
+            <Link to="/" className="absolute -top-16 left-0 flex items-center gap-2 text-gray-600 hover:text-[#8e2800] transition-colors">
+              <FaArrowLeft className="text-lg" />
+              <span className="font-medium">Về trang chủ</span>
+            </Link>
             {/* Mobile Header */}
             <div className="lg:hidden text-center mb-8">
               <div className="text-5xl mb-3">
                 <Logo className="border border-white rounded-full" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-800">
-                Pet Care Da Nang
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-800">Pet Care Da Nang</h1>
             </div>
 
             {/* Form Container */}
             <div className="bg-white">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                Chào Mừng Trở Lại
-              </h2>
-              <p className="text-gray-600 text-sm mb-6">
-                Đăng nhập để tiếp tục
-              </p>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Chào Mừng Trở Lại</h2>
+              <p className="text-gray-600 text-sm mb-6">Đăng nhập để tiếp tục</p>
 
               {/* Error Alert */}
-              {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
+              {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
 
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                   <input
                     type="email"
                     name="email"
@@ -183,9 +176,7 @@ const Login = () => {
 
                 {/* Password */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mật khẩu
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
@@ -202,21 +193,14 @@ const Login = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
                     >
-                      {showPassword ? (
-                        <FaEyeSlash className="text-[#8e2800]" />
-                      ) : (
-                        <FaEye className="text-[#8e2800]" />
-                      )}
+                      {showPassword ? <FaEyeSlash className="text-[#8e2800]" /> : <FaEye className="text-[#8e2800]" />}
                     </button>
                   </div>
                 </div>
 
                 {/* Remember & Forgot */}
                 <div className="flex items-center justify-end text-sm">
-                  <Link
-                    to="/forgot-password"
-                    className="text-[#8e2800] hover:underline font-medium"
-                  >
+                  <Link to="/forgot-password" className="text-[#8e2800] hover:underline font-medium">
                     Quên mật khẩu?
                   </Link>
                 </div>
@@ -256,10 +240,7 @@ const Login = () => {
               {/* Register Link */}
               <p className="text-center text-gray-600 text-sm">
                 Chưa có tài khoản?{" "}
-                <Link
-                  to="/register"
-                  className="text-[#8e2800] font-semibold hover:underline"
-                >
+                <Link to="/register" className="text-[#8e2800] font-semibold hover:underline">
                   Đăng ký ngay
                 </Link>
               </p>

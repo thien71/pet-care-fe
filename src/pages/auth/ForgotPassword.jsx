@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { FaArrowLeft } from "react-icons/fa";
 
 const ForgotPassword = () => {
   const { forgotPassword } = useAuth();
@@ -39,37 +40,21 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#8e2800] opacity-10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#8e2800] opacity-10 rounded-full blur-3xl"></div>
-      </div>
+      </div> */}
 
       <div className="relative w-full max-w-md">
-        {/* Back Button */}
-        <Link
-          to="/login"
-          className="absolute -top-16 left-0 flex items-center gap-2 text-white hover:text-[#8e2800] transition-colors"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
-          <span>Quay lại đăng nhập</span>
+        <Link to="/login" className="flex items-center gap-2 text-gray-600 hover:text-[#8e2800] transition-colors mb-6">
+          <FaArrowLeft className="text-lg" />
+          <span className="font-medium">Quay lại đăng nhập</span>
         </Link>
 
         {/* Main Card */}
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
           {!success ? (
             <>
               {/* Header */}
@@ -82,17 +67,12 @@ const ForgotPassword = () => {
               {/* Content */}
               <div className="p-8">
                 {/* Alert */}
-                {error && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-                    {error}
-                  </div>
-                )}
+                {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
 
                 {/* Info Box */}
                 <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm text-blue-800">
-                    <span className="font-semibold">ℹ️ Lưu ý:</span> Chúng tôi
-                    sẽ gửi link đặt lại mật khẩu đến email của bạn. Link này có
+                    <span className="font-semibold">ℹ️ Lưu ý:</span> Chúng tôi sẽ gửi link đặt lại mật khẩu đến email của bạn. Link này có
                     hiệu lực trong vòng 1 giờ.
                   </p>
                 </div>
@@ -100,9 +80,7 @@ const ForgotPassword = () => {
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Địa chỉ Email
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ Email</label>
                     <input
                       type="email"
                       value={email}
@@ -127,19 +105,12 @@ const ForgotPassword = () => {
             /* Success State */
             <div className="p-8 text-center">
               <div className="text-6xl mb-4">✅</div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                Email Đã Được Gửi!
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Chúng tôi đã gửi link đặt lại mật khẩu đến email:
-              </p>
-              <p className="text-[#8e2800] font-semibold text-lg mb-6">
-                {email}
-              </p>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Email Đã Được Gửi!</h2>
+              <p className="text-gray-600 mb-6">Chúng tôi đã gửi link đặt lại mật khẩu đến email:</p>
+              <p className="text-[#8e2800] font-semibold text-lg mb-6">{email}</p>
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                 <p className="text-sm text-yellow-800">
-                  <span className="font-semibold">⚠️ Quan trọng:</span> Kiểm tra
-                  cả hộp thư spam nếu không thấy email trong vài phút.
+                  <span className="font-semibold">⚠️ Quan trọng:</span> Kiểm tra cả hộp thư spam nếu không thấy email trong vài phút.
                 </p>
               </div>
               <Link
@@ -153,9 +124,7 @@ const ForgotPassword = () => {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-white/70 text-sm mt-6">
-          © 2024 Pet Care Da Nang. All rights reserved.
-        </p>
+        <p className="text-center text-white/70 text-sm mt-6">© 2024 Pet Care Da Nang. All rights reserved.</p>
       </div>
     </div>
   );
