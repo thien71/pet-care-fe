@@ -314,15 +314,6 @@ const SearchResults = () => {
                     />
                   ))}
                 </div>
-                {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {services.map((service) => (
-                    <ServiceCard
-                      key={service.maDichVuShop}
-                      service={service}
-                      onClick={() => navigate(`/service/${service.maDichVuShop}`)}
-                    />
-                  ))}
-                </div> */}
 
                 {/* Pagination */}
                 {totalPages > 1 && (
