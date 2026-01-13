@@ -137,9 +137,8 @@ const RegisterShop = () => {
       await shopService.registerShop(formDataWithFiles);
       setSuccess(true);
       showToast.success("Đăng ký thành công! Chờ admin duyệt.");
-
       setTimeout(() => {
-        navigate("/profile");
+        navigate("/");
       }, 2000);
     } catch (err) {
       showToast.error(err.message || "Đăng ký thất bại");
@@ -285,6 +284,7 @@ const RegisterShop = () => {
                       value={formData.soDienThoai}
                       onChange={handleInputChange}
                       placeholder="0912345678"
+                      maxLength={10}
                       className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors ${
                         errors.soDienThoai
                           ? "border-red-500 focus:border-red-500 focus:ring-red-500"
