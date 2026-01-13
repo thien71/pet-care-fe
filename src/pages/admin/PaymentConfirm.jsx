@@ -1,4 +1,4 @@
-// src/pages/admin/PaymentConfirm.jsx (FIXED)
+// src/pages/admin/PaymentConfirm.jsx - ENHANCED VERSION
 import { useState, useEffect } from "react";
 import { paymentService } from "@/api";
 import { showToast } from "@/utils/toast";
@@ -170,7 +170,7 @@ const PaymentConfirm = () => {
     );
   };
 
-  // ⭐ Filter statistics - tính từ allPayments
+  // Filter statistics
   const filterStats = {
     ALL: allPayments.length,
     CHO_XAC_NHAN: allPayments.filter((p) => p.trangThai === "CHO_XAC_NHAN").length,
@@ -181,7 +181,7 @@ const PaymentConfirm = () => {
     QUA_HAN: allPayments.filter((p) => p.trangThai === "QUA_HAN").length,
   };
 
-  // ⭐ Filter hiển thị
+  // Filter display
   const displayedPayments = filter === "ALL" ? allPayments : allPayments.filter((p) => p.trangThai === filter);
 
   const filterButtons = [
@@ -318,14 +318,16 @@ const PaymentConfirm = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
-                        {payment.bienLaiThanhToan && (
+                        {payment.bienLaiThanhToan ? (
                           <button
                             onClick={() => openImageModal(`${BACKEND_URL}${payment.bienLaiThanhToan}`)}
                             className="p-2 text-blue-700 hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors"
                             title="Xem biên lai"
                           >
-                            <FaImage />
+                            <FaImage className="text-lg" />
                           </button>
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">Chưa có biên lai</span>
                         )}
 
                         {payment.trangThai === "CHO_XAC_NHAN" && (
@@ -366,17 +368,22 @@ const PaymentConfirm = () => {
         </div>
       </div>
 
-      {/* Image Modal */}
+      {/* ⭐ IMAGE MODAL - ENHANCED */}
       {imageModal.isOpen && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={closeImageModal}>
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4" onClick={closeImageModal}>
           <div className="relative max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={closeImageModal}
-              className="absolute -top-12 right-0 p-2 bg-white rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <FaTimes />
-            </button>
-            <img src={imageModal.imageUrl} alt="Biên lai" className="w-full rounded-lg shadow-2xl" />
+            <div className="bg-white rounded-lg shadow-2xl overflow-hidden">
+              <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="text-lg font-bold text-gray-800">Biên Lai Thanh Toán</h3>
+                <button
+                  onClick={closeImageModal}
+                  className=" px-5 py-3 text-gray-800 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2"
+                >
+                  <FaTimes className="text-red-500" />
+                </button>
+              </div>
+              <img src={imageModal.imageUrl} alt="Biên lai" className="w-full max-h-[70vh] object-contain bg-gray-50" />
+            </div>
           </div>
         </div>
       )}

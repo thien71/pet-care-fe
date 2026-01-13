@@ -114,7 +114,7 @@ const HomePage = () => {
 
             {/* Quick Search Tags */}
             <div className="flex flex-wrap justify-center gap-3 mt-6">
-              {["Tắm rửa", "Cắt tỉa", "Khám sức khỏe", "Tiêm chủng"].map((tag) => (
+              {["Tắm rửa", "Cắt tỉa", "Khám sức khỏe"].map((tag) => (
                 <button
                   key={tag}
                   onClick={() => {

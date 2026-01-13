@@ -45,19 +45,21 @@ const OwnerPayments = () => {
         maGoi: selectedPackage.maGoi,
       });
 
+      // Sửa: Lấy đúng payment object từ response (server trả { message, data })
+      // const payment = paymentRes.data.data;
+      console.log("PaymentRes", paymentRes);
+
       // 2. Upload biên lai
       const formData = new FormData();
       formData.append("paymentId", paymentRes.data.maThanhToan);
       formData.append("bienLai", receiptFile);
-      formData.append("ghiChu", "Upload cùng lúc đăng ký");
+      formData.append("ghiChu", "");
 
       await paymentService.uploadPaymentProof(formData);
-
       showToast.success("Đăng ký và upload biên lai thành công! Chờ admin xác nhận.");
       setShowPurchaseModal(false);
-      await loadData();
     } catch (err) {
-      showToast.error(err.message || "Lỗi khi đăng ký gói");
+      showToast.error(err.message || "Lỗi khi xử lý");
     } finally {
       setActionLoading(false);
     }

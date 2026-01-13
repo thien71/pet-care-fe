@@ -43,6 +43,14 @@ export const paymentService = {
   purchasePackage: async (purchaseData) => {
     return await apiClient.post("/payments/purchase", purchaseData);
   },
+
+  uploadPaymentProof: async (formData) => {
+    return await apiClient.post("/payments/my/upload-proof", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
 };
 
 export default paymentService;
