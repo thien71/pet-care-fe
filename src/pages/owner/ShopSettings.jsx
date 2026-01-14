@@ -70,10 +70,24 @@ const ShopSettings = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+
+    let newValue = value;
+
+    // Nếu là số điện thoại → chỉ cho phép số
+    if (name === "soDienThoai") {
+      newValue = value.replace(/\D/g, "");
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: newValue,
+    }));
 
     if (formErrors[name]) {
-      setFormErrors({ ...formErrors, [name]: "" });
+      setFormErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
     }
   };
 
@@ -309,6 +323,7 @@ const ShopSettings = () => {
                   type="tel"
                   name="soDienThoai"
                   value={formData.soDienThoai}
+                  maxLength={10}
                   onChange={handleChange}
                   disabled={!editing}
                   className={`w-full px-4 py-2 border rounded-lg transition-colors ${

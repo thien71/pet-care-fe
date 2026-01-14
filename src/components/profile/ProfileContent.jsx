@@ -62,6 +62,28 @@ const ProfileContent = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    let newValue = value;
+
+    if (name === "soDienThoai") {
+      newValue = value.replace(/\D/g, "");
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: newValue,
+    }));
+
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
 
@@ -270,13 +292,10 @@ const ProfileContent = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Số điện thoại</label>
                 <input
                   type="tel"
+                  name="soDienThoai"
                   value={formData.soDienThoai}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      soDienThoai: e.target.value,
-                    })
-                  }
+                  maxLength={10}
+                  onChange={handleChange}
                   disabled={!editing}
                   className={`w-full px-4 py-2 border rounded-lg transition-colors ${
                     editing
