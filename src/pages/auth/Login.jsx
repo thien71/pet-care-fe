@@ -57,7 +57,11 @@ const Login = () => {
 
       // Delay một chút để user thấy toast
       setTimeout(() => {
-        if (roles.includes("QUAN_TRI_VIEN")) {
+        // Nếu có từ đâu quay lại (ví dụ: /service/:id), thì quay lại đó
+        const fromPath = location.state?.from;
+        if (fromPath) {
+          navigate(fromPath);
+        } else if (roles.includes("QUAN_TRI_VIEN")) {
           navigate("/admin/dashboard");
         } else if (roles.includes("CHU_CUA_HANG")) {
           navigate("/owner/dashboard");
@@ -100,7 +104,11 @@ const Login = () => {
       const roles = response.user.VaiTros?.map((vt) => vt.tenVaiTro) || [];
 
       setTimeout(() => {
-        if (roles.includes("QUAN_TRI_VIEN")) {
+        // Nếu có từ đâu quay lại (ví dụ: /service/:id), thì quay lại đó
+        const fromPath = location.state?.from;
+        if (fromPath) {
+          navigate(fromPath);
+        } else if (roles.includes("QUAN_TRI_VIEN")) {
           navigate("/admin/dashboard");
         } else if (roles.includes("CHU_CUA_HANG")) {
           navigate("/owner/dashboard");
