@@ -3,8 +3,6 @@ const ServiceCard = ({ service, onClick }) => {
   const reviewCount = service.reviewCount || service.soLuotDanhGia || 0;
   const bookingCount = service.soLanDat || 0;
 
-  console.log("Service", service);
-
   return (
     <div
       onClick={onClick}

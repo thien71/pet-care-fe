@@ -89,13 +89,11 @@ const BookingPage = () => {
       if (keywords.some((keyword) => lowerName.includes(keyword))) {
         const petType = petTypesArray.find((pt) => pt.tenLoai.toLowerCase() === petTypeName);
         if (petType) {
-          console.log("✅ Detected pet type:", petType.tenLoai, "for service:", serviceName);
           return petType.maLoai;
         }
       }
     }
 
-    console.log("⚠️ Could not detect pet type from:", serviceName);
     return null;
   };
 
@@ -109,7 +107,6 @@ const BookingPage = () => {
     if (preselectedShopId && shops.length > 0) {
       const shop = shops.find((s) => s.maCuaHang === parseInt(preselectedShopId));
       if (shop) {
-        console.log("✅ Auto-selected shop:", shop.tenCuaHang);
         setSelectedShop(shop);
       }
     }
@@ -121,14 +118,12 @@ const BookingPage = () => {
       const detectedPetType = detectPetTypeFromService(preselectedServiceName, petTypes);
 
       if (detectedPetType) {
-        console.log("✅ Setting pet type to:", detectedPetType);
         setCurrentPet((prev) => ({
           ...prev,
           maLoai: detectedPetType.toString(),
         }));
       } else {
         // Nếu không detect được, mặc định chọn loài đầu tiên
-        console.log("⚠️ Using default pet type:", petTypes[0].tenLoai);
         setCurrentPet((prev) => ({
           ...prev,
           maLoai: petTypes[0].maLoai.toString(),
@@ -150,7 +145,6 @@ const BookingPage = () => {
       const service = availableServices.find((s) => s.maDichVuShop === parseInt(preselectedServiceId));
 
       if (service) {
-        console.log("✅ Auto-selected service:", service.tenDichVu);
         setCurrentPet((prev) => ({
           ...prev,
           dichVuIds: [service.maDichVuShop],
@@ -174,10 +168,8 @@ const BookingPage = () => {
       const [shopsRes, petTypesRes] = await Promise.all([shopService.getPublicShops(), serviceService.getPublicPetTypes()]);
       setShops(shopsRes.data || []);
       setPetTypes(petTypesRes.data || []);
-      console.log("✅ Loaded pet types:", petTypesRes.data);
     } catch (err) {
       setError("Không thể tải dữ liệu. Vui lòng thử lại.");
-      console.error("Load initial data error:", err);
     } finally {
       setLoading(false);
     }
@@ -185,7 +177,6 @@ const BookingPage = () => {
 
   const loadServicesByPetType = async () => {
     try {
-      console.log("📡 Loading services for pet type:", currentPet.maLoai);
       const res = await serviceService.getShopServicesByPetType(selectedShop.maCuaHang, currentPet.maLoai);
       setAvailableServices(res.data || []);
 
@@ -197,10 +188,7 @@ const BookingPage = () => {
         });
         return newCache;
       });
-
-      console.log("✅ Loaded services:", res.data);
     } catch (err) {
-      console.error("Load services error:", err);
       setAvailableServices([]);
     }
   };

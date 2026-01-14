@@ -45,10 +45,6 @@ const OwnerPayments = () => {
         maGoi: selectedPackage.maGoi,
       });
 
-      // Sửa: Lấy đúng payment object từ response (server trả { message, data })
-      // const payment = paymentRes.data.data;
-      console.log("PaymentRes", paymentRes);
-
       // 2. Upload biên lai
       const formData = new FormData();
       formData.append("paymentId", paymentRes.data.maThanhToan);

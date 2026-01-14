@@ -27,10 +27,8 @@ const Profile = () => {
     const fetchUserProfile = async () => {
       try {
         setLoading(true);
-        console.log("📡 Fetching user profile from database...");
 
         const response = await userService.getProfile();
-        console.log("✅ Profile data from database:", response);
 
         setUser(response);
         setFormData({
@@ -39,7 +37,6 @@ const Profile = () => {
           diaChi: response.diaChi || "",
         });
       } catch (err) {
-        console.error("❌ Fetch profile error:", err);
         showToast.error("Không thể tải thông tin cá nhân");
       } finally {
         setLoading(false);
@@ -70,7 +67,6 @@ const Profile = () => {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    console.log("📁 File selected:", file?.name);
 
     if (file) {
       if (!file.type.startsWith("image/")) {
@@ -87,7 +83,6 @@ const Profile = () => {
       // ⭐ Preview từ FileReader (base64)
       const reader = new FileReader();
       reader.onloadend = () => {
-        console.log("✅ Preview set from FileReader");
         setPreviewFromFile(reader.result);
       };
       reader.readAsDataURL(file);
@@ -107,7 +102,6 @@ const Profile = () => {
       let updateData;
 
       if (avatarFile) {
-        console.log("📤 Uploading with avatar file");
         const formDataToSend = new FormData();
         formDataToSend.append("hoTen", formData.hoTen);
         formDataToSend.append("soDienThoai", formData.soDienThoai);
@@ -115,15 +109,12 @@ const Profile = () => {
         formDataToSend.append("avatar", avatarFile);
         updateData = formDataToSend;
       } else {
-        console.log("📝 Uploading without avatar (JSON)");
         updateData = formData;
       }
 
       const response = await userService.updateProfile(updateData);
-      console.log("✅ Update API Response:", response);
 
       if (response && response.data) {
-        console.log("🔄 Updating user state with response data");
         setUser(response.data);
         setFormData({
           hoTen: response.data.hoTen || "",
@@ -131,17 +122,16 @@ const Profile = () => {
           diaChi: response.data.diaChi || "",
         });
 
-        // ⭐ Clear preview từ file khi save thành công
+        // Clear preview từ file khi save thành công
         setAvatarFile(null);
         setPreviewFromFile(null);
 
-        // ⭐ Update localStorage
+        // Update localStorage
         const userData = {
           ...response.data,
           tokenInfo: authUser?.tokenInfo,
         };
         localStorage.setItem("user", JSON.stringify(userData));
-        console.log("💾 LocalStorage updated");
       }
 
       setEditing(false);
@@ -162,19 +152,15 @@ const Profile = () => {
   const getDisplayAvatar = () => {
     // Priority 1: Preview từ FileReader khi đang edit + chọn ảnh mới
     if (previewFromFile) {
-      console.log("📸 Using preview from FileReader");
       return previewFromFile;
     }
 
     // Priority 2: Avatar từ database
     if (user?.avatar) {
-      console.log("🖼️ Avatar from DB:", user.avatar);
       const fullUrl = getAvatarUrl(user.avatar);
-      console.log("🔗 Converted to full URL:", fullUrl);
       return fullUrl;
     }
 
-    console.log("⚠️ No avatar found");
     return null;
   };
 
@@ -248,10 +234,7 @@ const Profile = () => {
                           src={displayAvatar}
                           alt="Avatar"
                           className="w-full h-full object-cover"
-                          onLoad={() => console.log("✅ Avatar loaded successfully")}
                           onError={(e) => {
-                            console.error("❌ Avatar load error:", displayAvatar);
-                            // ⭐ Fallback: Hiển thị chữ cái đầu nếu ảnh lỗi
                             e.target.style.display = "none";
                             e.target.parentElement.innerHTML = `
                               <div class="w-full h-full bg-[#8e2800] flex items-center justify-center text-white text-4xl font-bold">

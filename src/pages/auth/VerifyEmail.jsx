@@ -27,10 +27,7 @@ const VerifyEmail = () => {
       }
 
       try {
-        console.log("🔐 Verifying email with token...");
         await verifyEmail(token);
-
-        console.log("✅ Email verified!");
 
         setState({
           verifying: false,
