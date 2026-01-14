@@ -53,13 +53,13 @@ const ShopDetail = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
+      {/* Hero Section - Compact */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Image */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
+            {/* Shop Image - Small */}
             <div className="lg:col-span-1">
-              <div className="relative h-64 lg:h-80 rounded-xl overflow-hidden bg-gray-100">
+              <div className="relative h-32 rounded-lg overflow-hidden bg-gray-100">
                 {imageUrl ? (
                   <img
                     src={imageUrl}
@@ -71,7 +71,7 @@ const ShopDetail = () => {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <svg className="w-20 h-20 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-12 h-12 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
                       <path
                         fillRule="evenodd"
                         d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
@@ -83,48 +83,37 @@ const ShopDetail = () => {
               </div>
             </div>
 
-            {/* Info */}
-            <div className="lg:col-span-2">
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">{shop.tenCuaHang}</h1>
+            {/* Shop Info */}
+            <div className="lg:col-span-4">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">{shop.tenCuaHang}</h1>
 
-              <div className="space-y-3 mb-6">
+              <div className="space-y-1 text-sm">
                 {shop.diaChi && (
-                  <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-[#8e2800] shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-4 h-4 text-[#8e2800] shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path
                         fillRule="evenodd"
                         d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
                         clipRule="evenodd"
                       />
                     </svg>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 mb-1">Địa chỉ</p>
-                      <p className="text-gray-600">{shop.diaChi}</p>
-                    </div>
+                    <p className="text-gray-600">{shop.diaChi}</p>
                   </div>
                 )}
 
                 {shop.soDienThoai && (
-                  <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-[#8e2800] shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-4 h-4 text-[#8e2800] shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                     </svg>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 mb-1">Số điện thoại</p>
-                      <a href={`tel:${shop.soDienThoai}`} className="text-[#8e2800] hover:underline">
-                        {shop.soDienThoai}
-                      </a>
-                    </div>
+                    <a href={`tel:${shop.soDienThoai}`} className="text-[#8e2800] hover:underline">
+                      {shop.soDienThoai}
+                    </a>
                   </div>
                 )}
               </div>
 
-              {shop.moTa && (
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Giới thiệu</h3>
-                  <p className="text-gray-600 leading-relaxed">{shop.moTa}</p>
-                </div>
-              )}
+              {shop.moTa && <p className="text-sm text-gray-600 mt-2 line-clamp-2">{shop.moTa}</p>}
             </div>
           </div>
         </div>
@@ -158,17 +147,20 @@ const ShopDetail = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === "services" ? (
           services.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {services.map((service) => {
-                const serviceData = {
-                  ...service,
-                  tenCuaHang: shop.tenCuaHang,
-                  diaChi: shop.diaChi,
-                };
-                return (
-                  <ServiceCard key={service.maDichVuShop} service={serviceData} onClick={() => handleServiceClick(service.maDichVuShop)} />
-                );
-              })}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {services.map((service) => (
+                <ServiceCard
+                  key={service.maDichVuShop}
+                  service={{
+                    ...service,
+                    hinhAnh: service.hinhAnh,
+                    anhCuaHang: shop.anhCuaHang,
+                    tenCuaHang: shop.tenCuaHang,
+                    diaChi: shop.diaChi,
+                  }}
+                  onClick={() => handleServiceClick(service.maDichVuShop)}
+                />
+              ))}
             </div>
           ) : (
             <div className="text-center py-16">

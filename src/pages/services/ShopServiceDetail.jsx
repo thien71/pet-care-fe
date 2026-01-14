@@ -104,7 +104,16 @@ const ShopServiceDetail = () => {
               {/* Shop Image */}
               <Link to={`/shop/${service.shop.maCuaHang}`} className="block">
                 <div className="h-64 bg-gray-100 overflow-hidden">
-                  {service.shop.anhCuaHang ? (
+                  {service.hinhAnh ? (
+                    <img
+                      src={`http://localhost:5000${service.hinhAnh}`}
+                      alt={service.tenDichVu}
+                      className="w-full h-full object-cover hover:scale-105 transition"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  ) : service.shop.anhCuaHang ? (
                     <img
                       src={`http://localhost:5000${service.shop.anhCuaHang}`}
                       alt={service.shop.tenCuaHang}
