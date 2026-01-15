@@ -2,7 +2,7 @@
 import ProtectedRoute from "@/components/common/ProtectedRoute";
 
 // Public Pages
-import HomePage from "@/pages/home/HomePage";
+import ProtectedHomePage from "@/pages/home/ProtectedHomePage";
 import ShopServiceDetail from "@/pages/services/ShopServiceDetail";
 import ServiceDetail from "@/pages/services/ServiceDetail";
 import SearchResults from "@/pages/search/SearchResults";
@@ -13,7 +13,7 @@ import ShopDetail from "@/pages/shop/ShopDetail";
 export const publicRoutes = [
   {
     index: true,
-    element: <HomePage />,
+    element: <ProtectedHomePage />,
   },
   {
     path: "search",
